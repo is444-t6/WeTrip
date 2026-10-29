@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { setDevSession, getSessionToken, clearSession } from './session'
 
 // Stands in for WeTrip's real login while ValidateSessionStub (Task 12.4
@@ -15,7 +15,7 @@ export default function DevLogin() {
   function submit(e) {
     e.preventDefault()
     setDevSession(customerId.trim(), accountId.trim(), displayName.trim())
-    navigate('/family')
+    navigate({ to: '/family' })
   }
 
   return (
@@ -28,7 +28,7 @@ export default function DevLogin() {
               <path d="M7.5 12.5 10.5 15.5 16.5 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <h2>Sign in to WeTrip Family</h2>
+          <h2>Sign in to WeTrip</h2>
           <p className="muted">Dev stub — stands in for WeTrip login until it's wired up.</p>
         </div>
 
@@ -36,7 +36,7 @@ export default function DevLogin() {
           {current && (
             <div className="banner ok row-between" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78em' }}>
               <span>{current}</span>
-              <button className="secondary" style={{ padding: '4px 10px' }} onClick={() => { clearSession(); navigate(0) }} type="button">Clear</button>
+              <button className="secondary" style={{ padding: '4px 10px' }} onClick={() => { clearSession(); window.location.reload() }} type="button">Clear</button>
             </div>
           )}
           <form onSubmit={submit}>

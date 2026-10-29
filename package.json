@@ -9,14 +9,22 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:atomic": "node --env-file=.env.test scripts/test-atomic.mjs",
-    "test:composite": "node --env-file=.env.test scripts/test-composite.mjs"
+    "test:composite": "node --env-file=.env.test scripts/test-composite.mjs",
+    "test:smartfx": "playwright test tests/smartfx-api.spec.js",
+    "test:ui": "playwright test tests/family.spec.js",
+    "test:e2e": "playwright test",
+    "test:ui:report": "playwright show-report"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-router": "^1.170.46",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tanstack/router-plugin": "^1.168.48",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

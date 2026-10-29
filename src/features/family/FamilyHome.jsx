@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FamilyApi } from './api'
+import { Link } from '@tanstack/react-router'
+import { useRole } from './queries'
 import { isLoggedIn, clearSession } from './session'
 import ParentHome from './ParentHome'
 import ChildHome from './ChildHome'
@@ -9,15 +8,7 @@ import AppShell from './components/AppShell'
 import Banner from './components/Banner'
 
 export default function FamilyHome() {
-  const [role, setRole] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!isLoggedIn()) return
-    FamilyApi.getMyFamilyRole()
-      .then((r) => setRole(r.role))
-      .catch((e) => setError(e.message))
-  }, [])
+  const { data: role, error } = useRole()
 
   if (!isLoggedIn()) {
     return (
@@ -44,10 +35,10 @@ export default function FamilyHome() {
 
   return (
     <AppShell onSignOut={signOut}>
-      {error && <Banner>{error}</Banner>}
+      {error && <Banner>{error.message}</Banner>}
       {!role && !error && <p className="muted">Loading…</p>}
       {role === 'Parent' && <ParentHome />}
-      {(role === 'Child') && <ChildHome />}
+      {role === 'Child' && <ChildHome />}
       {(role === 'Pending' || role === 'None') && <ChildInvite />}
     </AppShell>
   )

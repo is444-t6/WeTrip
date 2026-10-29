@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import Money from './Money'
 
 function initials(name) {
@@ -52,7 +52,7 @@ export default function ChildCard({ child }) {
         </>
       )}
 
-      <Link to={`/family/child/${child.familyLinkId}`} state={{ child }}>
+      <Link to="/family/child/$familyLinkId" params={{ familyLinkId: String(child.familyLinkId) }}>
         <button className="secondary" style={{ width: '100%', marginTop: 14 }}>Manage</button>
       </Link>
     </div>

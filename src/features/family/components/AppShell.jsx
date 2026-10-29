@@ -1,9 +1,11 @@
+import { Link } from '@tanstack/react-router'
+
 export default function AppShell({ onSignOut, children }) {
   return (
     <>
       <div className="navbar">
         <div className="navbar-inner">
-          <div className="brand">
+          <Link to="/family" className="brand" style={{ textDecoration: 'none' }}>
             <span className="brand-mark">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -14,11 +16,15 @@ export default function AppShell({ onSignOut, children }) {
                 <path d="M7.5 12.5 10.5 15.5 16.5 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            WeTrip Family
+            WeTrip
+          </Link>
+          <div className="row">
+            <Link to="/family" className="nav-link">Family</Link>
+            <Link to="/fx" className="nav-link">SmartFX</Link>
+            {onSignOut && (
+              <button className="ghost" onClick={onSignOut}>Sign out</button>
+            )}
           </div>
-          {onSignOut && (
-            <button className="ghost" onClick={onSignOut}>Sign out</button>
-          )}
         </div>
       </div>
       <div className="page">{children}</div>

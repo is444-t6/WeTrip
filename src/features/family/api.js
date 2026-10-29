@@ -1,32 +1,10 @@
-import { getSessionToken } from './session'
+import { createClient } from '../../lib/http'
 
-const BASE = import.meta.env.VITE_FAMILY_API_BASE
-const API_KEY = import.meta.env.VITE_FAMILY_API_KEY
-
-async function call(method, path, body) {
-  const res = await fetch(`${BASE}/${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Contacts-Key': API_KEY,
-      'X-Session-Token': getSessionToken(),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const message = data?.Errors?.[0] || `Request failed (${res.status})`
-    throw new Error(message)
-  }
-  return data
-}
-
-function qs(params) {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
-  if (entries.length === 0) return ''
-  return '?' + new URLSearchParams(entries).toString()
-}
+const { call, qs } = createClient({
+  base: import.meta.env.VITE_FAMILY_API_BASE,
+  apiKey: import.meta.env.VITE_FAMILY_API_KEY,
+  normalize: true,
+})
 
 // Every key below is the exact "Name in JSON" from the build guide's Task 11.3
 // structure tables (all lowercase-first camelCase) — the guide's own sample

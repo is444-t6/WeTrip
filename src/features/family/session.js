@@ -8,6 +8,14 @@ export function getSessionToken() {
   return sessionStorage.getItem(KEY) || ''
 }
 
+export function getSessionCustomerId() {
+  return getSessionToken().split(':')[0] || ''
+}
+
+export function getSessionAccountId() {
+  return getSessionToken().split(':')[1] || ''
+}
+
 export function setDevSession(customerId, accountId, displayName) {
   const token = `${customerId}:${accountId}:${displayName || ''}`
   sessionStorage.setItem(KEY, token)

@@ -1,33 +1,43 @@
-import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
-import { FamilyApi } from './api'
+import { useState } from 'react'
+import { Link, useParams } from '@tanstack/react-router'
+import {
+  useBalanceTrend,
+  useChildExpenses,
+  useChildren,
+  useSetBudget,
+  useSetupAllowance,
+  useStopAllowance,
+  useTopUp,
+} from './queries'
+import { isLoggedIn } from './session'
 import Banner from './components/Banner'
 import Money from './components/Money'
 
 export default function ChildDetail() {
-  const { familyLinkId } = useParams()
-  const location = useLocation()
-  const [child, setChild] = useState(location.state?.child || null)
-  const [error, setError] = useState(null)
+  const { familyLinkId } = useParams({ from: '/family/child/$familyLinkId' })
+  const { data: children, error } = useChildren()
 
-  useEffect(() => {
-    if (child) return
-    FamilyApi.getChildren()
-      .then((list) => {
-        const match = list.find((c) => String(c.familyLinkId) === String(familyLinkId))
-        if (!match) setError('Could not find that child in your list.')
-        setChild(match || null)
-      })
-      .catch((e) => setError(e.message))
-  }, [familyLinkId, child])
+  if (!isLoggedIn()) {
+    return (
+      <div className="center-page">
+        <div className="card center-card" style={{ textAlign: 'center' }}>
+          <p className="muted">You're not signed in yet.</p>
+          <Link to="/family/dev-login"><button style={{ width: '100%' }}>Sign in</button></Link>
+        </div>
+      </div>
+    )
+  }
+
+  const child = children?.find((c) => String(c.familyLinkId) === String(familyLinkId)) || null
+  const notFound = children && !child ? 'Could not find that child in your list.' : null
 
   return (
     <div>
       <Link to="/family" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
         &larr; Back to children
       </Link>
-      <Banner>{error}</Banner>
-      {!child && !error && <p className="muted">Loading…</p>}
+      <Banner>{error?.message || notFound}</Banner>
+      {!child && !error && !notFound && <p className="muted">Loading…</p>}
       {child && (
         <>
           <h1 style={{ fontSize: '1.4rem', marginBottom: 18 }}>{child.nickname || child.childCustomerId}</h1>
@@ -50,28 +60,21 @@ export default function ChildDetail() {
 function BudgetCard({ familyLinkId }) {
   const [period, setPeriod] = useState('Monthly')
   const [amount, setAmount] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
   const [ok, setOk] = useState('')
+  const setBudget = useSetBudget()
 
-  async function submit(e) {
+  function submit(e) {
     e.preventDefault()
-    setBusy(true)
-    setError(null)
     setOk('')
-    try {
-      await FamilyApi.setBudget(Number(familyLinkId), period, Number(amount))
-      setOk('Budget saved.')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    setBudget.mutate(
+      { familyLinkId: Number(familyLinkId), period, amount: Number(amount) },
+      { onSuccess: () => setOk('Budget saved.') },
+    )
   }
 
   return (
     <div className="card">
-      <Banner>{error}</Banner>
+      <Banner>{setBudget.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
       <form onSubmit={submit}>
         <div className="grid-2">
@@ -87,7 +90,7 @@ function BudgetCard({ familyLinkId }) {
             <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </div>
         </div>
-        <button disabled={busy} type="submit" style={{ width: '100%' }}>Save budget</button>
+        <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>Save budget</button>
       </form>
     </div>
   )
@@ -97,42 +100,23 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
   const [amount, setAmount] = useState('')
   const [weeklyMonthly, setWeeklyMonthly] = useState('Monthly')
   const [startDate, setStartDate] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
   const [ok, setOk] = useState('')
+  const setup = useSetupAllowance()
+  const stop = useStopAllowance()
+  const busy = setup.isPending || stop.isPending
 
-  async function setup(e) {
+  function submit(e) {
     e.preventDefault()
-    setBusy(true)
-    setError(null)
     setOk('')
-    try {
-      await FamilyApi.setupAllowance(
-        Number(familyLinkId),
-        Number(amount),
+    setup.mutate(
+      {
+        familyLinkId: Number(familyLinkId),
+        amount: Number(amount),
         weeklyMonthly,
-        startDate ? new Date(startDate).toISOString() : undefined,
-      )
-      setOk('Allowance set up.')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function stop() {
-    setBusy(true)
-    setError(null)
-    setOk('')
-    try {
-      await FamilyApi.stopAllowance(Number(familyLinkId))
-      setOk('Allowance stopped.')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+      },
+      { onSuccess: () => setOk('Allowance set up.') },
+    )
   }
 
   return (
@@ -142,9 +126,9 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
         Test <code>AddStandingInstruction</code> alone in Postman first to confirm which exact
         string SMUtBank accepts for weeklyMonthly (Task 17.3 note) — "Weekly"/"Monthly" is a guess.
       </p>
-      <Banner>{error}</Banner>
+      <Banner>{setup.error?.message || stop.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
-      <form onSubmit={setup}>
+      <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
             <label>Amount (SGD)</label>
@@ -164,7 +148,16 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
         </div>
         <div className="row">
           <button disabled={busy} type="submit">Set up allowance</button>
-          <button disabled={busy} type="button" className="secondary" onClick={stop}>Stop allowance</button>
+          <button
+            disabled={busy}
+            type="button"
+            className="secondary"
+            onClick={() =>
+              stop.mutate(Number(familyLinkId), { onSuccess: () => setOk('Allowance stopped.') })
+            }
+          >
+            Stop allowance
+          </button>
         </div>
       </form>
     </div>
@@ -174,30 +167,27 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
 function TopUpCard({ familyLinkId }) {
   const [amount, setAmount] = useState('')
   const [narrative, setNarrative] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
   const [ok, setOk] = useState('')
+  const topUp = useTopUp()
 
-  async function submit(e) {
+  function submit(e) {
     e.preventDefault()
-    setBusy(true)
-    setError(null)
     setOk('')
-    try {
-      const r = await FamilyApi.topUp(Number(familyLinkId), Number(amount), narrative)
-      setOk(`Transferred. New balance: ${r.balanceAfter}`)
-      setAmount('')
-      setNarrative('')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    topUp.mutate(
+      { familyLinkId: Number(familyLinkId), amount: Number(amount), narrative },
+      {
+        onSuccess: (r) => {
+          setOk(`Transferred. New balance: ${r.balanceAfter}`)
+          setAmount('')
+          setNarrative('')
+        },
+      },
+    )
   }
 
   return (
     <div className="card">
-      <Banner>{error}</Banner>
+      <Banner>{topUp.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
       <form onSubmit={submit}>
         <div className="grid-2">
@@ -210,61 +200,52 @@ function TopUpCard({ familyLinkId }) {
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
         </div>
-        <button disabled={busy} type="submit" style={{ width: '100%' }}>Top up</button>
+        <button disabled={topUp.isPending} type="submit" style={{ width: '100%' }}>Top up</button>
       </form>
     </div>
   )
 }
 
 function ExpensesCard({ familyLinkId }) {
-  const [startDate, setStartDate] = useState(firstOfMonth())
-  const [endDate, setEndDate] = useState(today())
-  const [result, setResult] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-
-  async function load(e) {
-    e?.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      const r = await FamilyApi.getChildExpenses(Number(familyLinkId), startDate, endDate)
-      setResult(r)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [from, setFrom] = useState(firstOfMonth())
+  const [to, setTo] = useState(today())
+  // Draft inputs vs the range actually queried: the old screen only refetched
+  // when Refresh was pressed, so changing a date must not fire a request.
+  const [applied, setApplied] = useState({ from, to })
+  const { data: result, error } = useChildExpenses(Number(familyLinkId), applied.from, applied.to)
 
   return (
     <div className="card">
-      <Banner>{error}</Banner>
-      <form onSubmit={load} className="row">
+      <Banner>{error?.message}</Banner>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          setApplied({ from, to })
+        }}
+        className="row"
+      >
         <div className="field" style={{ flex: 1 }}>
           <label>From</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>To</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
-        <button disabled={busy} type="submit">Refresh</button>
+        <button type="submit">Refresh</button>
       </form>
       {result && (
         <>
           <div className="row-between" style={{ marginTop: 10, marginBottom: 4 }}>
             <span className="muted">Total</span>
-            <span className="money"><Money amount={result.total} currency={result.hostCurrency} /></span>
+            <span className="money"><Money amount={result.total ?? 0} currency={result.hostCurrency} /></span>
           </div>
           <table>
             <thead>
               <tr><th>Date</th><th>To</th><th>Category</th><th style={{ textAlign: 'right' }}>Amount</th><th>Source</th></tr>
             </thead>
             <tbody>
-              {result.expenses.map((x) => (
+              {(result.expenses ?? []).map((x) => (
                 <tr key={x.transactionId}>
                   <td>{String(x.date).slice(0, 10)}</td>
                   <td>{x.accountTo}</td>
@@ -273,7 +254,7 @@ function ExpensesCard({ familyLinkId }) {
                   <td className="muted">{x.source}</td>
                 </tr>
               ))}
-              {result.expenses.length === 0 && (
+              {(result.expenses ?? []).length === 0 && (
                 <tr><td colSpan={5} className="muted">No outgoing payments in this range.</td></tr>
               )}
             </tbody>
@@ -286,18 +267,11 @@ function ExpensesCard({ familyLinkId }) {
 
 function BalanceTrendCard({ familyLinkId }) {
   const [months, setMonths] = useState(6)
-  const [points, setPoints] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    FamilyApi.getBalanceTrend(Number(familyLinkId), months)
-      .then(setPoints)
-      .catch((e) => setError(e.message))
-  }, [familyLinkId, months])
+  const { data: points, error } = useBalanceTrend(Number(familyLinkId), months)
 
   return (
     <div className="card">
-      <Banner>{error}</Banner>
+      <Banner>{error?.message}</Banner>
       <div className="field" style={{ maxWidth: 120 }}>
         <label>Months</label>
         <input type="number" min="1" max="24" value={months} onChange={(e) => setMonths(Number(e.target.value) || 6)} />

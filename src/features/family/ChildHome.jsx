@@ -1,51 +1,45 @@
-import { useEffect, useState } from 'react'
-import { FamilyApi } from './api'
+import { useState } from 'react'
+import { useChildDashboard, useChildSpend } from './queries'
 import Banner from './components/Banner'
 import Money from './components/Money'
 import BalanceHero from './components/BalanceHero'
 
 export default function ChildHome() {
-  const [dash, setDash] = useState(null)
+  const { data: dash, error } = useChildDashboard()
+  const spend = useChildSpend()
+
   const [amount, setAmount] = useState('')
   const [merchantAccountId, setMerchantAccountId] = useState('')
   const [category, setCategory] = useState('General')
   const [narrative, setNarrative] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
   const [message, setMessage] = useState('')
 
-  const load = () => FamilyApi.getChildDashboard().then(setDash).catch((e) => setError(e.message))
-  useEffect(() => { load() }, [])
-
-  async function pay(e) {
+  function pay(e) {
     e.preventDefault()
-    setBusy(true)
-    setError(null)
     setMessage('')
-    try {
-      const result = await FamilyApi.childSpend(
-        merchantAccountId.trim(),
-        Number(amount),
+    spend.mutate(
+      {
+        merchantAccountId: merchantAccountId.trim(),
+        amount: Number(amount),
         category,
         narrative,
-      )
-      setMessage(
-        result.status === 'Completed'
-          ? `Paid! Remaining this period: ${result.remaining}`
-          : 'Over budget — sent to your parent for approval.',
-      )
-      setAmount('')
-      setMerchantAccountId('')
-      setNarrative('')
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+      },
+      {
+        onSuccess: (result) => {
+          setMessage(
+            result.status === 'Completed'
+              ? `Paid! Remaining this period: ${result.remaining}`
+              : 'Over budget — sent to your parent for approval.',
+          )
+          setAmount('')
+          setMerchantAccountId('')
+          setNarrative('')
+        },
+      },
+    )
   }
 
-  if (error && !dash) return <Banner>{error}</Banner>
+  if (error && !dash) return <Banner>{error.message}</Banner>
   if (!dash) return <p className="muted">Loading…</p>
 
   const pct = dash.budget ? Math.min(100, (dash.spent / dash.budget) * 100) : 0
@@ -96,7 +90,7 @@ export default function ChildHome() {
 
       <div className="card">
         <h3>Pay a merchant</h3>
-        <Banner>{error}</Banner>
+        <Banner>{spend.error?.message}</Banner>
         <Banner kind="ok">{message}</Banner>
         <form onSubmit={pay}>
           <div className="field">
@@ -117,7 +111,7 @@ export default function ChildHome() {
             <label>Note (optional)</label>
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
-          <button disabled={busy} type="submit" style={{ width: '100%' }}>Pay</button>
+          <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>Pay</button>
         </form>
       </div>
     </div>
