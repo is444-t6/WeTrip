@@ -3,6 +3,32 @@ import { getSessionToken } from './session'
 const BASE = import.meta.env.VITE_FAMILY_API_BASE
 const API_KEY = import.meta.env.VITE_FAMILY_API_KEY
 
+// Family_Composite's Name-in-JSON fixes (Task 11.3) are landing structure by
+// structure on the backend, so some responses are still PascalCase where the
+// spec calls for camelCase. Rather than special-case every screen, every
+// response gets a lowercase-first alias added for each key — so code written
+// against the spec (familyLinkId, status, ...) works whether the backend has
+// been fixed yet or not. Safe to delete once every structure's Name in JSON
+// is confirmed fixed.
+function lowerFirst(key) {
+  return key.charAt(0).toLowerCase() + key.slice(1)
+}
+
+function withCamelAliases(value) {
+  if (Array.isArray(value)) return value.map(withCamelAliases)
+  if (value && typeof value === 'object') {
+    const out = {}
+    for (const [key, raw] of Object.entries(value)) {
+      const normalized = withCamelAliases(raw)
+      out[key] = normalized
+      const alias = lowerFirst(key)
+      if (alias !== key && !(alias in out)) out[alias] = normalized
+    }
+    return out
+  }
+  return value
+}
+
 async function call(method, path, body) {
   const res = await fetch(`${BASE}/${path}`, {
     method,
@@ -19,7 +45,7 @@ async function call(method, path, body) {
     const message = data?.Errors?.[0] || `Request failed (${res.status})`
     throw new Error(message)
   }
-  return data
+  return withCamelAliases(data)
 }
 
 function qs(params) {

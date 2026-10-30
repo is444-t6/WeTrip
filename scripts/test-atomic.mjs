@@ -5,22 +5,27 @@
 // Usage:
 //   node --env-file=.env.test scripts/test-atomic.mjs
 //
-// Needs in .env.test: ATOMIC_BASE, ATOMIC_API_KEY, PARENT_CUSTOMER_ID,
-// PARENT_ACCOUNT_ID, CHILD_CUSTOMER_ID, MERCHANT_ACCOUNT_ID.
+// Needs in .env.test: ATOMIC_BASE, ATOMIC_API_KEY, ATOMIC_TEST_PARENT_ID,
+// ATOMIC_TEST_CHILD_ID, ATOMIC_TEST_MERCHANT_ID.
 //
-// Family_Atomic never validates CHILD_CUSTOMER_ID/MERCHANT_ACCOUNT_ID
-// against real SMUtBank accounts (only Family_Composite does), so synthetic
-// values work fine here — this script writes real rows into
-// FamilyLink/Budget/SpendLog/SpendRequest but is safe to re-run.
+// Deliberately uses its own throwaway synthetic identities, NOT the real
+// PARENT_CUSTOMER_ID/CHILD_CUSTOMER_ID from test-composite.mjs — reusing the
+// real child here would create extra FamilyLink rows under the real parent
+// with fake ChildAccountIds, which breaks Family_Composite's GetChildren
+// (it iterates every linked child and blows up on any with a fake account).
+// Family_Atomic never validates these against real SMUtBank accounts anyway
+// (only Family_Composite does), so synthetic values work fine here — this
+// script writes real rows into FamilyLink/Budget/SpendLog/SpendRequest but
+// is safe to re-run.
 
 import { assert, env, http, step, summary } from './_lib.mjs'
 
 const BASE = env('ATOMIC_BASE')
 const API_KEY = env('ATOMIC_API_KEY')
-const PARENT_CUSTOMER_ID = env('PARENT_CUSTOMER_ID')
-const PARENT_ACCOUNT_ID = env('PARENT_ACCOUNT_ID')
-const CHILD_CUSTOMER_ID = env('CHILD_CUSTOMER_ID')
-const MERCHANT_ACCOUNT_ID = env('MERCHANT_ACCOUNT_ID')
+const PARENT_CUSTOMER_ID = env('ATOMIC_TEST_PARENT_ID')
+const PARENT_ACCOUNT_ID = '0000000001'
+const CHILD_CUSTOMER_ID = env('ATOMIC_TEST_CHILD_ID')
+const MERCHANT_ACCOUNT_ID = env('ATOMIC_TEST_MERCHANT_ID')
 
 const headers = { 'X-Contacts-Key': API_KEY }
 const errs = (json) => json?.Errors?.[0] ?? ''
@@ -144,8 +149,12 @@ await step('SetBudget again (same FamilyLinkId) upserts — same id, new amount'
   assert(json.id === budgetId, `expected upsert to reuse id ${budgetId}, got ${json.id} — check the Unique index on Budget.FamilyLinkId`)
 
   const check = await http(BASE, 'GET', `GetBudget?FamilyLinkId=${familyLinkId}`, { headers })
-  assert(Number(check.json.Amount) === 750, `expected updated Amount 750, got ${check.json.Amount}`)
-  assert(check.json.Period === 'Weekly', `expected updated Period Weekly, got ${check.json.Period}`)
+  // GetBudget's casing has drifted to lowercase while GetLink stays PascalCase
+  // (Family_Atomic entities are otherwise PascalCase-as-is per Task 3.1) — tolerate both.
+  const amount = check.json.Amount ?? check.json.amount
+  const period = check.json.Period ?? check.json.period
+  assert(Number(amount) === 750, `expected updated Amount 750, got ${JSON.stringify(check.json)}`)
+  assert(period === 'Weekly', `expected updated Period Weekly, got ${JSON.stringify(check.json)}`)
 })
 
 await step('GetBudget on a FamilyLink with no budget returns "Not found: ..."', async () => {

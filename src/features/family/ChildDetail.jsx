@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { FamilyApi } from './api'
+import AppShell from './components/AppShell'
 import Banner from './components/Banner'
 import Money from './components/Money'
+import { clearSession, isLoggedIn } from './session'
 
 export default function ChildDetail() {
   const { familyLinkId } = useParams()
@@ -11,7 +13,7 @@ export default function ChildDetail() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (child) return
+    if (!isLoggedIn() || child) return
     FamilyApi.getChildren()
       .then((list) => {
         const match = list.find((c) => String(c.familyLinkId) === String(familyLinkId))
@@ -21,8 +23,15 @@ export default function ChildDetail() {
       .catch((e) => setError(e.message))
   }, [familyLinkId, child])
 
+  if (!isLoggedIn()) return <Navigate to="/login" replace />
+
+  function signOut() {
+    clearSession()
+    window.location.href = '/login'
+  }
+
   return (
-    <div>
+    <AppShell onSignOut={signOut}>
       <Link to="/family" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
         &larr; Back to children
       </Link>
@@ -43,7 +52,7 @@ export default function ChildDetail() {
           <BalanceTrendCard familyLinkId={familyLinkId} />
         </>
       )}
-    </div>
+    </AppShell>
   )
 }
 
@@ -264,7 +273,7 @@ function ExpensesCard({ familyLinkId }) {
               <tr><th>Date</th><th>To</th><th>Category</th><th style={{ textAlign: 'right' }}>Amount</th><th>Source</th></tr>
             </thead>
             <tbody>
-              {result.expenses.map((x) => (
+              {(result.expenses ?? []).map((x) => (
                 <tr key={x.transactionId}>
                   <td>{String(x.date).slice(0, 10)}</td>
                   <td>{x.accountTo}</td>
@@ -273,7 +282,7 @@ function ExpensesCard({ familyLinkId }) {
                   <td className="muted">{x.source}</td>
                 </tr>
               ))}
-              {result.expenses.length === 0 && (
+              {(result.expenses ?? []).length === 0 && (
                 <tr><td colSpan={5} className="muted">No outgoing payments in this range.</td></tr>
               )}
             </tbody>

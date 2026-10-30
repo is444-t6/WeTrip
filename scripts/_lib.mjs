@@ -42,6 +42,16 @@ export function summary() {
   process.exitCode = fail > 0 ? 1 : 0
 }
 
+// Tolerant field reader: Family_Composite's Name-in-JSON fixes are landing
+// structure by structure, so some responses are still camelCase-expected
+// but PascalCase-actual. Reads either so the test can see through that gap
+// to the real underlying behavior instead of getting stuck on it.
+export function field(obj, camelName) {
+  if (obj == null) return undefined
+  const pascalName = camelName[0].toUpperCase() + camelName.slice(1)
+  return obj[camelName] ?? obj[pascalName]
+}
+
 export async function http(baseUrl, method, path, { headers = {}, body } = {}) {
   const res = await fetch(`${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`, {
     method,

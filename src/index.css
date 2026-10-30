@@ -144,6 +144,19 @@ a { color: var(--accent); text-decoration: none; }
 
 .nav-user strong { color: var(--nav-text); font-weight: 600; }
 
+.nav-link {
+  color: var(--muted-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link[data-active='true'] {
+  color: var(--nav-text);
+  border-bottom-color: var(--brand-grad-3);
+}
+
 /* --- surfaces --- */
 
 .card {

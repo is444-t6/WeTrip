@@ -49,12 +49,18 @@ export default function ChildCard({ child }) {
           ) : (
             <p className="muted" style={{ marginTop: 10 }}>No budget set yet</p>
           )}
+
+          <Link to={`/family/child/${child.familyLinkId}`} state={{ child }}>
+            <button className="secondary" style={{ width: '100%', marginTop: 14 }}>Manage</button>
+          </Link>
         </>
       )}
 
-      <Link to={`/family/child/${child.familyLinkId}`} state={{ child }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>Manage</button>
-      </Link>
+      {child.status === 'Pending' && (
+        <p className="muted" style={{ marginTop: 14 }}>
+          Invite sent — waiting for {label} to accept.
+        </p>
+      )}
     </div>
   )
 }

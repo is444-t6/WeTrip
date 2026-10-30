@@ -38,11 +38,14 @@ export default function ChildInvite() {
 
   if (!invite) return <p className="muted">Loading…</p>
 
-  if (!invite.hasInvite) {
+  // Reached only when GetMyFamilyRole already returned "Pending" — a real
+  // invite necessarily exists, so don't gate on invite.hasInvite here (that
+  // field has been unreliable in testing). familyLinkId is what AcceptLink
+  // actually needs.
+  if (!invite.familyLinkId) {
     return (
       <div className="card empty">
-        <p>You're not linked to a family yet.</p>
-        <p className="muted">Ask a parent to link your phone number from their WeTrip Family screen.</p>
+        <p>Couldn't load your invite — try refreshing.</p>
       </div>
     )
   }
