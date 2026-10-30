@@ -1,18 +1,11 @@
-import { Link, useLocation } from 'react-router-dom'
-
-const NAV_LINKS = [
-  { to: '/accounts', label: 'Accounts' },
-  { to: '/family', label: 'Family' },
-]
+import { Link } from '@tanstack/react-router'
 
 export default function AppShell({ onSignOut, children }) {
-  const location = useLocation()
-
   return (
     <>
       <div className="navbar">
         <div className="navbar-inner">
-          <Link to="/home" className="brand">
+          <Link to="/family" className="brand" style={{ textDecoration: 'none' }}>
             <span className="brand-mark">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -25,23 +18,13 @@ export default function AppShell({ onSignOut, children }) {
             </span>
             WeTrip
           </Link>
-          {onSignOut && (
-            <div className="row" style={{ gap: 18 }}>
-              <nav className="row" style={{ gap: 14 }}>
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className="nav-link"
-                    data-active={location.pathname.startsWith(link.to)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
+          <div className="row">
+            <Link to="/family" className="nav-link">Family</Link>
+            <Link to="/fx" className="nav-link">SmartFX</Link>
+            {onSignOut && (
               <button className="ghost" onClick={onSignOut}>Sign out</button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       <div className="page">{children}</div>

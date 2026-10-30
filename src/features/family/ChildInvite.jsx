@@ -1,31 +1,12 @@
-import { useEffect, useState } from 'react'
-import { FamilyApi } from './api'
+import { useState } from 'react'
+import { useAcceptLink, useMyInvite } from './queries'
 import Banner from './components/Banner'
 
 export default function ChildInvite() {
-  const [invite, setInvite] = useState(null)
+  const { data: invite, error } = useMyInvite()
+  const accept = useAcceptLink()
   const [accountId, setAccountId] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
   const [done, setDone] = useState(false)
-
-  useEffect(() => {
-    FamilyApi.getMyLinkInvite().then(setInvite).catch((e) => setError(e.message))
-  }, [])
-
-  async function accept(e) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      await FamilyApi.acceptLink(invite.familyLinkId, accountId.trim())
-      setDone(true)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   if (done) {
     return (
@@ -36,6 +17,7 @@ export default function ChildInvite() {
     )
   }
 
+  if (error) return <Banner>{error.message}</Banner>
   if (!invite) return <p className="muted">Loading…</p>
 
   // Reached only when GetMyFamilyRole already returned "Pending" — a real
@@ -56,8 +38,16 @@ export default function ChildInvite() {
       <p className="muted">
         <strong style={{ color: 'var(--text)' }}>{invite.nickname || invite.parentCustomerId}</strong> wants to link you as their child on WeTrip Family.
       </p>
-      <Banner>{error}</Banner>
-      <form onSubmit={accept}>
+      <Banner>{accept.error?.message}</Banner>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          accept.mutate(
+            { familyLinkId: invite.familyLinkId, accountId: accountId.trim() },
+            { onSuccess: () => setDone(true) },
+          )
+        }}
+      >
         <div className="field">
           <label>Which of your accounts should they manage?</label>
           <input
@@ -67,7 +57,7 @@ export default function ChildInvite() {
             required
           />
         </div>
-        <button disabled={busy} type="submit" style={{ width: '100%' }}>Accept invite</button>
+        <button disabled={accept.isPending} type="submit" style={{ width: '100%' }}>Accept invite</button>
       </form>
     </div>
   )
