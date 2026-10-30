@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import DevLogin from '../features/family/DevLogin'
+import Login from '../features/family/Login'
 
 export const Route = createFileRoute('/family/dev-login')({
-  component: DevLogin,
+  component: Login,
 })

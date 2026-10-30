@@ -5,7 +5,7 @@ import { setDevSession, getSessionToken, clearSession } from './session'
 // Stands in for WeTrip's real login while ValidateSessionStub (Task 12.4
 // Option C) is wired up server-side. Writes customerId:accountId:name into
 // sessionStorage['wetrip_session'] — exactly what GetSessionUser expects.
-export default function DevLogin() {
+export default function Login() {
   const [customerId, setCustomerId] = useState('')
   const [accountId, setAccountId] = useState('')
   const [displayName, setDisplayName] = useState('')

@@ -9,7 +9,8 @@ import {
   useStopAllowance,
   useTopUp,
 } from './queries'
-import { isLoggedIn } from './session'
+import { clearSession, isLoggedIn } from './session'
+import AppShell from './components/AppShell'
 import Banner from './components/Banner'
 import Money from './components/Money'
 
@@ -28,11 +29,16 @@ export default function ChildDetail() {
     )
   }
 
+  function signOut() {
+    clearSession()
+    window.location.reload()
+  }
+
   const child = children?.find((c) => String(c.familyLinkId) === String(familyLinkId)) || null
   const notFound = children && !child ? 'Could not find that child in your list.' : null
 
   return (
-    <div>
+    <AppShell onSignOut={signOut}>
       <Link to="/family" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
         &larr; Back to children
       </Link>
@@ -53,7 +59,7 @@ export default function ChildDetail() {
           <BalanceTrendCard familyLinkId={familyLinkId} />
         </>
       )}
-    </div>
+    </AppShell>
   )
 }
 
