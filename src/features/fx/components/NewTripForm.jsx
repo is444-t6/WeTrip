@@ -4,6 +4,7 @@ import { getSessionCustomerId } from '../../family/session'
 import Banner from '../../family/components/Banner'
 import { CURRENCIES, tenorFor } from '../api'
 import { useCreateTrip, useRate } from '../queries'
+import { Link } from '@tanstack/react-router'
 
 export default function NewTripForm() {
   const { data: children } = useChildren()
@@ -67,6 +68,15 @@ export default function NewTripForm() {
         <button className="ghost" type="button" onClick={() => setOpen(false)}>Close</button>
       </div>
       <Banner>{create.error?.message}</Banner>
+
+      <div className="banner" style={{ background: 'var(--accent-soft)', color: 'var(--text)' }}>
+        <strong>Travel insurance is optional.</strong> Compare illustrative cover for this trip after planning.
+        <Link
+          to="/insurance"
+          search={{ destination, startDate: tripStartDate, endDate: tripEndDate }}
+          style={{ display: 'block', marginTop: 6, fontWeight: 700 }}
+        >Explore travel insurance →</Link>
+      </div>
 
       <form onSubmit={submit}>
         <div className="field">

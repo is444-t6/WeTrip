@@ -21,6 +21,8 @@ export default function AppShell({ onSignOut, children }) {
           <div className="row">
             <Link to="/family" className="nav-link">Family</Link>
             <Link to="/fx" className="nav-link">SmartFX</Link>
+            <Link to="/insurance" className="nav-link">Insurance</Link>
+            <Link to="/insurance/policies" className="nav-link">My Insurance</Link>
             {onSignOut && (
               <button className="ghost" onClick={onSignOut}>Sign out</button>
             )}

@@ -13,8 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
 import { Route as FamilyDevLoginRouteImport } from './routes/family.dev-login'
 import { Route as FxIndexRouteImport } from './routes/fx.index'
+import { Route as InsuranceIndexRouteImport } from './routes/insurance.index'
+import { Route as InsuranceCheckoutRouteImport } from './routes/insurance.checkout'
+import { Route as InsuranceConfirmationRouteImport } from './routes/insurance.confirmation'
+import { Route as InsurancePoliciesRouteImport } from './routes/insurance.policies'
+import { Route as InsuranceTravellersRouteImport } from './routes/insurance.travellers'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
 import { Route as FxTripsTripIdRouteImport } from './routes/fx.trips.$tripId'
+import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan.$planId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,6 +42,31 @@ const FxIndexRoute = FxIndexRouteImport.update({
   path: '/fx/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsuranceIndexRoute = InsuranceIndexRouteImport.update({
+  id: '/insurance/',
+  path: '/insurance/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsuranceCheckoutRoute = InsuranceCheckoutRouteImport.update({
+  id: '/insurance/checkout',
+  path: '/insurance/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsuranceConfirmationRoute = InsuranceConfirmationRouteImport.update({
+  id: '/insurance/confirmation',
+  path: '/insurance/confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsurancePoliciesRoute = InsurancePoliciesRouteImport.update({
+  id: '/insurance/policies',
+  path: '/insurance/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsuranceTravellersRoute = InsuranceTravellersRouteImport.update({
+  id: '/insurance/travellers',
+  path: '/insurance/travellers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FamilyChildFamilyLinkIdRoute = FamilyChildFamilyLinkIdRouteImport.update({
   id: '/family/child/$familyLinkId',
   path: '/family/child/$familyLinkId',
@@ -46,66 +77,113 @@ const FxTripsTripIdRoute = FxTripsTripIdRouteImport.update({
   path: '/fx/trips/$tripId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
+  id: '/insurance/plan/$planId',
+  path: '/insurance/plan/$planId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
+  '/insurance/checkout': typeof InsuranceCheckoutRoute
+  '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/policies': typeof InsurancePoliciesRoute
+  '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
+  '/insurance/': typeof InsuranceIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
+  '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
+  '/insurance/checkout': typeof InsuranceCheckoutRoute
+  '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/policies': typeof InsurancePoliciesRoute
+  '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family': typeof FamilyIndexRoute
   '/fx': typeof FxIndexRoute
+  '/insurance': typeof InsuranceIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
+  '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
+  '/insurance/checkout': typeof InsuranceCheckoutRoute
+  '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/policies': typeof InsurancePoliciesRoute
+  '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
+  '/insurance/': typeof InsuranceIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
+  '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/family/dev-login'
+    | '/insurance/checkout'
+    | '/insurance/confirmation'
+    | '/insurance/policies'
+    | '/insurance/travellers'
     | '/family/'
     | '/fx/'
+    | '/insurance/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
+    | '/insurance/plan/$planId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/family/dev-login'
+    | '/insurance/checkout'
+    | '/insurance/confirmation'
+    | '/insurance/policies'
+    | '/insurance/travellers'
     | '/family'
     | '/fx'
+    | '/insurance'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
+    | '/insurance/plan/$planId'
   id:
     | '__root__'
     | '/'
     | '/family/dev-login'
+    | '/insurance/checkout'
+    | '/insurance/confirmation'
+    | '/insurance/policies'
+    | '/insurance/travellers'
     | '/family/'
     | '/fx/'
+    | '/insurance/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
+    | '/insurance/plan/$planId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
+  InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
+  InsuranceConfirmationRoute: typeof InsuranceConfirmationRoute
+  InsurancePoliciesRoute: typeof InsurancePoliciesRoute
+  InsuranceTravellersRoute: typeof InsuranceTravellersRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
   FxIndexRoute: typeof FxIndexRoute
+  InsuranceIndexRoute: typeof InsuranceIndexRoute
   FamilyChildFamilyLinkIdRoute: typeof FamilyChildFamilyLinkIdRoute
   FxTripsTripIdRoute: typeof FxTripsTripIdRoute
+  InsurancePlanPlanIdRoute: typeof InsurancePlanPlanIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +216,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FxIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insurance/': {
+      id: '/insurance/'
+      path: '/insurance'
+      fullPath: '/insurance/'
+      preLoaderRoute: typeof InsuranceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insurance/checkout': {
+      id: '/insurance/checkout'
+      path: '/insurance/checkout'
+      fullPath: '/insurance/checkout'
+      preLoaderRoute: typeof InsuranceCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insurance/confirmation': {
+      id: '/insurance/confirmation'
+      path: '/insurance/confirmation'
+      fullPath: '/insurance/confirmation'
+      preLoaderRoute: typeof InsuranceConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insurance/policies': {
+      id: '/insurance/policies'
+      path: '/insurance/policies'
+      fullPath: '/insurance/policies'
+      preLoaderRoute: typeof InsurancePoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insurance/travellers': {
+      id: '/insurance/travellers'
+      path: '/insurance/travellers'
+      fullPath: '/insurance/travellers'
+      preLoaderRoute: typeof InsuranceTravellersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/family/child/$familyLinkId': {
       id: '/family/child/$familyLinkId'
       path: '/family/child/$familyLinkId'
@@ -152,16 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FxTripsTripIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insurance/plan/$planId': {
+      id: '/insurance/plan/$planId'
+      path: '/insurance/plan/$planId'
+      fullPath: '/insurance/plan/$planId'
+      preLoaderRoute: typeof InsurancePlanPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,
+  InsuranceCheckoutRoute: InsuranceCheckoutRoute,
+  InsuranceConfirmationRoute: InsuranceConfirmationRoute,
+  InsurancePoliciesRoute: InsurancePoliciesRoute,
+  InsuranceTravellersRoute: InsuranceTravellersRoute,
   FamilyIndexRoute: FamilyIndexRoute,
   FxIndexRoute: FxIndexRoute,
+  InsuranceIndexRoute: InsuranceIndexRoute,
   FamilyChildFamilyLinkIdRoute: FamilyChildFamilyLinkIdRoute,
   FxTripsTripIdRoute: FxTripsTripIdRoute,
+  InsurancePlanPlanIdRoute: InsurancePlanPlanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
