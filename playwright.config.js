@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 // UI regression suite for the WeTrip frontend. It runs against the Vite dev
 // server, which proxies /api/family and /api/fx to the live sandbox — so the
-// tests read real data. They are read-only; none of them mutate a trip or an
-// account.
+// tests read real data. tests/family.spec.js is read-only; tests/smartfx-api.spec.js
+// writes trips to the sandbox and is serialized with the UI suite.
 const PORT = 5199
 
 export default defineConfig({

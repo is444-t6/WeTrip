@@ -16,6 +16,7 @@ permissions:
 concurrency:
   group: e2e-live-sandbox
   cancel-in-progress: false
+  queue: max
 
 jobs:
   playwright:
@@ -40,6 +41,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
       - run: npx playwright install --with-deps chromium
+      # Runs both the read-only UI suite and the SmartFX API suite. The latter
+      # writes trips to the sandbox; the job is serialized to keep runs apart.
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
