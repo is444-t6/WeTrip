@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run build
+
+  e2e:
+    # Fork PRs get no secrets, so the live-API suite cannot run there.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/e2e-tests.yml
+    secrets:
+      VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}
+      VITE_FX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}

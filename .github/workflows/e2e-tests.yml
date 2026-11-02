@@ -1,0 +1,52 @@
+name: E2E Tests
+
+on:
+  workflow_call:
+    secrets:
+      VITE_FAMILY_API_KEY:
+        required: true
+      VITE_FX_API_KEY:
+        required: true
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The suite writes to one shared live sandbox, so overlapping runs collide.
+concurrency:
+  group: e2e-live-sandbox
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_FAMILY_API_BASE: /api/family
+      VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}
+      VITE_FX_API_BASE: /api/fx
+      VITE_FX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - run: npx playwright install --with-deps chromium
+      # Runs both the read-only UI suite and the SmartFX API suite. The latter
+      # writes trips to the sandbox; the job is serialized to keep runs apart.
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

@@ -22,8 +22,7 @@ export const FamilyApi = {
   linkChild: ({ childCustomerId, nickname, hostCurrency }) =>
     call('POST', 'LinkChild', { childCustomerId, nickname, hostCurrency }),
   getMyLinkInvite: () => call('GET', 'GetMyLinkInvite'),
-  acceptLink: (familyLinkId, accountId) =>
-    call('POST', 'AcceptLink', { familyLinkId, accountId }),
+  acceptLink: (familyLinkId, accountId) => call('POST', 'AcceptLink', { familyLinkId, accountId }),
 
   // Parent: children, budget, allowance, top-up
   getChildren: () => call('GET', 'GetChildren'),
@@ -31,8 +30,7 @@ export const FamilyApi = {
     call('POST', 'SetBudget', { familyLinkId, period, amount }),
   setupAllowance: (familyLinkId, amount, weeklyMonthly, startDate) =>
     call('POST', 'SetupAllowance', { familyLinkId, amount, weeklyMonthly, startDate }),
-  stopAllowance: (familyLinkId) =>
-    call('POST', 'StopAllowance', { familyLinkId }),
+  stopAllowance: (familyLinkId) => call('POST', 'StopAllowance', { familyLinkId }),
   topUp: (familyLinkId, amount, narrative) =>
     call('POST', 'TopUp', { familyLinkId, amount, narrative }),
 
@@ -43,8 +41,7 @@ export const FamilyApi = {
 
   // Parent: approvals
   getPendingRequests: () => call('GET', 'GetPendingRequests'),
-  decideRequest: (requestId, approve) =>
-    call('POST', 'DecideRequest', { requestId, approve }),
+  decideRequest: (requestId, approve) => call('POST', 'DecideRequest', { requestId, approve }),
 
   // Parent: expenses, balance trend
   getChildExpenses: (familyLinkId, startDate, endDate) =>

@@ -45,7 +45,9 @@ function headersFor(token) {
 console.log(`\nFamily_Composite (Family) smoke test\nBase: ${BASE}\n`)
 
 await step('GetMyFamilyRole (parent) responds', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', { headers: headersFor(parentToken) })
+  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', {
+    headers: headersFor(parentToken),
+  })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
   console.log(`      role: ${field(json, 'role')}`)
 })
@@ -58,7 +60,10 @@ await step('FindCustomerByPhone finds the child', async () => {
     { headers: headersFor(parentToken) },
   )
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-  assert(field(json, 'customerId') === CHILD_CUSTOMER_ID, `expected customerId ${CHILD_CUSTOMER_ID}, got ${JSON.stringify(json)}`)
+  assert(
+    field(json, 'customerId') === CHILD_CUSTOMER_ID,
+    `expected customerId ${CHILD_CUSTOMER_ID}, got ${JSON.stringify(json)}`,
+  )
 })
 
 let familyLinkId
@@ -66,28 +71,41 @@ let familyLinkId
 await step('LinkChild (or reuse an existing link)', async () => {
   const { status, json } = await http(BASE, 'POST', 'LinkChild', {
     headers: headersFor(parentToken),
-    body: { childCustomerId: CHILD_CUSTOMER_ID, nickname: 'Test harness child', hostCurrency: 'KRW' },
+    body: {
+      childCustomerId: CHILD_CUSTOMER_ID,
+      nickname: 'Test harness child',
+      hostCurrency: 'KRW',
+    },
   })
   if (status === 200) {
     familyLinkId = field(json, 'id')
     return
   }
   // Already linked — fall through to GetChildren below to find it.
-  console.log(`      LinkChild responded ${status} (${json?.Errors?.[0] ?? 'likely already linked'}), reusing existing link`)
+  console.log(
+    `      LinkChild responded ${status} (${json?.Errors?.[0] ?? 'likely already linked'}), reusing existing link`,
+  )
 })
 
 if (!familyLinkId) {
   await step('Resolve familyLinkId via GetChildren', async () => {
-    const { status, json } = await http(BASE, 'GET', 'GetChildren', { headers: headersFor(parentToken) })
+    const { status, json } = await http(BASE, 'GET', 'GetChildren', {
+      headers: headersFor(parentToken),
+    })
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
     const match = json.find((c) => field(c, 'childCustomerId') === CHILD_CUSTOMER_ID)
-    assert(match, `no existing link found for child ${CHILD_CUSTOMER_ID} — check LinkChild error above`)
+    assert(
+      match,
+      `no existing link found for child ${CHILD_CUSTOMER_ID} — check LinkChild error above`,
+    )
     familyLinkId = field(match, 'familyLinkId')
   })
 }
 
 await step('GetMyLinkInvite (child) + AcceptLink if still pending', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetMyLinkInvite', { headers: headersFor(childToken) })
+  const { status, json } = await http(BASE, 'GET', 'GetMyLinkInvite', {
+    headers: headersFor(childToken),
+  })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
   if (!field(json, 'hasInvite')) {
     console.log('      already active (or hasInvite missing from response), nothing to accept')
@@ -97,8 +115,14 @@ await step('GetMyLinkInvite (child) + AcceptLink if still pending', async () => 
     headers: headersFor(childToken),
     body: { familyLinkId, accountId: CHILD_ACCOUNT_ID },
   })
-  assert(accept.status === 200, `AcceptLink failed: ${accept.status} ${JSON.stringify(accept.json)}`)
-  assert(field(accept.json, 'status') === 'Active', `expected status Active, got ${JSON.stringify(accept.json)}`)
+  assert(
+    accept.status === 200,
+    `AcceptLink failed: ${accept.status} ${JSON.stringify(accept.json)}`,
+  )
+  assert(
+    field(accept.json, 'status') === 'Active',
+    `expected status Active, got ${JSON.stringify(accept.json)}`,
+  )
 })
 
 await step('SetBudget (parent) sets 500/Monthly', async () => {
@@ -124,12 +148,20 @@ await step('SetupAllowance (parent) — may fail if WEEKLY_MONTHLY value is wron
     headers: headersFor(parentToken),
     body: { familyLinkId, amount: 100, weeklyMonthly: WEEKLY_MONTHLY, startDate: tomorrow },
   })
-  assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)} — try a different WEEKLY_MONTHLY value in .env.test`)
-  assert(field(json, 'standingInstructionId'), `expected a standingInstructionId, got ${JSON.stringify(json)}`)
+  assert(
+    status === 200,
+    `expected 200, got ${status}: ${JSON.stringify(json)} — try a different WEEKLY_MONTHLY value in .env.test`,
+  )
+  assert(
+    field(json, 'standingInstructionId'),
+    `expected a standingInstructionId, got ${JSON.stringify(json)}`,
+  )
 })
 
 await step('GetChildDashboard (child) shows the budget', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetChildDashboard', { headers: headersFor(childToken) })
+  const { status, json } = await http(BASE, 'GET', 'GetChildDashboard', {
+    headers: headersFor(childToken),
+  })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
   assert(field(json, 'hasBudget') === true, `expected hasBudget true, got ${JSON.stringify(json)}`)
 })
@@ -137,7 +169,12 @@ await step('GetChildDashboard (child) shows the budget', async () => {
 await step('ChildSpend within budget completes immediately (40, Food)', async () => {
   const { status, json } = await http(BASE, 'POST', 'ChildSpend', {
     headers: headersFor(childToken),
-    body: { merchantAccountId: MERCHANT_ACCOUNT_ID, amount: 40, category: 'Food', narrative: 'Lunch' },
+    body: {
+      merchantAccountId: MERCHANT_ACCOUNT_ID,
+      amount: 40,
+      category: 'Food',
+      narrative: 'Lunch',
+    },
   })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
   assert(field(json, 'status') === 'Completed', `expected Completed, got ${JSON.stringify(json)}`)
@@ -160,14 +197,22 @@ await step('ChildSpend over budget creates a PendingApproval request (400, Study
     body: { merchantAccountId: MERCHANT_ACCOUNT_ID, amount: 400, category: 'Study' },
   })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-  assert(field(json, 'status') === 'PendingApproval', `expected PendingApproval, got ${JSON.stringify(json)}`)
+  assert(
+    field(json, 'status') === 'PendingApproval',
+    `expected PendingApproval, got ${JSON.stringify(json)}`,
+  )
   requestId = field(json, 'requestId')
 })
 
 await step('GetPendingRequests (parent) lists the request', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetPendingRequests', { headers: headersFor(parentToken) })
+  const { status, json } = await http(BASE, 'GET', 'GetPendingRequests', {
+    headers: headersFor(parentToken),
+  })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-  assert(json.some((r) => field(r, 'requestId') === requestId), `requestId ${requestId} not found in pending list: ${JSON.stringify(json)}`)
+  assert(
+    json.some((r) => field(r, 'requestId') === requestId),
+    `requestId ${requestId} not found in pending list: ${JSON.stringify(json)}`,
+  )
 })
 
 await step('DecideRequest (parent) approves it', async () => {
@@ -187,17 +232,30 @@ await step('GetChildExpenses (parent) returns rows with categories', async () =>
     { headers: headersFor(parentToken) },
   )
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-  assert(Array.isArray(field(json, 'expenses')), `expected an expenses array, got ${JSON.stringify(json)}`)
+  assert(
+    Array.isArray(field(json, 'expenses')),
+    `expected an expenses array, got ${JSON.stringify(json)}`,
+  )
 })
 
 await step('GetChildren (parent) shows the child card', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetChildren', { headers: headersFor(parentToken) })
+  const { status, json } = await http(BASE, 'GET', 'GetChildren', {
+    headers: headersFor(parentToken),
+  })
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-  assert(json.some((c) => field(c, 'familyLinkId') === familyLinkId), `child card not found: ${JSON.stringify(json)}`)
+  assert(
+    json.some((c) => field(c, 'familyLinkId') === familyLinkId),
+    `child card not found: ${JSON.stringify(json)}`,
+  )
 })
 
 await step('GetBalanceTrend (parent) returns a list', async () => {
-  const { status, json } = await http(BASE, 'GET', `GetBalanceTrend?familyLinkId=${familyLinkId}&months=6`, { headers: headersFor(parentToken) })
+  const { status, json } = await http(
+    BASE,
+    'GET',
+    `GetBalanceTrend?familyLinkId=${familyLinkId}&months=6`,
+    { headers: headersFor(parentToken) },
+  )
   assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
   assert(Array.isArray(json), `expected a list, got ${JSON.stringify(json)}`)
 })
@@ -205,15 +263,25 @@ await step('GetBalanceTrend (parent) returns a list', async () => {
 // --- Negative tests ---
 
 await step('Missing API key is rejected', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', { headers: { 'X-Session-Token': parentToken } })
+  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', {
+    headers: { 'X-Session-Token': parentToken },
+  })
   assert(status !== 200, 'expected a non-200 response without the API key')
-  assert(/Invalid API Key/i.test(json?.Errors?.[0] ?? ''), `expected "Invalid API Key", got ${JSON.stringify(json)}`)
+  assert(
+    /Invalid API Key/i.test(json?.Errors?.[0] ?? ''),
+    `expected "Invalid API Key", got ${JSON.stringify(json)}`,
+  )
 })
 
 await step('Missing session token is rejected', async () => {
-  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', { headers: { 'X-Contacts-Key': API_KEY } })
+  const { status, json } = await http(BASE, 'GET', 'GetMyFamilyRole', {
+    headers: { 'X-Contacts-Key': API_KEY },
+  })
   assert(status !== 200, 'expected a non-200 response without a session token')
-  assert(/log in to WeTrip/i.test(json?.Errors?.[0] ?? ''), `expected "Please log in to WeTrip first", got ${JSON.stringify(json)}`)
+  assert(
+    /log in to WeTrip/i.test(json?.Errors?.[0] ?? ''),
+    `expected "Please log in to WeTrip first", got ${JSON.stringify(json)}`,
+  )
 })
 
 await step('Child token on DecideRequest is forbidden', async () => {
@@ -231,7 +299,10 @@ await step('Amount 0 on TopUp is rejected with a validation message', async () =
     body: { familyLinkId, amount: 0 },
   })
   assert(status !== 200, 'expected a non-200 response')
-  assert(/more than 0/i.test(json?.Errors?.[0] ?? ''), `expected a "more than 0" validation message, got ${JSON.stringify(json)}`)
+  assert(
+    /more than 0/i.test(json?.Errors?.[0] ?? ''),
+    `expected a "more than 0" validation message, got ${JSON.stringify(json)}`,
+  )
 })
 
 summary()

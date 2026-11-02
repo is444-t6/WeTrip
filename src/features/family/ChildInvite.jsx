@@ -12,7 +12,9 @@ export default function ChildInvite() {
     return (
       <div className="card" style={{ textAlign: 'center' }}>
         <Banner kind="ok">Link accepted — you're all set.</Banner>
-        <button style={{ width: '100%' }} onClick={() => window.location.reload()}>Go to your dashboard</button>
+        <button style={{ width: '100%' }} onClick={() => window.location.reload()}>
+          Go to your dashboard
+        </button>
       </div>
     )
   }
@@ -29,7 +31,9 @@ export default function ChildInvite() {
     return (
       <div className="card empty">
         <p>You're not linked to a family yet.</p>
-        <p className="muted">Ask a parent to link your phone number from their WeTrip Family screen.</p>
+        <p className="muted">
+          Ask a parent to link your phone number from their WeTrip Family screen.
+        </p>
       </div>
     )
   }
@@ -38,7 +42,10 @@ export default function ChildInvite() {
     <div className="card">
       <h2>Family invite</h2>
       <p className="muted">
-        <strong style={{ color: 'var(--text)' }}>{invite.nickname || invite.parentCustomerId}</strong> wants to link you as their child on WeTrip Family.
+        <strong style={{ color: 'var(--text)' }}>
+          {invite.nickname || invite.parentCustomerId}
+        </strong>{' '}
+        wants to link you as their child on WeTrip Family.
       </p>
       <Banner>{accept.error?.message}</Banner>
       <form
@@ -59,7 +66,9 @@ export default function ChildInvite() {
             required
           />
         </div>
-        <button disabled={accept.isPending} type="submit" style={{ width: '100%' }}>Accept invite</button>
+        <button disabled={accept.isPending} type="submit" style={{ width: '100%' }}>
+          Accept invite
+        </button>
       </form>
     </div>
   )

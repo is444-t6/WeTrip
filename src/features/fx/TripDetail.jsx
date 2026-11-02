@@ -24,16 +24,24 @@ export default function TripDetail() {
 
   const spentForeign = spends.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
   const remainingForeign = Math.max(0, (Number(trip.lockedForeign) || 0) - spentForeign)
-  const remainingSgd = Math.max(0, (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0))
+  const remainingSgd = Math.max(
+    0,
+    (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0),
+  )
   return (
     <div>
-      <Link to="/fx" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
+      <Link
+        to="/fx"
+        className="muted"
+        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
+      >
         &larr; Back to trips
       </Link>
 
       <h1 style={{ fontSize: '1.4rem', marginBottom: 4 }}>{trip.destination}</h1>
       <p className="muted" style={{ marginTop: 0 }}>
-        {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} · {trip.status}
+        {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
+        {trip.status}
         {trip.childNickname ? ` · ${trip.childNickname}` : ''}
       </p>
 
@@ -44,13 +52,19 @@ export default function TripDetail() {
         sub={`${Number(trip.lockedSgd).toFixed(2)} SGD locked of ${Number(trip.targetBudgetSgd).toFixed(2)}`}
         foot={
           <>
-            <span>{locks.length} lock{locks.length === 1 ? '' : 's'}</span>
+            <span>
+              {locks.length} lock{locks.length === 1 ? '' : 's'}
+            </span>
             {trip.autoLockEnabled && <span>auto-lock on</span>}
           </>
         }
       />
 
-      <RateGauge current={quote.data?.forwardRate} target={trip.targetRate} currency={trip.currency} />
+      <RateGauge
+        current={quote.data?.forwardRate}
+        target={trip.targetRate}
+        currency={trip.currency}
+      />
 
       {role === 'Parent' && (
         <ParentActions
@@ -69,14 +83,22 @@ export default function TripDetail() {
         {locks.length > 0 && (
           <table>
             <thead>
-              <tr><th>Date</th><th>Rate</th><th style={{ textAlign: 'right' }}>SGD</th><th style={{ textAlign: 'right' }}>{trip.currency}</th><th>Source</th></tr>
+              <tr>
+                <th>Date</th>
+                <th>Rate</th>
+                <th style={{ textAlign: 'right' }}>SGD</th>
+                <th style={{ textAlign: 'right' }}>{trip.currency}</th>
+                <th>Source</th>
+              </tr>
             </thead>
             <tbody>
               {locks.map((l) => (
                 <tr key={l.lockId}>
                   <td>{String(l.createdAt).slice(0, 10)}</td>
                   <td>{Number(l.lockedRate).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right' }}><Money amount={l.sgdAmount} /></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <Money amount={l.sgdAmount} />
+                  </td>
                   <td style={{ textAlign: 'right' }}>{Number(l.foreignAmount).toFixed(2)}</td>
                   <td className="muted">{l.source}</td>
                 </tr>
@@ -92,7 +114,12 @@ export default function TripDetail() {
         {spends.length > 0 && (
           <table>
             <thead>
-              <tr><th>Date</th><th>Category</th><th>To</th><th style={{ textAlign: 'right' }}>Amount</th></tr>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>To</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+              </tr>
             </thead>
             <tbody>
               {spends.map((s) => (
@@ -100,7 +127,9 @@ export default function TripDetail() {
                   <td>{String(s.createdAt).slice(0, 10)}</td>
                   <td>{s.category}</td>
                   <td className="muted">{s.merchantAccountId}</td>
-                  <td style={{ textAlign: 'right' }}>{Number(s.amount).toFixed(2)} {trip.currency}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    {Number(s.amount).toFixed(2)} {trip.currency}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -110,10 +139,18 @@ export default function TripDetail() {
 
       {trip.status === 'Completed' && (
         <div className="card">
-          <div className="card-header"><h3>Converted back</h3><span className="badge active">closed</span></div>
+          <div className="card-header">
+            <h3>Converted back</h3>
+            <span className="badge active">closed</span>
+          </div>
           <div className="row-between">
-            <span className="muted">{Number(trip.returnedForeign).toFixed(2)} {trip.currency} at {Number(trip.returnRate).toFixed(4)}</span>
-            <span className="money"><Money amount={trip.returnedSgd} /></span>
+            <span className="muted">
+              {Number(trip.returnedForeign).toFixed(2)} {trip.currency} at{' '}
+              {Number(trip.returnRate).toFixed(4)}
+            </span>
+            <span className="money">
+              <Money amount={trip.returnedSgd} />
+            </span>
           </div>
         </div>
       )}
@@ -170,7 +207,8 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         </div>
       </div>
       <p className="muted" style={{ marginTop: 0, fontSize: '0.85em' }}>
-        Locks at the live {period} forward ({rate ? rate.toFixed(4) : '—'} {trip.currency} per SGD), not at a rate you type.
+        Locks at the live {period} forward ({rate ? rate.toFixed(4) : '—'} {trip.currency} per SGD),
+        not at a rate you type.
       </p>
 
       <div className="row" style={{ marginTop: 6 }}>
@@ -234,7 +272,9 @@ function SpendCard({ trip, remainingForeign }) {
       },
       {
         onSuccess: (r) => {
-          setMessage(`${Number(amount).toFixed(2)} ${trip.currency} paid · ${Number(r.remainingForeign ?? remainingForeign - Number(amount)).toFixed(2)} ${trip.currency} left`)
+          setMessage(
+            `${Number(amount).toFixed(2)} ${trip.currency} paid · ${Number(r.remainingForeign ?? remainingForeign - Number(amount)).toFixed(2)} ${trip.currency} left`,
+          )
           setAmount('')
           setMerchantAccountId('')
           setNarrative('')
@@ -251,12 +291,23 @@ function SpendCard({ trip, remainingForeign }) {
       <form onSubmit={submit}>
         <div className="field">
           <label>Merchant account id</label>
-          <input value={merchantAccountId} onChange={(e) => setMerchantAccountId(e.target.value)} required />
+          <input
+            value={merchantAccountId}
+            onChange={(e) => setMerchantAccountId(e.target.value)}
+            required
+          />
         </div>
         <div className="grid-2">
           <div className="field">
             <label>Amount ({trip.currency})</label>
-            <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Category</label>
