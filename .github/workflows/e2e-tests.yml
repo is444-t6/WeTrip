@@ -2,14 +2,25 @@ name: E2E Tests
 
 on:
   workflow_call:
+    secrets:
+      VITE_FAMILY_API_KEY:
+        required: true
+      VITE_FX_API_KEY:
+        required: true
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# The suite writes to one shared live sandbox, so overlapping runs collide.
+concurrency:
+  group: e2e-live-sandbox
+  cancel-in-progress: false
+
 jobs:
   playwright:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       VITE_FAMILY_API_BASE: /api/family
       VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}

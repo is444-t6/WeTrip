@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "prepare": "lefthook install",
+    "prepare": "lefthook install || exit 0",
     "preview": "vite preview",
     "test:atomic": "node --env-file=.env.test scripts/test-atomic.mjs",
     "test:composite": "node --env-file=.env.test scripts/test-composite.mjs",

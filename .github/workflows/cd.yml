@@ -15,21 +15,33 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       VERCEL_ORG_ID: team_qxSt8IYPnfIh6WNbpzI2nMBq
       VERCEL_PROJECT_ID: prj_jzBF2zUnIDyhXQzrz87o239c9IaQ
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+
+      # A newer push may already be on main; deploying an older SHA would roll
+      # production back.
+      - run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse origin/main)" = "${{ github.event.workflow_run.head_sha }}"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
-      - run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      - run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: npx --yes vercel@63.1.2 pull --yes --environment=production
+      - run: npx --yes vercel@63.1.2 build --prod
+      - run: npx --yes vercel@63.1.2 deploy --prebuilt --prod
