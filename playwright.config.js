@@ -8,7 +8,9 @@ const PORT = 5199
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false,
+  // The suite talks to one shared live sandbox; parallel workers make the
+  // Family API time out under load.
+  workers: 1,
   retries: 0,
   reporter: [['list']],
   timeout: 30_000,
