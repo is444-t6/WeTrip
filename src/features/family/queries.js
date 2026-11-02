@@ -28,8 +28,7 @@ export function useRole() {
   })
 }
 
-export const useMe = () =>
-  useQuery({ queryKey: keys.me, queryFn: FamilyApi.getMe, ...authed() })
+export const useMe = () => useQuery({ queryKey: keys.me, queryFn: FamilyApi.getMe, ...authed() })
 
 export const useChildren = () =>
   useQuery({ queryKey: keys.children, queryFn: FamilyApi.getChildren, ...authed() })

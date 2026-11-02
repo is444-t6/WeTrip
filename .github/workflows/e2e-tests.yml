@@ -1,0 +1,32 @@
+name: E2E Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    env:
+      VITE_FAMILY_API_BASE: /api/family
+      VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}
+      VITE_FX_API_BASE: /api/fx
+      VITE_FX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

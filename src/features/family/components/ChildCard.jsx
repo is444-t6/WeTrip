@@ -3,7 +3,12 @@ import Money from './Money'
 
 function initials(name) {
   if (!name) return '?'
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('')
 }
 
 function badgeClass(status) {
@@ -33,7 +38,9 @@ export default function ChildCard({ child }) {
         <>
           <div className="row-between" style={{ marginTop: 16 }}>
             <span className="muted">Balance</span>
-            <span className="money"><Money amount={child.balance} currency={child.hostCurrency} /></span>
+            <span className="money">
+              <Money amount={child.balance} currency={child.hostCurrency} />
+            </span>
           </div>
 
           {child.budget > 0 ? (
@@ -42,18 +49,25 @@ export default function ChildCard({ child }) {
                 <div style={{ width: `${pct}%` }} />
               </div>
               <div className="row-between muted" style={{ fontSize: '0.82em' }}>
-                <span><Money amount={child.spent} /> of <Money amount={child.budget} /> this {child.period?.toLowerCase()}</span>
+                <span>
+                  <Money amount={child.spent} /> of <Money amount={child.budget} /> this{' '}
+                  {child.period?.toLowerCase()}
+                </span>
                 {child.hasAllowance && <span className="badge active">allowance</span>}
               </div>
             </>
           ) : (
-            <p className="muted" style={{ marginTop: 10 }}>No budget set yet</p>
+            <p className="muted" style={{ marginTop: 10 }}>
+              No budget set yet
+            </p>
           )}
         </>
       )}
 
       <Link to="/family/child/$familyLinkId" params={{ familyLinkId: String(child.familyLinkId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>Manage</button>
+        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
+          Manage
+        </button>
       </Link>
     </div>
   )

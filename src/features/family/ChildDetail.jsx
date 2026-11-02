@@ -23,7 +23,9 @@ export default function ChildDetail() {
       <div className="center-page">
         <div className="card center-card" style={{ textAlign: 'center' }}>
           <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login"><button style={{ width: '100%' }}>Sign in</button></Link>
+          <Link to="/family/dev-login">
+            <button style={{ width: '100%' }}>Sign in</button>
+          </Link>
         </div>
       </div>
     )
@@ -39,14 +41,20 @@ export default function ChildDetail() {
 
   return (
     <AppShell onSignOut={signOut}>
-      <Link to="/family" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
+      <Link
+        to="/family"
+        className="muted"
+        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
+      >
         &larr; Back to children
       </Link>
       <Banner>{error?.message || notFound}</Banner>
       {!child && !error && !notFound && <p className="muted">Loading…</p>}
       {child && (
         <>
-          <h1 style={{ fontSize: '1.4rem', marginBottom: 18 }}>{child.nickname || child.childCustomerId}</h1>
+          <h1 style={{ fontSize: '1.4rem', marginBottom: 18 }}>
+            {child.nickname || child.childCustomerId}
+          </h1>
           <div className="section-title">Budget</div>
           <BudgetCard familyLinkId={familyLinkId} />
           <div className="section-title">Allowance</div>
@@ -93,10 +101,19 @@ function BudgetCard({ familyLinkId }) {
           </div>
           <div className="field">
             <label>Amount (SGD)</label>
-            <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
         </div>
-        <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>Save budget</button>
+        <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>
+          Save budget
+        </button>
       </form>
     </div>
   )
@@ -127,7 +144,11 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
 
   return (
     <div className="card">
-      {hasAllowance && <span className="badge active" style={{ marginBottom: 10, display: 'inline-flex' }}>active</span>}
+      {hasAllowance && (
+        <span className="badge active" style={{ marginBottom: 10, display: 'inline-flex' }}>
+          active
+        </span>
+      )}
       <p className="muted">
         Test <code>AddStandingInstruction</code> alone in Postman first to confirm which exact
         string SMUtBank accepts for weeklyMonthly (Task 17.3 note) — "Weekly"/"Monthly" is a guess.
@@ -138,7 +159,14 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
         <div className="grid-2">
           <div className="field">
             <label>Amount (SGD)</label>
-            <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Frequency</label>
@@ -153,7 +181,9 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
           <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
         <div className="row">
-          <button disabled={busy} type="submit">Set up allowance</button>
+          <button disabled={busy} type="submit">
+            Set up allowance
+          </button>
           <button
             disabled={busy}
             type="button"
@@ -199,14 +229,23 @@ function TopUpCard({ familyLinkId }) {
         <div className="grid-2">
           <div className="field">
             <label>Amount (SGD)</label>
-            <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Note (optional)</label>
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
         </div>
-        <button disabled={topUp.isPending} type="submit" style={{ width: '100%' }}>Top up</button>
+        <button disabled={topUp.isPending} type="submit" style={{ width: '100%' }}>
+          Top up
+        </button>
       </form>
     </div>
   )
@@ -244,11 +283,19 @@ function ExpensesCard({ familyLinkId }) {
         <>
           <div className="row-between" style={{ marginTop: 10, marginBottom: 4 }}>
             <span className="muted">Total</span>
-            <span className="money"><Money amount={result.total ?? 0} currency={result.hostCurrency} /></span>
+            <span className="money">
+              <Money amount={result.total ?? 0} currency={result.hostCurrency} />
+            </span>
           </div>
           <table>
             <thead>
-              <tr><th>Date</th><th>To</th><th>Category</th><th style={{ textAlign: 'right' }}>Amount</th><th>Source</th></tr>
+              <tr>
+                <th>Date</th>
+                <th>To</th>
+                <th>Category</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+                <th>Source</th>
+              </tr>
             </thead>
             <tbody>
               {(result.expenses ?? []).map((x) => (
@@ -256,12 +303,18 @@ function ExpensesCard({ familyLinkId }) {
                   <td>{String(x.date).slice(0, 10)}</td>
                   <td>{x.accountTo}</td>
                   <td>{x.category}</td>
-                  <td style={{ textAlign: 'right' }}><Money amount={x.amount} currency={x.currency} /></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <Money amount={x.amount} currency={x.currency} />
+                  </td>
                   <td className="muted">{x.source}</td>
                 </tr>
               ))}
               {(result.expenses ?? []).length === 0 && (
-                <tr><td colSpan={5} className="muted">No outgoing payments in this range.</td></tr>
+                <tr>
+                  <td colSpan={5} className="muted">
+                    No outgoing payments in this range.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -280,7 +333,13 @@ function BalanceTrendCard({ familyLinkId }) {
       <Banner>{error?.message}</Banner>
       <div className="field" style={{ maxWidth: 120 }}>
         <label>Months</label>
-        <input type="number" min="1" max="24" value={months} onChange={(e) => setMonths(Number(e.target.value) || 6)} />
+        <input
+          type="number"
+          min="1"
+          max="24"
+          value={months}
+          onChange={(e) => setMonths(Number(e.target.value) || 6)}
+        />
       </div>
       {points && (
         <table>
@@ -288,7 +347,9 @@ function BalanceTrendCard({ familyLinkId }) {
             {points.map((p) => (
               <tr key={p.yearMonth}>
                 <td>{p.yearMonth}</td>
-                <td style={{ textAlign: 'right' }}><Money amount={p.balance} /></td>
+                <td style={{ textAlign: 'right' }}>
+                  <Money amount={p.balance} />
+                </td>
               </tr>
             ))}
           </tbody>

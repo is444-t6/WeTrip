@@ -13,16 +13,28 @@ export default function AppShell({ onSignOut, children }) {
                   stroke="#fff"
                   strokeWidth="1.6"
                 />
-                <path d="M7.5 12.5 10.5 15.5 16.5 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M7.5 12.5 10.5 15.5 16.5 9"
+                  stroke="#fff"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
             WeTrip
           </Link>
           <div className="row">
-            <Link to="/family" className="nav-link">Family</Link>
-            <Link to="/fx" className="nav-link">SmartFX</Link>
+            <Link to="/family" className="nav-link">
+              Family
+            </Link>
+            <Link to="/fx" className="nav-link">
+              SmartFX
+            </Link>
             {onSignOut && (
-              <button className="ghost" onClick={onSignOut}>Sign out</button>
+              <button className="ghost" onClick={onSignOut}>
+                Sign out
+              </button>
             )}
           </div>
         </div>

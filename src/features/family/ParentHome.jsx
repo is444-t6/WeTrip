@@ -31,7 +31,9 @@ export default function ParentHome() {
           sub="Your WeTrip balance"
           foot={
             <>
-              <span>{linkedCount} {linkedCount === 1 ? 'child' : 'children'} linked</span>
+              <span>
+                {linkedCount} {linkedCount === 1 ? 'child' : 'children'} linked
+              </span>
               {requests.data?.length > 0 && <span>{requests.data.length} awaiting approval</span>}
             </>
           }
@@ -45,7 +47,9 @@ export default function ParentHome() {
       {children.data?.length === 0 && (
         <div className="card empty">No children linked yet — add one below.</div>
       )}
-      {children.data?.map((c) => <ChildCard key={c.familyLinkId} child={c} />)}
+      {children.data?.map((c) => (
+        <ChildCard key={c.familyLinkId} child={c} />
+      ))}
 
       <div className="section-title">Link a child</div>
       <LinkChildForm />
@@ -75,9 +79,16 @@ function PendingRequests({ requests }) {
           }}
         >
           <div className="stack">
-            <span><strong>{r.nickname}</strong> &rarr; {r.merchantAccountId}</span>
-            <span className="muted">{r.category}{r.narrative ? ` · ${r.narrative}` : ''}</span>
-            <span className="money" style={{ marginTop: 2 }}><Money amount={r.amount} /></span>
+            <span>
+              <strong>{r.nickname}</strong> &rarr; {r.merchantAccountId}
+            </span>
+            <span className="muted">
+              {r.category}
+              {r.narrative ? ` · ${r.narrative}` : ''}
+            </span>
+            <span className="money" style={{ marginTop: 2 }}>
+              <Money amount={r.amount} />
+            </span>
           </div>
           <div className="row">
             <button
@@ -140,18 +151,36 @@ function LinkChildForm() {
           <div className="grid-2">
             <div className="field">
               <label>Country code</label>
-              <input value={countryCode} onChange={(e) => setCountryCode(e.target.value)} required />
+              <input
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                required
+              />
             </div>
             <div className="field">
               <label>Phone number</label>
-              <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+              <input
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+              />
             </div>
           </div>
-          <button disabled={busy} type="submit" style={{ width: '100%' }}>Find</button>
+          <button disabled={busy} type="submit" style={{ width: '100%' }}>
+            Find
+          </button>
         </form>
       ) : (
         <form onSubmit={send}>
-          <div className="row-between" style={{ background: 'var(--accent-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: 14 }}>
+          <div
+            className="row-between"
+            style={{
+              background: 'var(--accent-soft)',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: 14,
+            }}
+          >
             <div className="stack">
               <strong>{found.name}</strong>
               <span className="muted">{found.customerId}</span>
@@ -161,7 +190,11 @@ function LinkChildForm() {
           <div className="grid-2">
             <div className="field">
               <label>Nickname</label>
-              <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. Jamie (Seoul)" />
+              <input
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="e.g. Jamie (Seoul)"
+              />
             </div>
             <div className="field">
               <label>Host currency</label>
@@ -169,8 +202,12 @@ function LinkChildForm() {
             </div>
           </div>
           <div className="row">
-            <button disabled={busy} type="submit">Send invite</button>
-            <button type="button" className="secondary" onClick={() => find.reset()}>Back</button>
+            <button disabled={busy} type="submit">
+              Send invite
+            </button>
+            <button type="button" className="secondary" onClick={() => find.reset()}>
+              Back
+            </button>
           </div>
         </form>
       )}

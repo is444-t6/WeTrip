@@ -32,8 +32,12 @@ export default function TripCard({ trip }) {
         <div style={{ width: `${pct}%` }} />
       </div>
       <div className="row-between muted" style={{ fontSize: '0.82em' }}>
-        <span><Money amount={locked} /> locked</span>
-        <span>of <Money amount={target} /></span>
+        <span>
+          <Money amount={locked} /> locked
+        </span>
+        <span>
+          of <Money amount={target} />
+        </span>
       </div>
 
       <div className="row-between" style={{ marginTop: 12 }}>
@@ -45,7 +49,9 @@ export default function TripCard({ trip }) {
       </div>
 
       <Link to="/fx/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>Open trip</button>
+        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
+          Open trip
+        </button>
       </Link>
     </div>
   )

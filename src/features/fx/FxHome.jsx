@@ -17,7 +17,9 @@ export default function FxHome() {
         <div className="card center-card" style={{ textAlign: 'center' }}>
           <h2>WeTrip SmartFX</h2>
           <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login"><button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button></Link>
+          <Link to="/family/dev-login">
+            <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
+          </Link>
         </div>
       </div>
     )
@@ -36,13 +38,16 @@ export default function FxHome() {
         <h2 style={{ margin: 0 }}>SmartFX</h2>
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
-        Lock a trip budget at today's rate. If the market moves your way first, SmartFX locks it for you.
+        Lock a trip budget at today's rate. If the market moves your way first, SmartFX locks it for
+        you.
       </p>
 
-      <div className="section-title">{role === 'Child' ? "Your trips" : "Trip goals"}</div>
+      <div className="section-title">{role === 'Child' ? 'Your trips' : 'Trip goals'}</div>
       {isLoading && <p className="muted">Loading…</p>}
       {trips?.length === 0 && <div className="card empty">No trip goals yet.</div>}
-      {trips?.map((t) => <TripCard key={t.tripId} trip={t} />)}
+      {trips?.map((t) => (
+        <TripCard key={t.tripId} trip={t} />
+      ))}
 
       {role === 'Parent' && (
         <>
