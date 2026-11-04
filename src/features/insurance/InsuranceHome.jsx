@@ -1,51 +1,52 @@
 import { useState } from 'react'
-import { Link, useSearch } from '@tanstack/react-router'
-import { plans, formatSgd } from './data'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { getTrip, saveTrip } from './storage'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
 
 export default function InsuranceHome() {
   const search = useSearch({ from: '/insurance/' })
-  const [destination, setDestination] = useState(search.destination || '')
-  const [startDate, setStartDate] = useState(search.startDate || '')
-  const [endDate, setEndDate] = useState(search.endDate || '')
-  const [compare, setCompare] = useState(false)
+  const savedTrip = getTrip()
+  const [destination, setDestination] = useState(search.destination || savedTrip.destination || '')
+  const [destinationCode, setDestinationCode] = useState(search.destinationCode || savedTrip.destinationCode || '')
+  const [startDate, setStartDate] = useState(search.startDate || savedTrip.startDate || '')
+  const [endDate, setEndDate] = useState(search.endDate || savedTrip.endDate || '')
   const [error, setError] = useState('')
-  const trip = { destination, startDate, endDate }
+  const navigate = useNavigate()
+  const trip = { destination, destinationCode: destinationCode.toUpperCase(), startDate, endDate }
 
-  function continueTo(planId) {
-    if (!destination.trim() || !startDate || !endDate || endDate < startDate) {
-      setError('Enter a destination and valid travel dates before choosing a plan.')
+  function updateTrip(next) {
+    const updated = { ...trip, ...next }
+    if (next.destinationCode !== undefined) updated.destinationCode = next.destinationCode.toUpperCase()
+    saveTrip(updated)
+  }
+
+  function continueToPlans(event) {
+    event.preventDefault()
+    if (!destination.trim() || !/^[A-Za-z]{2}$/.test(destinationCode) || !startDate || !endDate || endDate < startDate) {
+      setError('Enter a destination, its 2-letter country code, and valid travel dates to continue.')
       return
     }
-    window.sessionStorage.setItem('wetrip.insurance.trip', JSON.stringify(trip))
-    window.location.href = `/insurance/plan/${planId}`
+
+    saveTrip(trip)
+    navigate({ to: '/insurance/plans' })
   }
 
   return <InsuranceLayout>
     <h1 style={{ fontSize: '1.5rem', marginBottom: 6 }}>Travel insurance</h1>
-    <p className="muted">Add optional cover to your trip. Compare plans and choose what suits your travellers.</p>
+    <p className="muted">First, tell us where and when you’re travelling. You’ll choose an insurance plan next.</p>
     <Notice />
-    <div className="section-title">Your trip</div>
-    <div className="card">
+    <div className="section-title">Destination details</div>
+    <form onSubmit={continueToPlans} className="card">
       {error && <div className="banner error">{error}</div>}
-      <div className="field"><label htmlFor="destination">Destination</label><input id="destination" value={destination} onChange={e => { setDestination(e.target.value); persistTrip({ destination: e.target.value, startDate, endDate }) }} placeholder="e.g. Tokyo, Japan" required /></div>
+      <div className="field"><label htmlFor="destination">Destination</label><input id="destination" value={destination} onChange={e => { setDestination(e.target.value); updateTrip({ destination: e.target.value }) }} placeholder="e.g. Tokyo, Japan" required /></div>
+      <div className="field"><label htmlFor="destinationCode">Destination country code</label><input id="destinationCode" value={destinationCode} onChange={e => { setDestinationCode(e.target.value); updateTrip({ destinationCode: e.target.value }) }} placeholder="JP" maxLength={2} autoCapitalize="characters" required /><small className="muted">Use the 2-letter country code, for example JP for Japan.</small></div>
       <div className="grid-2">
-        <div className="field"><label htmlFor="start">Depart</label><input id="start" type="date" value={startDate} onChange={e => { setStartDate(e.target.value); persistTrip({ destination, startDate: e.target.value, endDate }) }} required /></div>
-        <div className="field"><label htmlFor="end">Return</label><input id="end" type="date" min={startDate} value={endDate} onChange={e => { setEndDate(e.target.value); persistTrip({ destination, startDate, endDate: e.target.value }) }} required /></div>
+        <div className="field"><label htmlFor="start">Depart</label><input id="start" type="date" value={startDate} onChange={e => { setStartDate(e.target.value); updateTrip({ startDate: e.target.value }) }} required /></div>
+        <div className="field"><label htmlFor="end">Return</label><input id="end" type="date" min={startDate} value={endDate} onChange={e => { setEndDate(e.target.value); updateTrip({ endDate: e.target.value }) }} required /></div>
       </div>
-    </div>
-    <div className="row-between"><div className="section-title">Choose a plan</div><label className="row" style={{ margin: 0 }}><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} style={{ width: 'auto' }} /> Compare</label></div>
-    {compare && <div className="card" style={{ overflowX: 'auto' }}><table><thead><tr><th>Benefit</th>{plans.map(p => <th key={p.id}>{p.name}</th>)}</tr></thead><tbody>{[['Medical', 'medical'], ['Cancellation', 'cancellation'], ['Baggage', 'baggage'], ['Travel delay', 'delay']].map(([label, key]) => <tr key={key}><td>{label}</td>{plans.map(p => <td key={p.id}>{formatSgd(p.benefits[key])}</td>)}</tr>)}</tbody></table></div>}
-    {plans.map(plan => <div className="card" key={plan.id}>
-      <div className="card-header"><div><span className="badge active">{plan.tier}</span><h2 style={{ marginTop: 8 }}>{plan.name}</h2></div><strong className="money">{formatSgd(plan.premium)}<span className="muted" style={{ fontWeight: 400 }}> / traveller</span></strong></div>
-      <p className="muted">{plan.summary}</p>
-      <div className="row-between"><span>Medical cover</span><strong>{formatSgd(plan.benefits.medical)}</strong></div>
-      <div className="row-between" style={{ marginTop: 8 }}><span>Cancellation</span><strong>{formatSgd(plan.benefits.cancellation)}</strong></div>
-      <div className="row" style={{ marginTop: 16 }}><Link to="/insurance/plan/$planId" params={{ planId: plan.id }}><button className="secondary">Details & exclusions</button></Link><button onClick={() => continueTo(plan.id)}>Choose plan</button></div>
-    </div>)}
+      <button type="submit" style={{ width: '100%' }}>Continue to insurance plans</button>
+    </form>
     <Link to="/insurance/policies" className="muted">View My Insurance →</Link>
   </InsuranceLayout>
 }
-
-function persistTrip(trip) { sessionStorage.setItem('wetrip.insurance.trip', JSON.stringify(trip)) }

@@ -16,6 +16,7 @@ import { Route as FxIndexRouteImport } from './routes/fx.index'
 import { Route as InsuranceIndexRouteImport } from './routes/insurance.index'
 import { Route as InsuranceCheckoutRouteImport } from './routes/insurance.checkout'
 import { Route as InsuranceConfirmationRouteImport } from './routes/insurance.confirmation'
+import { Route as InsurancePlansRouteImport } from './routes/insurance.plans'
 import { Route as InsurancePoliciesRouteImport } from './routes/insurance.policies'
 import { Route as InsuranceTravellersRouteImport } from './routes/insurance.travellers'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
@@ -57,6 +58,11 @@ const InsuranceConfirmationRoute = InsuranceConfirmationRouteImport.update({
   path: '/insurance/confirmation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsurancePlansRoute = InsurancePlansRouteImport.update({
+  id: '/insurance/plans',
+  path: '/insurance/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InsurancePoliciesRoute = InsurancePoliciesRouteImport.update({
   id: '/insurance/policies',
   path: '/insurance/policies',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family/': typeof FamilyIndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family': typeof FamilyIndexRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
+  '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/family/': typeof FamilyIndexRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
+    | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/family/'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
+    | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/family'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
+    | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/family/'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
   InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
   InsuranceConfirmationRoute: typeof InsuranceConfirmationRoute
+  InsurancePlansRoute: typeof InsurancePlansRoute
   InsurancePoliciesRoute: typeof InsurancePoliciesRoute
   InsuranceTravellersRoute: typeof InsuranceTravellersRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InsuranceConfirmationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insurance/plans': {
+      id: '/insurance/plans'
+      path: '/insurance/plans'
+      fullPath: '/insurance/plans'
+      preLoaderRoute: typeof InsurancePlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/insurance/policies': {
       id: '/insurance/policies'
       path: '/insurance/policies'
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   FamilyDevLoginRoute: FamilyDevLoginRoute,
   InsuranceCheckoutRoute: InsuranceCheckoutRoute,
   InsuranceConfirmationRoute: InsuranceConfirmationRoute,
+  InsurancePlansRoute: InsurancePlansRoute,
   InsurancePoliciesRoute: InsurancePoliciesRoute,
   InsuranceTravellersRoute: InsuranceTravellersRoute,
   FamilyIndexRoute: FamilyIndexRoute,

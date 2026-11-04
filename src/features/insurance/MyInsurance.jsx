@@ -1,10 +1,31 @@
 import { Link } from '@tanstack/react-router'
-import { getPolicies } from './storage'
-import { formatSgd } from './data'
-import Notice from './components/Notice'
+import { formatMoney, formatDate, planLabel } from './data'
+import { useInsurancePlans, useMyInsurance } from './queries'
 import InsuranceLayout from './components/InsuranceLayout'
 
 export default function MyInsurance() {
-  const policies = getPolicies()
-  return <InsuranceLayout><h1 style={{ fontSize: '1.5rem' }}>My Insurance</h1><p className="muted">Your simulated purchases on this browser.</p><Notice />{policies.length === 0 ? <div className="card empty">No demo purchases yet.<div style={{ marginTop: 14 }}><Link to="/insurance"><button>Explore plans</button></Link></div></div> : policies.map(p => <div className="card" key={p.policyNumber}><div className="card-header"><div><span className="badge pending">Demo policy</span><h2 style={{ marginTop: 8 }}>{p.planName} · {p.coverType === 'family' ? 'Family' : 'Individual'}</h2></div><strong className="money">{formatSgd(p.total)}</strong></div><div className="row-between"><span>Reference</span><strong>{p.policyNumber}</strong></div><div className="row-between" style={{ marginTop: 8 }}><span>Destination</span><strong>{p.trip?.destination}</strong></div><div className="row-between" style={{ marginTop: 8 }}><span>Travel dates</span><strong>{p.trip?.startDate} – {p.trip?.endDate}</strong></div><div className="row-between" style={{ marginTop: 8 }}><span>Travellers</span><strong>{p.travellers?.map(t => t.name).join(', ')}</strong></div></div>)}<Link to="/insurance"><button className="secondary" style={{ width: '100%' }}>Explore plans</button></Link></InsuranceLayout>
+  const policies = useMyInsurance()
+  const plans = useInsurancePlans()
+  const planById = new Map((plans.data || []).map(p => [String(p.id), p]))
+  const items = policies.data || []
+
+  return <InsuranceLayout>
+    <h1 style={{ fontSize: '1.5rem' }}>My Insurance</h1>
+    <p className="muted">Policies returned by the insurance service.</p>
+    {policies.isLoading && <div className="card muted">Loading your policies…</div>}
+    {policies.error && <div className="banner error">Could not load your policies: {policies.error.message}</div>}
+    {policies.isSuccess && items.length === 0 && <div className="card empty">No insurance policies were returned.<div style={{ marginTop: 14 }}><Link to="/insurance"><button>Explore plans</button></Link></div></div>}
+    {items.map(p => {
+      const plan = planById.get(String(p.insurancePlanId))
+      const isExpired = String(p.status || '').trim().toLowerCase() === 'expired'
+      return <div className="card" key={p.purchaseId ?? p.policyNumber}>
+        <div className="card-header"><div><span className={`badge ${isExpired ? 'removed' : 'active'}`}>{p.status || 'Policy'}</span><h2 style={{ marginTop: 8 }}>{plan ? planLabel(plan) : `Plan ${p.insurancePlanId}`}</h2></div><strong className="money">{formatMoney(p.totalPremium, p.currencyCode)}</strong></div>
+        <div className="row-between"><span>Policy number</span><strong>{p.policyNumber || '—'}</strong></div>
+        <div className="row-between" style={{ marginTop: 8 }}><span>Destination</span><strong>{p.destinationCode || '—'}</strong></div>
+        <div className="row-between" style={{ marginTop: 8 }}><span>Coverage dates</span><strong>{formatDate(p.coverageStart)} – {formatDate(p.coverageEnd)}</strong></div>
+        <div className="row-between" style={{ marginTop: 8 }}><span>Purchased</span><strong>{formatDate(p.purchasedOn)}</strong></div>
+      </div>
+    })}
+    <Link to="/insurance"><button className="secondary" style={{ width: '100%' }}>Explore plans</button></Link>
+  </InsuranceLayout>
 }

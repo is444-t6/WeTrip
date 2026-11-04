@@ -395,6 +395,166 @@ td {
 
 tr:last-child td { border-bottom: none; }
 
+.insurance-compare-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 9px 13px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.insurance-compare-toggle:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.insurance-compare-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.insurance-comparison {
+  padding: 0;
+  overflow: hidden;
+}
+
+.insurance-comparison-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+}
+
+.insurance-comparison-heading h2 {
+  margin-bottom: 4px;
+}
+
+.insurance-comparison-heading p {
+  margin: 0;
+}
+
+.insurance-comparison-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--muted-2) var(--bg);
+}
+
+.insurance-comparison-table {
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.insurance-comparison-table th,
+.insurance-comparison-table td {
+  min-width: 155px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--card-border);
+  vertical-align: middle;
+}
+
+.insurance-comparison-table thead th {
+  height: 92px;
+  background: var(--accent-soft);
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+  vertical-align: middle;
+}
+
+.insurance-comparison-table .insurance-comparison-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 160px;
+  min-width: 160px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.insurance-comparison-table thead .insurance-comparison-label {
+  z-index: 2;
+  background: var(--accent-soft);
+  color: var(--muted);
+}
+
+.insurance-comparison-table tbody tr:last-child th,
+.insurance-comparison-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.insurance-comparison-table tbody tr:last-child td {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.insurance-comparison-table td > a > button {
+  white-space: nowrap;
+}
+
+.insurance-plan-name,
+.insurance-plan-type,
+.insurance-cell-note {
+  display: block;
+}
+
+.insurance-plan-name {
+  margin-top: 4px;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.insurance-plan-type,
+.insurance-cell-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+
+.insurance-best-value {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.insurance-comparison-table .insurance-description {
+  max-width: 270px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.insurance-scroll-hint {
+  display: none;
+  margin: 0;
+  padding: 0 20px 16px;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 640px) {
+  .insurance-scroll-hint { display: block; }
+}
+
 /* --- badges --- */
 
 .badge {
