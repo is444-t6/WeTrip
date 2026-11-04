@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 
-export default function AppShell({ onSignOut, children }) {
+export default function AppShell({ onSignOut, secondaryNav, children }) {
   return (
     <>
       <div className="navbar">
@@ -21,8 +21,10 @@ export default function AppShell({ onSignOut, children }) {
           <div className="row">
             <Link to="/family" className="nav-link">Family</Link>
             <Link to="/fx" className="nav-link">SmartFX</Link>
-            <Link to="/insurance" className="nav-link">Insurance</Link>
-            <Link to="/insurance/policies" className="nav-link">My Insurance</Link>
+            <div className="nav-insurance-menu">
+              <Link to="/insurance" className="nav-link">Insurance</Link>
+              {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
+            </div>
             {onSignOut && (
               <button className="ghost" onClick={onSignOut}>Sign out</button>
             )}

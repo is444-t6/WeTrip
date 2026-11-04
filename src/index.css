@@ -157,6 +157,44 @@ a { color: var(--accent); text-decoration: none; }
   border-bottom-color: var(--brand-grad-3);
 }
 
+.nav-insurance-menu {
+  position: relative;
+}
+
+.navbar-subnav {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -12px;
+  z-index: 20;
+  min-width: 160px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: var(--nav-bg);
+  box-shadow: var(--shadow);
+}
+
+.insurance-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.insurance-tab {
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--nav-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+.insurance-tab[data-active='true'] {
+  background: rgba(91, 124, 255, 0.16);
+  color: var(--nav-text);
+  opacity: 1;
+}
+
 /* --- surfaces --- */
 
 .card {
@@ -412,6 +450,314 @@ tr:last-child td { border-bottom: none; }
 .insurance-compare-toggle:has(input:checked) {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.insurance-plan-card {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.insurance-plan-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-grad-2), var(--brand-grad-3));
+  content: '';
+}
+
+.insurance-plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.insurance-plan-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 20px 16px;
+}
+
+.insurance-plan-heading {
+  min-width: 0;
+  padding-top: 23px;
+}
+
+.insurance-plan-header-coverage {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 8px;
+  text-align: right;
+}
+
+.insurance-plan-type-slot {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 23px;
+  align-items: center;
+}
+
+.insurance-coverage-badge {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.insurance-coverage-family {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.insurance-coverage-individual {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.insurance-plan-card-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.insurance-plan-detail-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.insurance-plan-description {
+  margin: 0;
+  padding: 0 20px 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.insurance-plan-facts {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 28px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--card-border);
+}
+
+.insurance-plan-fact {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  text-align: left;
+}
+
+.insurance-plan-fact strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.insurance-plan-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid var(--card-border);
+  background: var(--bg);
+}
+
+.insurance-plan-actions {
+  justify-content: flex-end;
+}
+
+.insurance-plan-actions a {
+  display: inline-flex;
+}
+
+.insurance-plan-detail-content {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.insurance-plan-detail-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.insurance-plan-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 24px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text);
+}
+
+.insurance-plan-detail-intro {
+  min-width: 0;
+}
+
+.insurance-plan-detail-intro .badge {
+  margin-bottom: 12px;
+}
+
+.insurance-plan-detail-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.insurance-plan-detail-hero .insurance-plan-detail-eyebrow {
+  color: var(--muted);
+}
+
+.insurance-plan-detail-hero h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.55rem, 5vw, 2rem);
+}
+
+.insurance-plan-detail-hero p {
+  max-width: 34em;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.insurance-plan-detail-limit {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+  padding-left: 22px;
+  border-left: 1px solid var(--card-border);
+}
+
+.insurance-plan-detail-limit span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.insurance-plan-detail-limit strong {
+  font-size: clamp(1.25rem, 4vw, 1.65rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.insurance-plan-detail-info {
+  padding: 20px 24px;
+}
+
+.insurance-plan-detail-section-heading h2 {
+  margin: 0;
+}
+
+.insurance-plan-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.insurance-plan-detail-facts > div {
+  min-width: 0;
+  padding: 14px;
+  border-left: 2px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+
+.insurance-plan-detail-facts dt {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.insurance-plan-detail-facts dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.insurance-plan-detail-status {
+  display: inline-flex;
+  color: var(--ok);
+}
+
+.insurance-plan-detail-status.is-unavailable {
+  color: var(--danger);
+}
+
+.insurance-plan-next-steps {
+  margin: 0 24px;
+  padding: 20px 0;
+  border-top: 1px solid var(--card-border);
+}
+
+.insurance-plan-steps {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insurance-plan-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.insurance-plan-steps li > span {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.insurance-plan-steps strong {
+  font-size: 0.88rem;
+}
+
+.insurance-plan-steps p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.insurance-plan-detail-action {
+  display: grid;
+  gap: 9px;
+  padding: 18px 24px 20px;
+  border-top: 1px solid var(--card-border);
+  border-top: 1px solid var(--card-border);
+  background: var(--bg);
+}
+
+.insurance-plan-detail-action > a,
+.insurance-plan-detail-action button {
+  width: 100%;
+}
+
+.insurance-plan-detail-action > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.insurance-plan-detail-action .banner {
+  margin: 0;
 }
 
 .insurance-compare-toggle input {
@@ -768,6 +1114,74 @@ tr:last-child td { border-bottom: none; }
 
 @media (max-width: 640px) {
   .insurance-scroll-hint { display: block; }
+
+  .insurance-plan-detail-hero {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 22px 20px;
+  }
+
+  .insurance-plan-detail-limit {
+    min-width: 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--card-border);
+    border-left: 0;
+  }
+
+  .insurance-plan-detail-facts {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .insurance-plan-detail-facts > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .insurance-plan-detail-info {
+    padding: 18px 20px;
+  }
+
+  .insurance-plan-next-steps {
+    margin: 0 20px;
+  }
+
+  .insurance-plan-detail-facts dt {
+    margin: 0;
+  }
+
+  .insurance-plan-detail-action {
+    padding: 16px 20px 18px;
+  }
+
+  .insurance-plan-card-header {
+    gap: 12px;
+  }
+
+  .insurance-plan-heading {
+    padding-top: 23px;
+  }
+
+  .insurance-plan-header-coverage {
+    max-width: 55%;
+  }
+
+  .insurance-plan-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .insurance-plan-actions {
+    width: 100%;
+  }
+
+  .insurance-plan-actions a,
+  .insurance-plan-actions button {
+    flex: 1;
+  }
 
   .insurance-policy-summary {
     align-items: flex-start;

@@ -12,6 +12,8 @@ export default function Checkout() {
   const purchase = usePurchaseInsurance()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const quotedDays = Number(draft.quote?.tripDays)
+  const hasQuotedDays = Number.isFinite(quotedDays) && quotedDays > 0
 
   async function confirmPurchase() {
     setError('')
@@ -53,7 +55,7 @@ export default function Checkout() {
     <Link to="/insurance/travellers" search={{ planId: draft.planId }} className="muted">← Edit traveller details</Link>
     <h1 style={{ marginTop: 16 }}>Checkout summary</h1>
     <div className="card"><div className="card-header"><h2>Trip</h2><span className="badge pending">Insurance quote</span></div><div className="row-between"><span>Destination</span><strong>{draft.trip.destination} ({draft.trip.destinationCode})</strong></div><div className="row-between" style={{ marginTop: 8 }}><span>Travel dates</span><strong>{draft.trip.startDate} – {draft.trip.endDate}</strong></div></div>
-    <div className="card"><h2 style={{ marginBottom: 14 }}>Selected plan</h2><div className="row-between"><strong>{planLabel(plan)} · {draft.coverType === 'family' ? 'Family' : 'Individual'}</strong><strong>{draft.travellers.length} traveller(s)</strong></div><p className="muted" style={{ marginTop: 10 }}>Travellers: {draft.travellers.map(t => t.name).join(', ')}</p><p className="muted">Contact: {draft.email}</p><hr style={{ border: 0, borderTop: '1px solid var(--card-border)', margin: '16px 0' }} /><div className="row-between"><span>Quoted premium ({draft.quote?.tripDays ?? '—'} days)</span><strong className="money">{formatMoney(draft.quote?.totalPremium, draft.quote?.currencyCode || plan.currencyCode)}</strong></div><p className="muted" style={{ marginTop: 12 }}>Confirming sends these trip and traveller details to the insurance service.</p></div>
+    <div className="card"><h2 style={{ marginBottom: 14 }}>Selected plan</h2><div className="row-between"><strong>{planLabel(plan)} · {draft.coverType === 'family' ? 'Family' : 'Individual'}</strong><strong>{draft.travellers.length} traveller(s)</strong></div><p className="muted" style={{ marginTop: 10 }}>Travellers: {draft.travellers.map(t => t.name).join(', ')}</p><p className="muted">Contact: {draft.email}</p><hr style={{ border: 0, borderTop: '1px solid var(--card-border)', margin: '16px 0' }} /><div className="row-between"><span>Final quoted premium{hasQuotedDays ? ` · ${quotedDays} covered ${quotedDays === 1 ? 'day' : 'days'}` : ''}</span><strong className="money">{formatMoney(draft.quote?.totalPremium, draft.quote?.currencyCode || plan.currencyCode)}</strong></div><p className="muted" style={{ marginTop: 12 }}>Final price calculated by the insurance service for your trip and selected travellers. Confirming sends these details to the insurance service.</p></div>
     {error && <div className="banner error">{error}</div>}
     <button type="button" disabled={purchase.isPending} onClick={confirmPurchase} style={{ width: '100%' }}>{purchase.isPending ? 'Submitting…' : 'Confirm purchase'}</button>
   </InsuranceLayout>

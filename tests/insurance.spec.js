@@ -10,7 +10,7 @@ test('destination details lead to a separate insurance plan selection step', asy
         {
           Id: 1,
           Name: 'Essential',
-          CoverageType: 'Travel cover',
+          CoverageType: 'Individual',
           PremiumPerDay: 3,
           CurrencyCode: 'SGD',
           MaxCoverageAmount: 10000,
@@ -20,11 +20,11 @@ test('destination details lead to a separate insurance plan selection step', asy
         {
           Id: 2,
           Name: 'Premium',
-          CoverageType: 'Extended cover',
+          CoverageType: 'Family bundle',
           PremiumPerDay: 5,
           CurrencyCode: 'SGD',
           MaxCoverageAmount: 50000,
-          MaxTravellers: 6,
+          MaxTravellers: 1,
           IsActive: true,
         },
       ]),
@@ -33,6 +33,16 @@ test('destination details lead to a separate insurance plan selection step', asy
 
   await page.goto('/insurance')
 
+  const insuranceMenu = page.locator('.nav-insurance-menu')
+  const insuranceTabs = insuranceMenu.getByRole('navigation', { name: 'Insurance' })
+  await expect(insuranceTabs.getByRole('link', { name: 'Buy Insurance' })).toBeVisible()
+  await expect(insuranceTabs.getByRole('link', { name: 'My Insurance' })).toBeVisible()
+  await expect(insuranceMenu.getByRole('link', { name: 'Insurance', exact: true })).toBeVisible()
+  const navbarBox = await page.locator('.navbar-inner').boundingBox()
+  const insuranceSubnavBox = await insuranceMenu.locator('.navbar-subnav').boundingBox()
+  expect(insuranceSubnavBox.height).toBeGreaterThan(0)
+  expect(insuranceSubnavBox.width).toBeLessThan(navbarBox.width / 2)
+  await expect(page.locator('.page').getByRole('navigation', { name: 'Insurance' })).toHaveCount(0)
   await expect(page.getByText('Destination details', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Choose an insurance plan' })).toHaveCount(0)
   expect(planRequests).toBe(0)
@@ -47,17 +57,58 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(page.getByRole('heading', { name: 'Choose an insurance plan' })).toBeVisible()
   await expect(page.getByText('Tokyo, Japan (JP)')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
+  const essentialCard = page.locator('.insurance-plan-card').filter({ has: page.getByRole('heading', { name: 'Essential' }) })
+  await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveClass(/insurance-coverage-individual/)
+  await expect(essentialCard.getByText('Maximum coverage')).toBeVisible()
+  await expect(essentialCard.getByText('$10,000.00')).toBeVisible()
+  await expect(essentialCard.getByText('Up to 4 people')).toBeVisible()
+  await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveText('Individual')
+  await expect(essentialCard.getByText('Available', { exact: true })).toHaveCount(0)
+  await expect(essentialCard.getByText(/per day/i)).toHaveCount(0)
+  const premiumCard = page.locator('.insurance-plan-card').filter({ has: page.getByRole('heading', { name: 'Premium' }) })
+  const premiumCoverageArea = premiumCard.locator('.insurance-plan-header-coverage')
+  await expect(premiumCoverageArea.locator('.insurance-coverage-badge')).toHaveText('Family bundle')
+  await expect(premiumCoverageArea.locator('.insurance-coverage-badge')).toHaveClass(/insurance-coverage-family/)
+  await expect(premiumCoverageArea.getByText('Maximum coverage')).toHaveCount(0)
+  await expect(premiumCard.getByText(/people|person/i)).toHaveCount(0)
+  const premiumCardBox = await premiumCard.boundingBox()
+  const premiumCoverageBox = await premiumCoverageArea.boundingBox()
+  expect(Math.abs(premiumCoverageBox.x + premiumCoverageBox.width - (premiumCardBox.x + premiumCardBox.width - 20))).toBeLessThanOrEqual(1)
+  const premiumFactsBox = await premiumCard.locator('.insurance-plan-facts').boundingBox()
+  const maxCoverageLabel = await premiumCard.getByText('Maximum coverage').boundingBox()
+  const cardFooter = await premiumCard.locator('.insurance-plan-card-footer').boundingBox()
+  expect(Math.abs(premiumFactsBox.x - premiumCardBox.x)).toBeLessThanOrEqual(1)
+  expect(maxCoverageLabel.y).toBeLessThan(cardFooter.y)
+  expect(Math.abs(maxCoverageLabel.x - (premiumCardBox.x + 20))).toBeLessThanOrEqual(1)
+  const essentialCardBox = await essentialCard.boundingBox()
+  const essentialTitle = await essentialCard.getByRole('heading', { name: 'Essential' }).boundingBox()
+  const premiumTitle = await premiumCard.getByRole('heading', { name: 'Premium' }).boundingBox()
+  expect(Math.abs((essentialTitle.y - essentialCardBox.y) - (premiumTitle.y - premiumCardBox.y))).toBeLessThan(2)
   expect(planRequests).toBeGreaterThan(0)
 
   await page.getByLabel('Compare plans').check()
   const comparison = page.getByRole('region', { name: 'Plan comparison table' })
-  await expect(comparison.getByText('Lowest price')).toBeVisible()
   await expect(comparison.getByText('Most cover')).toBeVisible()
+  await expect(comparison.getByText(/per day|price/i)).toHaveCount(0)
   await expect(comparison.getByRole('button', { name: 'Choose plan' })).toHaveCount(2)
+  await expect(page.getByRole('region', { name: 'Proposed coverage benefit comparison' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Essential' })).toHaveCount(0)
 
   await page.getByLabel('Compare plans').uncheck()
   await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
+  await page.getByRole('button', { name: 'Plan details' }).first().click()
+  await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
+  await expect(page.getByText(/per day|premium per day/i)).toHaveCount(0)
+  await expect(page.locator('.insurance-plan-detail-card')).toHaveCount(1)
+  await expect(page.locator('.insurance-plan-detail-card .card')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Plan information' })).toBeVisible()
+  await expect(page.getByText('$10,000.00')).toBeVisible()
+  await expect(page.getByText('4 people')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Continue with your plan' })).toBeVisible()
+  await expect(page.getByText('Review your quote')).toBeVisible()
+  await page.getByRole('button', { name: 'Choose this plan' }).click()
+  await expect(page.getByRole('heading', { name: 'Traveller details' })).toBeVisible()
+  await expect(page.getByText(/per day/i)).toHaveCount(0)
 })
 
 test('travel insurance does not allow departure dates in the past', async ({ page }) => {
@@ -157,6 +208,48 @@ test('checkout rejects a saved trip with past travel dates', async ({ page }) =>
 
   await expect(page.getByText(/Travel dates must start today or later/)).toBeVisible()
   expect(purchaseRequests).toBe(0)
+})
+
+test('checkout presents the API quote as the final price for covered days', async ({ page }) => {
+  await page.addInitScript(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const dayAfter = new Date(tomorrow)
+    dayAfter.setDate(dayAfter.getDate() + 1)
+    const formatDate = date => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    sessionStorage.setItem('wetrip.insurance.draft', JSON.stringify({
+      insurancePlanId: 1,
+      planId: '1',
+      planName: 'Test plan',
+      coverType: 'individual',
+      travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
+      email: 'taylor@example.com',
+      trip: {
+        destination: 'Tokyo',
+        destinationCode: 'JP',
+        startDate: formatDate(tomorrow),
+        endDate: formatDate(dayAfter),
+      },
+      quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
+    }))
+  })
+  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
+  }))
+
+  await page.goto('/insurance/checkout')
+
+  await expect(page.getByText('Final quoted premium · 2 covered days')).toBeVisible()
+  await expect(page.getByText('Final price calculated by the insurance service')).toBeVisible()
+  await expect(page.getByText('$12.50')).toBeVisible()
+  await expect(page.getByText(/estimate/i)).toHaveCount(0)
 })
 
 test('expired insurance policies use the red status badge', async ({ page }) => {

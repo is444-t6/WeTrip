@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { useChildren } from '../family/queries'
 import {
-  formatMoney,
   getBirthDateMinInputValue,
   getTodayDateInputValue,
   getYesterdayDateInputValue,
@@ -109,7 +108,7 @@ export default function TravellerDetails() {
   }
 
   return <InsuranceLayout>
-    <Link to="/insurance/plans" className="muted">← Back to plans</Link><h1 style={{ marginTop: 16 }}>Traveller details</h1><p className="muted">{planLabel(plan)} · {formatMoney(plan.premiumPerDay, plan.currencyCode)} per day</p><Notice />
+    <Link to="/insurance/plans" className="muted">← Back to plans</Link><h1 style={{ marginTop: 16 }}>Traveller details</h1><p className="muted">{planLabel(plan)}</p><Notice />
     <form onSubmit={submit} className="card">
       {error && <div className="banner error">{error}</div>}
       <div className="field"><label htmlFor="cover">Who are you covering?</label><select id="cover" value={coverType} onChange={e => { const next = e.target.value; setCoverType(next); setSelectChildren(false); setTravellers(next === 'family' ? [] : [{ name: '', dob: '', nationalityCode: '' }]); setError('') }}><option value="individual">Individual</option>{maxTravellers > 1 && <option value="family">Family</option>}</select></div>
