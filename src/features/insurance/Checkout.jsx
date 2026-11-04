@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { formatMoney, planLabel } from './data'
+import { formatMoney, getTodayDateInputValue, isReasonableBirthDate, isValidTripDates, planLabel } from './data'
 import { useInsurancePlans, usePurchaseInsurance } from './queries'
 import { getDraft, savePurchaseResult } from './storage'
 import InsuranceLayout from './components/InsuranceLayout'
@@ -15,6 +15,15 @@ export default function Checkout() {
 
   async function confirmPurchase() {
     setError('')
+    if (!isValidTripDates(draft.trip?.startDate, draft.trip?.endDate, getTodayDateInputValue())) {
+      setError('Travel dates must start today or later, and the return date must be on or after departure. Please update your trip dates.')
+      return
+    }
+    if (draft.travellers.some(traveller => !isReasonableBirthDate(traveller.dob))) {
+      setError('Each traveller must have a date of birth before today and within the past 120 years.')
+      return
+    }
+
     try {
       const result = await purchase.mutateAsync({
         InsurancePlanId: Number(draft.insurancePlanId),
@@ -49,4 +58,3 @@ export default function Checkout() {
     <button type="button" disabled={purchase.isPending} onClick={confirmPurchase} style={{ width: '100%' }}>{purchase.isPending ? 'Submitting…' : 'Confirm purchase'}</button>
   </InsuranceLayout>
 }
-

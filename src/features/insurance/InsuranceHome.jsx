@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { getTodayDateInputValue, isValidTripDates } from './data'
 import { getTrip, saveTrip } from './storage'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
@@ -13,6 +14,7 @@ export default function InsuranceHome() {
   const [endDate, setEndDate] = useState(search.endDate || savedTrip.endDate || '')
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const today = getTodayDateInputValue()
   const trip = { destination, destinationCode: destinationCode.toUpperCase(), startDate, endDate }
 
   function updateTrip(next) {
@@ -23,8 +25,8 @@ export default function InsuranceHome() {
 
   function continueToPlans(event) {
     event.preventDefault()
-    if (!destination.trim() || !/^[A-Za-z]{2}$/.test(destinationCode) || !startDate || !endDate || endDate < startDate) {
-      setError('Enter a destination, its 2-letter country code, and valid travel dates to continue.')
+    if (!destination.trim() || !/^[A-Za-z]{2}$/.test(destinationCode) || !isValidTripDates(startDate, endDate, today)) {
+      setError('Enter a destination, its 2-letter country code, and travel dates starting today or later, with the return date on or after departure.')
       return
     }
 
@@ -42,8 +44,8 @@ export default function InsuranceHome() {
       <div className="field"><label htmlFor="destination">Destination</label><input id="destination" value={destination} onChange={e => { setDestination(e.target.value); updateTrip({ destination: e.target.value }) }} placeholder="e.g. Tokyo, Japan" required /></div>
       <div className="field"><label htmlFor="destinationCode">Destination country code</label><input id="destinationCode" value={destinationCode} onChange={e => { setDestinationCode(e.target.value); updateTrip({ destinationCode: e.target.value }) }} placeholder="JP" maxLength={2} autoCapitalize="characters" required /><small className="muted">Use the 2-letter country code, for example JP for Japan.</small></div>
       <div className="grid-2">
-        <div className="field"><label htmlFor="start">Depart</label><input id="start" type="date" value={startDate} onChange={e => { setStartDate(e.target.value); updateTrip({ startDate: e.target.value }) }} required /></div>
-        <div className="field"><label htmlFor="end">Return</label><input id="end" type="date" min={startDate} value={endDate} onChange={e => { setEndDate(e.target.value); updateTrip({ endDate: e.target.value }) }} required /></div>
+        <div className="field"><label htmlFor="start">Depart</label><input id="start" type="date" min={today} value={startDate} onChange={e => { setStartDate(e.target.value); updateTrip({ startDate: e.target.value }) }} required /></div>
+        <div className="field"><label htmlFor="end">Return</label><input id="end" type="date" min={startDate > today ? startDate : today} value={endDate} onChange={e => { setEndDate(e.target.value); updateTrip({ endDate: e.target.value }) }} required /></div>
       </div>
       <button type="submit" style={{ width: '100%' }}>Continue to insurance plans</button>
     </form>

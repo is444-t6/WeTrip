@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { formatMoney, planLabel } from './data'
+import { formatMoney, isValidTripDates, planLabel } from './data'
 import { useInsurancePlans } from './queries'
 import { getTrip } from './storage'
 import Notice from './components/Notice'
@@ -26,9 +26,7 @@ export default function InsurancePlans() {
   const hasTrip = Boolean(
     trip.destination?.trim()
     && /^[A-Za-z]{2}$/.test(trip.destinationCode || '')
-    && trip.startDate
-    && trip.endDate
-    && trip.endDate >= trip.startDate,
+    && isValidTripDates(trip.startDate, trip.endDate),
   )
 
   return <InsuranceLayout>
