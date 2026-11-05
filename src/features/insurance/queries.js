@@ -1,5 +1,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keys as familyKeys } from '../family/queries'
 import { InsuranceApi } from './api'
 
 export const insuranceKeys = {
@@ -12,6 +13,14 @@ export function useInsurancePlans() {
     queryKey: insuranceKeys.plans,
     queryFn: InsuranceApi.getPlans,
     staleTime: 5 * 60_000,
+  })
+}
+
+export function useInsurancePlanBenefits(insurancePlanId) {
+  return useQuery({
+    queryKey: [...insuranceKeys.plans, String(insurancePlanId), 'benefits'],
+    queryFn: () => InsuranceApi.getBenefits(insurancePlanId),
+    enabled: insurancePlanId != null && String(insurancePlanId) !== '',
   })
 }
 
@@ -33,9 +42,17 @@ export function usePurchaseInsurance() {
 
   return useMutation({
     mutationFn: InsuranceApi.purchase,
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: insuranceKeys.policies,
-      }),
+    onSuccess: (result) => {
+      if (result?.paymentSuccess !== true) return
+
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: insuranceKeys.policies,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: familyKeys.me,
+        }),
+      ])
+    },
   })
 }
