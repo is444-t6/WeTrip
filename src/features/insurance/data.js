@@ -28,16 +28,16 @@ export function isValidDateInput(value) {
 }
 
 export function isValidTripDates(startDate, endDate, today = getTodayDateInputValue()) {
-  return isValidDateInput(startDate)
-    && isValidDateInput(endDate)
-    && startDate >= today
-    && endDate >= startDate
+  return (
+    isValidDateInput(startDate) &&
+    isValidDateInput(endDate) &&
+    startDate >= today &&
+    endDate >= startDate
+  )
 }
 
 export function isReasonableBirthDate(value, today = getTodayDateInputValue()) {
-  return isValidDateInput(value)
-    && value >= getBirthDateMinInputValue()
-    && value < today
+  return isValidDateInput(value) && value >= getBirthDateMinInputValue() && value < today
 }
 
 export function formatMoney(amount, currencyCode = 'SGD') {

@@ -41,15 +41,18 @@ export function createClient({
 
     const res = await fetch(url, {
       method,
-      headers: auth === 'none'
-        ? payload ? { 'Content-Type': 'application/json' } : undefined
-        : auth === 'params'
-          ? { 'Content-Type': 'application/json' }
-          : {
-              'Content-Type': 'application/json',
-              'X-Contacts-Key': apiKey,
-              'X-Session-Token': token,
-            },
+      headers:
+        auth === 'none'
+          ? payload
+            ? { 'Content-Type': 'application/json' }
+            : undefined
+          : auth === 'params'
+            ? { 'Content-Type': 'application/json' }
+            : {
+                'Content-Type': 'application/json',
+                'X-Contacts-Key': apiKey,
+                'X-Session-Token': token,
+              },
       body: payload ? JSON.stringify(payload) : undefined,
     })
 

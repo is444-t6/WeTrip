@@ -10,13 +10,30 @@ export default function InsuranceLayout({ children }) {
     navigate({ to: '/family' })
   }
 
-  return <AppShell
-    onSignOut={signOut}
-    secondaryNav={<nav className="insurance-tabs" aria-label="Insurance">
-      <Link to="/insurance" className="insurance-tab" activeOptions={{ exact: true }} activeProps={{ 'data-active': 'true' }}>Buy Insurance</Link>
-      <Link to="/insurance/policies" className="insurance-tab" activeProps={{ 'data-active': 'true' }}>My Insurance</Link>
-    </nav>}
-  >
-    {children}
-  </AppShell>
+  return (
+    <AppShell
+      onSignOut={signOut}
+      secondaryNav={
+        <nav className="insurance-tabs" aria-label="Insurance">
+          <Link
+            to="/insurance"
+            className="insurance-tab"
+            activeOptions={{ exact: true }}
+            activeProps={{ 'data-active': 'true' }}
+          >
+            Buy Insurance
+          </Link>
+          <Link
+            to="/insurance/policies"
+            className="insurance-tab"
+            activeProps={{ 'data-active': 'true' }}
+          >
+            My Insurance
+          </Link>
+        </nav>
+      }
+    >
+      {children}
+    </AppShell>
+  )
 }

@@ -201,7 +201,10 @@ a {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s;
 }
 
 .nav-insurance-menu:hover .navbar-subnav,
@@ -521,7 +524,9 @@ tr:last-child td {
   background: var(--card);
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .insurance-compare-toggle:has(input:checked) {
@@ -533,7 +538,9 @@ tr:last-child td {
   position: relative;
   padding: 0;
   overflow: hidden;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .insurance-plan-card::before {
@@ -1252,7 +1259,9 @@ tr:last-child td {
 }
 
 @media (max-width: 640px) {
-  .insurance-scroll-hint { display: block; }
+  .insurance-scroll-hint {
+    display: block;
+  }
 
   .insurance-plan-detail-hero {
     grid-template-columns: 1fr;

@@ -6,7 +6,7 @@ async function seedValidCheckout(page) {
     start.setDate(start.getDate() + 1)
     const end = new Date(start)
     end.setDate(end.getDate() + 1)
-    const formatDate = date => {
+    const formatDate = (date) => {
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
@@ -14,28 +14,31 @@ async function seedValidCheckout(page) {
     }
 
     sessionStorage.setItem('wetrip_session', 'parent:account:Parent')
-    sessionStorage.setItem('wetrip.insurance.draft', JSON.stringify({
-      insurancePlanId: 1,
-      planId: '1',
-      planName: 'Test plan',
-      coverType: 'individual',
-      travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
-      email: 'taylor@example.com',
-      trip: {
-        destination: 'Tokyo',
-        destinationCode: 'JP',
-        startDate: formatDate(start),
-        endDate: formatDate(end),
-      },
-      quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
-    }))
+    sessionStorage.setItem(
+      'wetrip.insurance.draft',
+      JSON.stringify({
+        insurancePlanId: 1,
+        planId: '1',
+        planName: 'Test plan',
+        coverType: 'individual',
+        travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
+        email: 'taylor@example.com',
+        trip: {
+          destination: 'Tokyo',
+          destinationCode: 'JP',
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+        },
+        quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
+      }),
+    )
   })
 }
 
 test('destination details lead to a separate insurance plan selection step', async ({ page }) => {
   let planRequests = 0
   let benefitsRequests = 0
-  await page.route('**/InsuranceAPI/Plans', async route => {
+  await page.route('**/InsuranceAPI/Plans', async (route) => {
     planRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -63,7 +66,7 @@ test('destination details lead to a separate insurance plan selection step', asy
       ]),
     })
   })
-  await page.route('**/InsuranceAPI/Benefits*', async route => {
+  await page.route('**/InsuranceAPI/Benefits*', async (route) => {
     benefitsRequests += 1
     expect(new URL(route.request().url()).searchParams.get('InsurancePlanId')).toBe('1')
     await route.fulfill({
@@ -124,23 +127,37 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(page.getByRole('heading', { name: 'Choose an insurance plan' })).toBeVisible()
   await expect(page.getByText('Tokyo, Japan (JP)')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
-  const essentialCard = page.locator('.insurance-plan-card').filter({ has: page.getByRole('heading', { name: 'Essential' }) })
-  await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveClass(/insurance-coverage-individual/)
+  const essentialCard = page
+    .locator('.insurance-plan-card')
+    .filter({ has: page.getByRole('heading', { name: 'Essential' }) })
+  await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveClass(
+    /insurance-coverage-individual/,
+  )
   await expect(essentialCard.getByText('Maximum coverage')).toBeVisible()
   await expect(essentialCard.getByText('$10,000.00')).toBeVisible()
   await expect(essentialCard.getByText('Up to 4 people')).toBeVisible()
   await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveText('Individual')
   await expect(essentialCard.getByText('Available', { exact: true })).toHaveCount(0)
   await expect(essentialCard.getByText(/per day/i)).toHaveCount(0)
-  const premiumCard = page.locator('.insurance-plan-card').filter({ has: page.getByRole('heading', { name: 'Premium' }) })
+  const premiumCard = page
+    .locator('.insurance-plan-card')
+    .filter({ has: page.getByRole('heading', { name: 'Premium' }) })
   const premiumCoverageArea = premiumCard.locator('.insurance-plan-header-coverage')
   await expect(premiumCoverageArea.locator('.insurance-coverage-badge')).toHaveText('Family bundle')
-  await expect(premiumCoverageArea.locator('.insurance-coverage-badge')).toHaveClass(/insurance-coverage-family/)
+  await expect(premiumCoverageArea.locator('.insurance-coverage-badge')).toHaveClass(
+    /insurance-coverage-family/,
+  )
   await expect(premiumCoverageArea.getByText('Maximum coverage')).toHaveCount(0)
   await expect(premiumCard.getByText(/people|person/i)).toHaveCount(0)
   const premiumCardBox = await premiumCard.boundingBox()
   const premiumCoverageBox = await premiumCoverageArea.boundingBox()
-  expect(Math.abs(premiumCoverageBox.x + premiumCoverageBox.width - (premiumCardBox.x + premiumCardBox.width - 20))).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(
+      premiumCoverageBox.x +
+        premiumCoverageBox.width -
+        (premiumCardBox.x + premiumCardBox.width - 20),
+    ),
+  ).toBeLessThanOrEqual(1)
   const premiumFactsBox = await premiumCard.locator('.insurance-plan-facts').boundingBox()
   const maxCoverageLabel = await premiumCard.getByText('Maximum coverage').boundingBox()
   const cardFooter = await premiumCard.locator('.insurance-plan-card-footer').boundingBox()
@@ -148,9 +165,13 @@ test('destination details lead to a separate insurance plan selection step', asy
   expect(maxCoverageLabel.y).toBeLessThan(cardFooter.y)
   expect(Math.abs(maxCoverageLabel.x - (premiumCardBox.x + 20))).toBeLessThanOrEqual(1)
   const essentialCardBox = await essentialCard.boundingBox()
-  const essentialTitle = await essentialCard.getByRole('heading', { name: 'Essential' }).boundingBox()
+  const essentialTitle = await essentialCard
+    .getByRole('heading', { name: 'Essential' })
+    .boundingBox()
   const premiumTitle = await premiumCard.getByRole('heading', { name: 'Premium' }).boundingBox()
-  expect(Math.abs((essentialTitle.y - essentialCardBox.y) - (premiumTitle.y - premiumCardBox.y))).toBeLessThan(2)
+  expect(
+    Math.abs(essentialTitle.y - essentialCardBox.y - (premiumTitle.y - premiumCardBox.y)),
+  ).toBeLessThan(2)
   expect(planRequests).toBeGreaterThan(0)
 
   await page.getByLabel('Compare plans').check()
@@ -158,7 +179,9 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(comparison.getByText('Most cover')).toBeVisible()
   await expect(comparison.getByText(/per day|price/i)).toHaveCount(0)
   await expect(comparison.getByRole('button', { name: 'Choose plan' })).toHaveCount(2)
-  await expect(page.getByRole('region', { name: 'Proposed coverage benefit comparison' })).toHaveCount(0)
+  await expect(
+    page.getByRole('region', { name: 'Proposed coverage benefit comparison' }),
+  ).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Essential' })).toHaveCount(0)
 
   await page.getByLabel('Compare plans').uncheck()
@@ -177,7 +200,9 @@ test('destination details lead to a separate insurance plan selection step', asy
   const benefitItems = page.locator('.insurance-plan-benefit')
   await expect(benefitItems).toHaveCount(2)
   await expect(benefitItems.nth(0).getByRole('heading')).toHaveText('Lost baggage')
-  await expect(benefitItems.nth(1).getByRole('heading')).toHaveText('Emergency overseas medical expenses')
+  await expect(benefitItems.nth(1).getByRole('heading')).toHaveText(
+    'Emergency overseas medical expenses',
+  )
   await expect(page.getByRole('heading', { name: /trip cancellation/i })).toHaveCount(0)
   await expect(page.getByText('Medical expenses for emergencies while travelling.')).toBeVisible()
   await expect(page.getByText('S$500,000')).toBeVisible()
@@ -191,7 +216,9 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(page.getByText(/per day/i)).toHaveCount(0)
 })
 
-test('signing out from an insurance page returns to the signed-out Family screen', async ({ page }) => {
+test('signing out from an insurance page returns to the signed-out Family screen', async ({
+  page,
+}) => {
   await page.addInitScript(() => sessionStorage.setItem('wetrip_session', 'parent:account:Parent'))
   await page.goto('/insurance')
 
@@ -216,7 +243,7 @@ test('travel insurance does not allow departure dates in the past', async ({ pag
   yesterday.setUTCDate(yesterday.getUTCDate() - 1)
   const pastDate = yesterday.toISOString().slice(0, 10)
   await departure.fill(pastDate)
-  expect(await departure.evaluate(input => input.validity.rangeUnderflow)).toBe(true)
+  expect(await departure.evaluate((input) => input.validity.rangeUnderflow)).toBe(true)
   await expect(returnDate).toHaveAttribute('min', today)
 
   await page.getByRole('button', { name: 'Continue to insurance plans' }).click()
@@ -225,17 +252,22 @@ test('travel insurance does not allow departure dates in the past', async ({ pag
 
 test('date of birth must be before today and within a reasonable range', async ({ page }) => {
   await page.addInitScript(() => {
-    sessionStorage.setItem('wetrip.insurance.trip', JSON.stringify({
-      destination: 'Tokyo, Japan',
-      destinationCode: 'JP',
-      startDate: '2027-01-10',
-      endDate: '2027-01-17',
-    }))
+    sessionStorage.setItem(
+      'wetrip.insurance.trip',
+      JSON.stringify({
+        destination: 'Tokyo, Japan',
+        destinationCode: 'JP',
+        startDate: '2027-01-10',
+        endDate: '2027-01-17',
+      }),
+    )
   })
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{ Id: 1, Name: 'Individual', MaxTravellers: 1, IsActive: true }]),
-  }))
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Individual', MaxTravellers: 1, IsActive: true }]),
+    }),
+  )
 
   await page.goto('/insurance/travellers?planId=1')
 
@@ -248,18 +280,18 @@ test('date of birth must be before today and within a reasonable range', async (
   const today = new Date(`${max}T00:00:00.000Z`)
   today.setUTCDate(today.getUTCDate() + 1)
   await dob.fill(today.toISOString().slice(0, 10))
-  expect(await dob.evaluate(input => input.validity.rangeOverflow)).toBe(true)
+  expect(await dob.evaluate((input) => input.validity.rangeOverflow)).toBe(true)
 
   const tooOld = new Date(`${min}T00:00:00.000Z`)
   tooOld.setUTCDate(tooOld.getUTCDate() - 1)
   await dob.fill(tooOld.toISOString().slice(0, 10))
-  expect(await dob.evaluate(input => input.validity.rangeUnderflow)).toBe(true)
+  expect(await dob.evaluate((input) => input.validity.rangeUnderflow)).toBe(true)
 })
 
 test('checkout rejects a saved trip with past travel dates', async ({ page }) => {
   let purchaseRequests = 0
   await page.addInitScript(() => {
-    const formatDate = date => {
+    const formatDate = (date) => {
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
@@ -270,29 +302,37 @@ test('checkout rejects a saved trip with past travel dates', async ({ page }) =>
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    sessionStorage.setItem('wetrip.insurance.draft', JSON.stringify({
-      insurancePlanId: 1,
-      planId: '1',
-      planName: 'Test plan',
-      coverType: 'individual',
-      travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
-      email: 'taylor@example.com',
-      trip: {
-        destination: 'Tokyo',
-        destinationCode: 'JP',
-        startDate: formatDate(yesterday),
-        endDate: formatDate(tomorrow),
-      },
-      quote: { totalPremium: 10, currencyCode: 'SGD' },
-    }))
+    sessionStorage.setItem(
+      'wetrip.insurance.draft',
+      JSON.stringify({
+        insurancePlanId: 1,
+        planId: '1',
+        planName: 'Test plan',
+        coverType: 'individual',
+        travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
+        email: 'taylor@example.com',
+        trip: {
+          destination: 'Tokyo',
+          destinationCode: 'JP',
+          startDate: formatDate(yesterday),
+          endDate: formatDate(tomorrow),
+        },
+        quote: { totalPremium: 10, currencyCode: 'SGD' },
+      }),
+    )
   })
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
-  }))
-  await page.route('**/InsuranceAPI/Purchase', async route => {
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
+    }),
+  )
+  await page.route('**/InsuranceAPI/Purchase', async (route) => {
     purchaseRequests += 1
-    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ PolicyNumber: 'POL-1' }) })
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ PolicyNumber: 'POL-1' }),
+    })
   })
 
   await page.goto('/insurance/checkout')
@@ -308,33 +348,38 @@ test('checkout presents the API quote as the final price for covered days', asyn
     tomorrow.setDate(tomorrow.getDate() + 1)
     const dayAfter = new Date(tomorrow)
     dayAfter.setDate(dayAfter.getDate() + 1)
-    const formatDate = date => {
+    const formatDate = (date) => {
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
       return `${year}-${month}-${day}`
     }
 
-    sessionStorage.setItem('wetrip.insurance.draft', JSON.stringify({
-      insurancePlanId: 1,
-      planId: '1',
-      planName: 'Test plan',
-      coverType: 'individual',
-      travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
-      email: 'taylor@example.com',
-      trip: {
-        destination: 'Tokyo',
-        destinationCode: 'JP',
-        startDate: formatDate(tomorrow),
-        endDate: formatDate(dayAfter),
-      },
-      quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
-    }))
+    sessionStorage.setItem(
+      'wetrip.insurance.draft',
+      JSON.stringify({
+        insurancePlanId: 1,
+        planId: '1',
+        planName: 'Test plan',
+        coverType: 'individual',
+        travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
+        email: 'taylor@example.com',
+        trip: {
+          destination: 'Tokyo',
+          destinationCode: 'JP',
+          startDate: formatDate(tomorrow),
+          endDate: formatDate(dayAfter),
+        },
+        quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
+      }),
+    )
   })
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
-  }))
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
+    }),
+  )
 
   await page.goto('/insurance/checkout')
 
@@ -344,14 +389,18 @@ test('checkout presents the API quote as the final price for covered days', asyn
   await expect(page.getByText(/estimate/i)).toHaveCount(0)
 })
 
-test('successful insurance payment confirms purchase and refreshes the Family wallet balance', async ({ page }) => {
+test('successful insurance payment confirms purchase and refreshes the Family wallet balance', async ({
+  page,
+}) => {
   let familyMeRequests = 0
   await seedValidCheckout(page)
-  await page.route('**/GetMyFamilyRole*', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify({ Role: 'Parent' }),
-  }))
-  await page.route('**/GetMe*', async route => {
+  await page.route('**/GetMyFamilyRole*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ Role: 'Parent' }),
+    }),
+  )
+  await page.route('**/GetMe*', async (route) => {
     familyMeRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -362,25 +411,33 @@ test('successful insurance payment confirms purchase and refreshes the Family wa
       }),
     })
   })
-  await page.route('**/GetChildren*', route => route.fulfill({ contentType: 'application/json', body: '[]' }))
-  await page.route('**/GetPendingRequests*', route => route.fulfill({ contentType: 'application/json', body: '[]' }))
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
-  }))
-  await page.route('**/InsuranceAPI/Purchase', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify({
-      PaymentSuccess: true,
-      PaymentMessage: 'Payment successful from SMUtBank.',
-      PolicyNumber: 'POL-2026-001',
-      PurchaseId: 77,
-      TotalPremium: 12.5,
-      PaymentFee: 1.25,
-      CurrencyCode: 'SGD',
-      Status: 'Confirmed',
+  await page.route('**/GetChildren*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: '[]' }),
+  )
+  await page.route('**/GetPendingRequests*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: '[]' }),
+  )
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
     }),
-  }))
+  )
+  await page.route('**/InsuranceAPI/Purchase', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        PaymentSuccess: true,
+        PaymentMessage: 'Payment successful from SMUtBank.',
+        PolicyNumber: 'POL-2026-001',
+        PurchaseId: 77,
+        TotalPremium: 12.5,
+        PaymentFee: 1.25,
+        CurrencyCode: 'SGD',
+        Status: 'Confirmed',
+      }),
+    }),
+  )
 
   await page.goto('/family')
   await expect(page.getByText('Your WeTrip balance')).toBeVisible()
@@ -405,14 +462,18 @@ test('successful insurance payment confirms purchase and refreshes the Family wa
   expect(familyMeRequests).toBe(2)
 })
 
-test('unsuccessful insurance payment stays at checkout and displays the bank error', async ({ page }) => {
+test('unsuccessful insurance payment stays at checkout and displays the bank error', async ({
+  page,
+}) => {
   let purchaseRequests = 0
   await seedValidCheckout(page)
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
-  }))
-  await page.route('**/InsuranceAPI/Purchase', async route => {
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
+    }),
+  )
+  await page.route('**/InsuranceAPI/Purchase', async (route) => {
     purchaseRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -439,29 +500,35 @@ test('unsuccessful insurance payment stays at checkout and displays the bank err
 })
 
 test('expired insurance policies use the red status badge', async ({ page }) => {
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([]),
-  }))
-  await page.route('**/InsuranceAPI/MyInsurance', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{
-      PurchaseId: 12,
-      InsurancePlanId: 1,
-      Status: 'Expired',
-      PolicyNumber: 'POL-12',
-      TotalPremium: 20,
-      CurrencyCode: 'SGD',
-      DestinationCode: 'JP',
-      CoverageStart: '2026-01-01',
-      CoverageEnd: '2026-01-08',
-      PurchasedOn: '2025-12-20',
-      Travellers: [
-        { FullName: 'Jamie Example', DateOfBirth: '2012-04-15' },
-        { FullName: 'Alex Example', DateOfBirth: '2010-09-22' },
-      ],
-    }]),
-  }))
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    }),
+  )
+  await page.route('**/InsuranceAPI/MyInsurance', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          PurchaseId: 12,
+          InsurancePlanId: 1,
+          Status: 'Expired',
+          PolicyNumber: 'POL-12',
+          TotalPremium: 20,
+          CurrencyCode: 'SGD',
+          DestinationCode: 'JP',
+          CoverageStart: '2026-01-01',
+          CoverageEnd: '2026-01-08',
+          PurchasedOn: '2025-12-20',
+          Travellers: [
+            { FullName: 'Jamie Example', DateOfBirth: '2012-04-15' },
+            { FullName: 'Alex Example', DateOfBirth: '2010-09-22' },
+          ],
+        },
+      ]),
+    }),
+  )
 
   await page.goto('/insurance/policies')
 
@@ -491,31 +558,40 @@ test('expired insurance policies use the red status badge', async ({ page }) => 
 test('family bundle reveals linked children for multi-select', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('wetrip_session', '0000002169:0000004554:Parent Demo')
-    sessionStorage.setItem('wetrip.insurance.trip', JSON.stringify({
-      destination: 'Tokyo, Japan',
-      destinationCode: 'JP',
-      startDate: '2027-01-10',
-      endDate: '2027-01-17',
-    }))
+    sessionStorage.setItem(
+      'wetrip.insurance.trip',
+      JSON.stringify({
+        destination: 'Tokyo, Japan',
+        destinationCode: 'JP',
+        startDate: '2027-01-10',
+        endDate: '2027-01-17',
+      }),
+    )
   })
-  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([{
-      Id: 1,
-      Name: 'Family Cover',
-      PremiumPerDay: 5,
-      CurrencyCode: 'SGD',
-      MaxTravellers: 4,
-      IsActive: true,
-    }]),
-  }))
-  await page.route('**/GetChildren*', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify([
-      { FamilyLinkId: 10, ChildCustomerId: '0000002828', Nickname: 'Jamie', Status: 'Active' },
-      { FamilyLinkId: 11, ChildCustomerId: '0000002829', Nickname: 'Alex', Status: 'Active' },
-    ]),
-  }))
+  await page.route('**/InsuranceAPI/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          Id: 1,
+          Name: 'Family Cover',
+          PremiumPerDay: 5,
+          CurrencyCode: 'SGD',
+          MaxTravellers: 4,
+          IsActive: true,
+        },
+      ]),
+    }),
+  )
+  await page.route('**/GetChildren*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { FamilyLinkId: 10, ChildCustomerId: '0000002828', Nickname: 'Jamie', Status: 'Active' },
+        { FamilyLinkId: 11, ChildCustomerId: '0000002829', Nickname: 'Alex', Status: 'Active' },
+      ]),
+    }),
+  )
 
   await page.goto('/insurance/travellers?planId=1')
   await page.getByLabel('Who are you covering?').selectOption('family')

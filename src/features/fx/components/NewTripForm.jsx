@@ -76,12 +76,15 @@ export default function NewTripForm() {
       <Banner>{create.error?.message}</Banner>
 
       <div className="banner" style={{ background: 'var(--accent-soft)', color: 'var(--text)' }}>
-        <strong>Travel insurance is optional.</strong> Compare illustrative cover for this trip after planning.
+        <strong>Travel insurance is optional.</strong> Compare illustrative cover for this trip
+        after planning.
         <Link
           to="/insurance"
           search={{ destination, startDate: tripStartDate, endDate: tripEndDate }}
           style={{ display: 'block', marginTop: 6, fontWeight: 700 }}
-        >Explore travel insurance →</Link>
+        >
+          Explore travel insurance →
+        </Link>
       </div>
 
       <form onSubmit={submit}>

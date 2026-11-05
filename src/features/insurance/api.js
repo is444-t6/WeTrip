@@ -1,4 +1,3 @@
-
 import { createClient } from '../../lib/http'
 
 const { call } = createClient({
@@ -6,9 +5,7 @@ const { call } = createClient({
     import.meta.env.VITE_INSURANCE_API_BASE ||
     'https://smuedu-dev.outsystemsenterprise.com/WeTrip_Insurance_Composite/rest/InsuranceAPI',
 
-  apiKey:
-    import.meta.env.VITE_INSURANCE_API_KEY ||
-    import.meta.env.VITE_FAMILY_API_KEY,
+  apiKey: import.meta.env.VITE_INSURANCE_API_KEY || import.meta.env.VITE_FAMILY_API_KEY,
 
   auth: 'header',
   normalize: true,
@@ -38,8 +35,9 @@ function extractBenefits(response) {
     throw new Error('The insurance benefits endpoint returned multiple unrecognized lists.')
   }
 
-  const isBenefitRecord = ['name', 'benefitName', 'title', 'coverageBenefit', 'benefit']
-    .some(field => response[field] != null)
+  const isBenefitRecord = ['name', 'benefitName', 'title', 'coverageBenefit', 'benefit'].some(
+    (field) => response[field] != null,
+  )
   if (isBenefitRecord) return [response]
   throw new Error('The insurance benefits endpoint returned an unsupported response.')
 }
@@ -50,9 +48,7 @@ export const insuranceApi = {
 
     console.log('Insurance Plans API response:', response)
 
-    const plans = Array.isArray(response)
-      ? response
-      : response.plans ?? response.Plans ?? []
+    const plans = Array.isArray(response) ? response : (response.plans ?? response.Plans ?? [])
 
     return Array.isArray(plans) ? plans : []
   },
@@ -62,12 +58,19 @@ export const insuranceApi = {
   purchase: (body) => call('POST', 'Purchase', body),
 
   getBenefits: async (insurancePlanId) => {
-    const response = await call('GET', `Benefits?InsurancePlanId=${encodeURIComponent(insurancePlanId)}`)
+    const response = await call(
+      'GET',
+      `Benefits?InsurancePlanId=${encodeURIComponent(insurancePlanId)}`,
+    )
     const benefits = extractBenefits(response)
-    if (!benefits || benefits.some(benefit =>
-      typeof benefit !== 'string'
-      && (!benefit || typeof benefit !== 'object' || Array.isArray(benefit)),
-    )) {
+    if (
+      !benefits ||
+      benefits.some(
+        (benefit) =>
+          typeof benefit !== 'string' &&
+          (!benefit || typeof benefit !== 'object' || Array.isArray(benefit)),
+      )
+    ) {
       throw new Error('The insurance benefits endpoint returned an unsupported response.')
     }
     return benefits
