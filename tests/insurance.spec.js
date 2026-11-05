@@ -431,10 +431,34 @@ test('unsuccessful insurance payment stays at checkout and displays the bank err
   await page.getByRole('button', { name: 'Confirm purchase' }).click()
 
   await expect(page).toHaveURL(/\/insurance\/checkout$/)
-  await expect(page.getByRole('alert')).toHaveText('SMUtBank declined the payment.')
+  const declineDialog = page.getByRole('alertdialog', { name: 'Payment unsuccessful' })
+  await expect(declineDialog).toBeVisible()
+  await expect(declineDialog).toContainText('SMUtBank declined the payment.')
   await expect(page.getByRole('heading', { name: 'Insurance purchase confirmed' })).toHaveCount(0)
   await expect(page.getByText('MUST-NOT-BE-SHOWN')).toHaveCount(0)
   await page.waitForTimeout(300)
+  expect(purchaseRequests).toBe(1)
+})
+
+test('network timeouts are not presented as confirmed payment declines', async ({ page }) => {
+  let purchaseRequests = 0
+  await seedValidCheckout(page)
+  await page.route('**/InsuranceAPI/Plans', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
+  }))
+  await page.route('**/InsuranceAPI/Purchase', async route => {
+    purchaseRequests += 1
+    await route.abort('timedout')
+  })
+  await page.goto('/insurance/checkout')
+  await page.goto('/insurance/checkout')
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+
+  await expect(page).toHaveURL(/\/insurance\/checkout$/)
+  await expect(page.getByRole('alert')).toHaveText('Failed to fetch')
+  await expect(page.getByRole('heading', { name: 'Payment unsuccessful' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Insurance purchase confirmed' })).toHaveCount(0)
   expect(purchaseRequests).toBe(1)
 })
 
