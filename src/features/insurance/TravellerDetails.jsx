@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useChildren } from "../family/queries";
+import { useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { useChildren } from '../family/queries'
 import {
   getBirthDateMinInputValue,
   getTodayDateInputValue,
@@ -8,35 +8,35 @@ import {
   isReasonableBirthDate,
   isValidTripDates,
   planLabel,
-} from "./data";
-import { useInsurancePlans, useInsuranceQuote } from "./queries";
-import { getTrip, saveDraft, clearPurchaseResult } from "./storage";
-import Notice from "./components/Notice";
-import InsuranceLayout from "./components/InsuranceLayout";
+} from './data'
+import { useInsurancePlans, useInsuranceQuote } from './queries'
+import { getTrip, saveDraft, clearPurchaseResult } from './storage'
+import Notice from './components/Notice'
+import InsuranceLayout from './components/InsuranceLayout'
 
 export default function TravellerDetails() {
-  const { planId } = useSearch({ from: "/insurance/travellers" });
-  const navigate = useNavigate();
-  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans();
-  const plan = plans.find((p) => String(p.id) === String(planId));
-  const quote = useInsuranceQuote();
+  const { planId } = useSearch({ from: '/insurance/travellers' })
+  const navigate = useNavigate()
+  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans()
+  const plan = plans.find((p) => String(p.id) === String(planId))
+  const quote = useInsuranceQuote()
   const {
     data: linkedChildren = [],
     isLoading: childrenLoading,
     error: childrenError,
-  } = useChildren();
-  const [coverType, setCoverType] = useState("individual");
-  const [selectChildren, setSelectChildren] = useState(false);
-  const [travellers, setTravellers] = useState([{ name: "", dob: "", nationalityCode: "" }]);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  } = useChildren()
+  const [coverType, setCoverType] = useState('individual')
+  const [selectChildren, setSelectChildren] = useState(false)
+  const [travellers, setTravellers] = useState([{ name: '', dob: '', nationalityCode: '' }])
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
 
   if (isLoading)
     return (
       <InsuranceLayout>
         <div className="card muted">Loading plan…</div>
       </InsuranceLayout>
-    );
+    )
   if (plansError)
     return (
       <InsuranceLayout>
@@ -45,7 +45,7 @@ export default function TravellerDetails() {
           <Link to="/insurance/plans">Browse plans</Link>
         </div>
       </InsuranceLayout>
-    );
+    )
   if (!plan)
     return (
       <InsuranceLayout>
@@ -53,35 +53,35 @@ export default function TravellerDetails() {
           Choose a plan first. <Link to="/insurance/plans">Browse plans</Link>
         </div>
       </InsuranceLayout>
-    );
+    )
 
-  const trip = getTrip();
-  const today = getTodayDateInputValue();
-  const yesterday = getYesterdayDateInputValue();
-  const earliestBirthDate = getBirthDateMinInputValue();
-  const maxTravellers = Number(plan.maxTravellers) || 1;
-  const activeChildren = linkedChildren.filter((child) => child.status === "Active");
+  const trip = getTrip()
+  const today = getTodayDateInputValue()
+  const yesterday = getYesterdayDateInputValue()
+  const earliestBirthDate = getBirthDateMinInputValue()
+  const maxTravellers = Number(plan.maxTravellers) || 1
+  const activeChildren = linkedChildren.filter((child) => child.status === 'Active')
 
   async function submit(e) {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError('')
     if (
       !trip.destination ||
-      !/^[A-Za-z]{2}$/.test(trip.destinationCode || "") ||
+      !/^[A-Za-z]{2}$/.test(trip.destinationCode || '') ||
       !isValidTripDates(trip.startDate, trip.endDate, today)
     ) {
       setError(
-        "Please enter a destination, country code, and travel dates starting today or later, with the return date on or after departure.",
-      );
-      return;
+        'Please enter a destination, country code, and travel dates starting today or later, with the return date on or after departure.',
+      )
+      return
     }
     if (travellers.length > maxTravellers) {
-      setError(`This plan allows up to ${maxTravellers} traveller(s).`);
-      return;
+      setError(`This plan allows up to ${maxTravellers} traveller(s).`)
+      return
     }
-    if (coverType === "family" && travellers.length === 0) {
-      setError("Select at least one linked child for the family bundle.");
-      return;
+    if (coverType === 'family' && travellers.length === 0) {
+      setError('Select at least one linked child for the family bundle.')
+      return
     }
     if (
       travellers.some(
@@ -92,13 +92,13 @@ export default function TravellerDetails() {
       )
     ) {
       setError(
-        "Enter each traveller’s name, a date of birth before today and within the past 120 years, and a 2-letter nationality code.",
-      );
-      return;
+        'Enter each traveller’s name, a date of birth before today and within the past 120 years, and a 2-letter nationality code.',
+      )
+      return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Enter a valid contact email.");
-      return;
+      setError('Enter a valid contact email.')
+      return
     }
 
     try {
@@ -107,7 +107,7 @@ export default function TravellerDetails() {
         CoverageStart: trip.startDate,
         CoverageEnd: trip.endDate,
         TravellerCount: travellers.length,
-      });
+      })
       const draft = {
         planId: String(plan.id),
         insurancePlanId: Number(plan.id),
@@ -121,43 +121,43 @@ export default function TravellerDetails() {
         email: email.trim(),
         trip: { ...trip, destinationCode: trip.destinationCode.toUpperCase() },
         quote: quoteResult,
-      };
-      saveDraft(draft);
-      clearPurchaseResult();
-      await navigate({ to: "/insurance/checkout" });
+      }
+      saveDraft(draft)
+      clearPurchaseResult()
+      await navigate({ to: '/insurance/checkout' })
     } catch (e) {
-      setError(e.message || "Could not calculate a quote. Please try again.");
+      setError(e.message || 'Could not calculate a quote. Please try again.')
     }
   }
 
   function toggleFamilyChildren(enabled) {
-    setSelectChildren(enabled);
-    if (!enabled) setTravellers([]);
-    setError("");
+    setSelectChildren(enabled)
+    if (!enabled) setTravellers([])
+    setError('')
   }
 
   function toggleChild(child, checked) {
     if (checked && travellers.length >= maxTravellers) {
-      setError(`This plan allows up to ${maxTravellers} traveller(s).`);
-      return;
+      setError(`This plan allows up to ${maxTravellers} traveller(s).`)
+      return
     }
 
-    setError("");
+    setError('')
     setTravellers((current) =>
       checked
         ? [
             ...current,
             {
               familyLinkId: child.familyLinkId,
-              name: child.nickname || "",
-              dob: "",
-              nationalityCode: "",
+              name: child.nickname || '',
+              dob: '',
+              nationalityCode: '',
             },
           ]
         : current.filter(
             (traveller) => String(traveller.familyLinkId) !== String(child.familyLinkId),
           ),
-    );
+    )
   }
 
   function updateTraveller(index, field, value) {
@@ -165,7 +165,7 @@ export default function TravellerDetails() {
       current.map((traveller, travellerIndex) =>
         travellerIndex === index ? { ...traveller, [field]: value } : traveller,
       ),
-    );
+    )
   }
 
   return (
@@ -184,30 +184,30 @@ export default function TravellerDetails() {
             id="cover"
             value={coverType}
             onChange={(e) => {
-              const next = e.target.value;
-              setCoverType(next);
-              setSelectChildren(false);
-              setTravellers(next === "family" ? [] : [{ name: "", dob: "", nationalityCode: "" }]);
-              setError("");
+              const next = e.target.value
+              setCoverType(next)
+              setSelectChildren(false)
+              setTravellers(next === 'family' ? [] : [{ name: '', dob: '', nationalityCode: '' }])
+              setError('')
             }}
           >
             <option value="individual">Individual</option>
             {maxTravellers > 1 && <option value="family">Family</option>}
           </select>
         </div>
-        {coverType === "family" && (
+        {coverType === 'family' && (
           <div className="field">
-            <label className="row" style={{ alignItems: "center", gap: 8 }}>
+            <label className="row" style={{ alignItems: 'center', gap: 8 }}>
               <input
                 type="checkbox"
                 checked={selectChildren}
                 onChange={(e) => toggleFamilyChildren(e.target.checked)}
-                style={{ width: "auto" }}
+                style={{ width: 'auto' }}
               />
               Select my linked children
             </label>
             <small className="muted">
-              Choose one or more active children to include in this family bundle (up to{" "}
+              Choose one or more active children to include in this family bundle (up to{' '}
               {maxTravellers} travellers).
             </small>
             {selectChildren && (
@@ -226,7 +226,7 @@ export default function TravellerDetails() {
                 {activeChildren.map((child) => {
                   const checked = travellers.some(
                     (traveller) => String(traveller.familyLinkId) === String(child.familyLinkId),
-                  );
+                  )
                   return (
                     <label className="insurance-child-option" key={child.familyLinkId}>
                       <input
@@ -240,7 +240,7 @@ export default function TravellerDetails() {
                         <small className="muted">{child.childCustomerId}</small>
                       </span>
                     </label>
-                  );
+                  )
                 })}
               </div>
             )}
@@ -249,7 +249,7 @@ export default function TravellerDetails() {
         {travellers.map((t, i) => (
           <div
             key={t.familyLinkId ?? i}
-            style={{ borderTop: i ? "1px solid var(--card-border)" : 0, paddingTop: i ? 14 : 0 }}
+            style={{ borderTop: i ? '1px solid var(--card-border)' : 0, paddingTop: i ? 14 : 0 }}
           >
             <h3 style={{ marginBottom: 12 }}>
               {t.familyLinkId ? `Child traveller ${i + 1}` : `Traveller ${i + 1}`}
@@ -261,7 +261,7 @@ export default function TravellerDetails() {
                   id={`name-${i}`}
                   autoComplete="name"
                   value={t.name}
-                  onChange={(e) => updateTraveller(i, "name", e.target.value)}
+                  onChange={(e) => updateTraveller(i, 'name', e.target.value)}
                   required
                 />
               </div>
@@ -273,7 +273,7 @@ export default function TravellerDetails() {
                   min={earliestBirthDate}
                   max={yesterday}
                   value={t.dob}
-                  onChange={(e) => updateTraveller(i, "dob", e.target.value)}
+                  onChange={(e) => updateTraveller(i, 'dob', e.target.value)}
                   required
                 />
               </div>
@@ -283,7 +283,7 @@ export default function TravellerDetails() {
                   id={`nationality-${i}`}
                   value={t.nationalityCode}
                   onChange={(e) =>
-                    updateTraveller(i, "nationalityCode", e.target.value.toUpperCase())
+                    updateTraveller(i, 'nationalityCode', e.target.value.toUpperCase())
                   }
                   placeholder="SG"
                   maxLength={2}
@@ -307,10 +307,10 @@ export default function TravellerDetails() {
         <p className="muted">
           We’ll request an exact quote from the insurance service before checkout.
         </p>
-        <button type="submit" disabled={quote.isPending} style={{ width: "100%" }}>
-          {quote.isPending ? "Calculating quote…" : "Get quote and review"}
+        <button type="submit" disabled={quote.isPending} style={{ width: '100%' }}>
+          {quote.isPending ? 'Calculating quote…' : 'Get quote and review'}
         </button>
       </form>
     </InsuranceLayout>
-  );
+  )
 }

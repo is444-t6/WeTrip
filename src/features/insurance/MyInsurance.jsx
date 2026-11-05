@@ -1,32 +1,32 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { formatMoney, formatDate, planLabel } from "./data";
-import { useInsurancePlans, useMyInsurance } from "./queries";
-import InsuranceLayout from "./components/InsuranceLayout";
+import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { formatMoney, formatDate, planLabel } from './data'
+import { useInsurancePlans, useMyInsurance } from './queries'
+import InsuranceLayout from './components/InsuranceLayout'
 
 function travellerInitials(name) {
-  return (name || "Traveller")
+  return (name || 'Traveller')
     .trim()
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join("");
+    .join('')
 }
 
 export default function MyInsurance() {
-  const policies = useMyInsurance();
-  const plans = useInsurancePlans();
-  const planById = new Map((plans.data || []).map((p) => [String(p.id), p]));
-  const items = policies.data || [];
-  const [expandedPolicies, setExpandedPolicies] = useState({});
+  const policies = useMyInsurance()
+  const plans = useInsurancePlans()
+  const planById = new Map((plans.data || []).map((p) => [String(p.id), p]))
+  const items = policies.data || []
+  const [expandedPolicies, setExpandedPolicies] = useState({})
 
   function togglePolicy(policyKey) {
-    setExpandedPolicies((current) => ({ ...current, [policyKey]: !current[policyKey] }));
+    setExpandedPolicies((current) => ({ ...current, [policyKey]: !current[policyKey] }))
   }
 
   return (
     <InsuranceLayout>
-      <h1 style={{ fontSize: "1.5rem" }}>My Insurance</h1>
+      <h1 style={{ fontSize: '1.5rem' }}>My Insurance</h1>
       <p className="muted">Policies returned by the insurance service.</p>
       {policies.isLoading && <div className="card muted">Loading your policies…</div>}
       {policies.error && (
@@ -43,15 +43,15 @@ export default function MyInsurance() {
         </div>
       )}
       {items.map((p) => {
-        const plan = planById.get(String(p.insurancePlanId));
+        const plan = planById.get(String(p.insurancePlanId))
         const isExpired =
-          String(p.status || "")
+          String(p.status || '')
             .trim()
-            .toLowerCase() === "expired";
+            .toLowerCase() === 'expired'
         const policyKey =
-          p.purchaseId ?? p.policyNumber ?? `${p.insurancePlanId}-${p.coverageStart}`;
-        const isExpanded = Boolean(expandedPolicies[policyKey]);
-        const travellers = p.travellers || p.coveredTravellers || p.insuredPersons || [];
+          p.purchaseId ?? p.policyNumber ?? `${p.insurancePlanId}-${p.coverageStart}`
+        const isExpanded = Boolean(expandedPolicies[policyKey])
+        const travellers = p.travellers || p.coveredTravellers || p.insuredPersons || []
         return (
           <section className="card insurance-policy-card" key={policyKey}>
             <button
@@ -62,17 +62,17 @@ export default function MyInsurance() {
               onClick={() => togglePolicy(policyKey)}
             >
               <div className="insurance-policy-title">
-                <span className={`badge ${isExpired ? "removed" : "active"}`}>
-                  {p.status || "Policy"}
+                <span className={`badge ${isExpired ? 'removed' : 'active'}`}>
+                  {p.status || 'Policy'}
                 </span>
                 <h2>{plan ? planLabel(plan) : `Plan ${p.insurancePlanId}`}</h2>
-                <span className="muted">Policy number: {p.policyNumber || "—"}</span>
+                <span className="muted">Policy number: {p.policyNumber || '—'}</span>
                 <span className="muted">
                   Coverage: {formatDate(p.coverageStart)} – {formatDate(p.coverageEnd)}
                 </span>
               </div>
               <span className="insurance-policy-expand">
-                {isExpanded ? "Hide details −" : "More information +"}
+                {isExpanded ? 'Hide details −' : 'More information +'}
               </span>
             </button>
             {isExpanded && (
@@ -84,14 +84,14 @@ export default function MyInsurance() {
                   </div>
                   {travellers.length > 0 && (
                     <span className="badge">
-                      {travellers.length} {travellers.length === 1 ? "traveller" : "travellers"}
+                      {travellers.length} {travellers.length === 1 ? 'traveller' : 'travellers'}
                     </span>
                   )}
                 </div>
                 {travellers.length > 0 ? (
                   <ul className="insurance-covered-travellers">
                     {travellers.map((traveller, index) => {
-                      const name = traveller.fullName || traveller.name || "Traveller";
+                      const name = traveller.fullName || traveller.name || 'Traveller'
                       return (
                         <li key={traveller.travellerId ?? traveller.id ?? `${name}-${index}`}>
                           <span className="insurance-traveller-avatar" aria-hidden="true">
@@ -112,7 +112,7 @@ export default function MyInsurance() {
                           </span>
                           <span className="badge active">Covered</span>
                         </li>
-                      );
+                      )
                     })}
                   </ul>
                 ) : (
@@ -131,7 +131,7 @@ export default function MyInsurance() {
                 <div className="insurance-policy-extra" aria-label="Purchase details">
                   <div className="insurance-policy-detail">
                     <span className="insurance-detail-label">Destination</span>
-                    <strong>{p.destinationCode || "—"}</strong>
+                    <strong>{p.destinationCode || '—'}</strong>
                   </div>
                   <div className="insurance-policy-detail">
                     <span className="insurance-detail-label">Premium paid</span>
@@ -145,13 +145,13 @@ export default function MyInsurance() {
               </div>
             )}
           </section>
-        );
+        )
       })}
       <Link to="/insurance">
-        <button className="secondary" style={{ width: "100%" }}>
+        <button className="secondary" style={{ width: '100%' }}>
           Explore plans
         </button>
       </Link>
     </InsuranceLayout>
-  );
+  )
 }

@@ -1,43 +1,43 @@
-import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   formatMoney,
   getTodayDateInputValue,
   isReasonableBirthDate,
   isValidTripDates,
   planLabel,
-} from "./data";
-import { useInsurancePlans, usePurchaseInsurance } from "./queries";
-import { clearPurchaseResult, getDraft, savePurchaseResult } from "./storage";
-import InsuranceLayout from "./components/InsuranceLayout";
+} from './data'
+import { useInsurancePlans, usePurchaseInsurance } from './queries'
+import { clearPurchaseResult, getDraft, savePurchaseResult } from './storage'
+import InsuranceLayout from './components/InsuranceLayout'
 
 export default function Checkout() {
-  const draft = getDraft();
-  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans();
-  const plan = plans.find((p) => String(p.id) === String(draft.insurancePlanId));
-  const purchase = usePurchaseInsurance();
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const quotedDays = Number(draft.quote?.tripDays);
-  const hasQuotedDays = Number.isFinite(quotedDays) && quotedDays > 0;
+  const draft = getDraft()
+  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans()
+  const plan = plans.find((p) => String(p.id) === String(draft.insurancePlanId))
+  const purchase = usePurchaseInsurance()
+  const navigate = useNavigate()
+  const [error, setError] = useState('')
+  const quotedDays = Number(draft.quote?.tripDays)
+  const hasQuotedDays = Number.isFinite(quotedDays) && quotedDays > 0
 
   async function confirmPurchase() {
-    setError("");
+    setError('')
     if (!isValidTripDates(draft.trip?.startDate, draft.trip?.endDate, getTodayDateInputValue())) {
       setError(
-        "Travel dates must start today or later, and the return date must be on or after departure. Please update your trip dates.",
-      );
-      return;
+        'Travel dates must start today or later, and the return date must be on or after departure. Please update your trip dates.',
+      )
+      return
     }
     if (draft.travellers.some((traveller) => !isReasonableBirthDate(traveller.dob))) {
       setError(
-        "Each traveller must have a date of birth before today and within the past 120 years.",
-      );
-      return;
+        'Each traveller must have a date of birth before today and within the past 120 years.',
+      )
+      return
     }
 
     try {
-      clearPurchaseResult();
+      clearPurchaseResult()
       const result = await purchase.mutateAsync({
         InsurancePlanId: Number(draft.insurancePlanId),
         CoverageStart: draft.trip.startDate,
@@ -49,21 +49,21 @@ export default function Checkout() {
           Email: draft.email,
           NationalityCode: t.nationalityCode,
         })),
-      });
+      })
       if (result?.paymentSuccess !== true) {
         setError(
           result?.paymentMessage ||
-            "Payment was unsuccessful. Your insurance purchase was not confirmed.",
-        );
-        return;
+            'Payment was unsuccessful. Your insurance purchase was not confirmed.',
+        )
+        return
       }
 
-      savePurchaseResult(result);
-      await navigate({ to: "/insurance/confirmation" });
+      savePurchaseResult(result)
+      await navigate({ to: '/insurance/confirmation' })
     } catch (e) {
       setError(
-        e.message || "The insurance service could not complete this purchase. Please try again.",
-      );
+        e.message || 'The insurance service could not complete this purchase. Please try again.',
+      )
     }
   }
 
@@ -74,13 +74,13 @@ export default function Checkout() {
           Your checkout details are missing. <Link to="/insurance">Start again</Link>.
         </div>
       </InsuranceLayout>
-    );
+    )
   if (isLoading)
     return (
       <InsuranceLayout>
         <div className="card muted">Loading checkout…</div>
       </InsuranceLayout>
-    );
+    )
   if (plansError)
     return (
       <InsuranceLayout>
@@ -89,7 +89,7 @@ export default function Checkout() {
           <Link to="/insurance">Start again</Link>
         </div>
       </InsuranceLayout>
-    );
+    )
   if (!plan)
     return (
       <InsuranceLayout>
@@ -97,7 +97,7 @@ export default function Checkout() {
           The selected plan is unavailable. <Link to="/insurance">Choose another plan</Link>.
         </div>
       </InsuranceLayout>
-    );
+    )
 
   return (
     <InsuranceLayout>
@@ -127,19 +127,19 @@ export default function Checkout() {
         <h2 style={{ marginBottom: 14 }}>Selected plan</h2>
         <div className="row-between">
           <strong>
-            {planLabel(plan)} · {draft.coverType === "family" ? "Family" : "Individual"}
+            {planLabel(plan)} · {draft.coverType === 'family' ? 'Family' : 'Individual'}
           </strong>
           <strong>{draft.travellers.length} traveller(s)</strong>
         </div>
         <p className="muted" style={{ marginTop: 10 }}>
-          Travellers: {draft.travellers.map((t) => t.name).join(", ")}
+          Travellers: {draft.travellers.map((t) => t.name).join(', ')}
         </p>
         <p className="muted">Contact: {draft.email}</p>
-        <hr style={{ border: 0, borderTop: "1px solid var(--card-border)", margin: "16px 0" }} />
+        <hr style={{ border: 0, borderTop: '1px solid var(--card-border)', margin: '16px 0' }} />
         <div className="row-between">
           <span>
             Final quoted premium
-            {hasQuotedDays ? ` · ${quotedDays} covered ${quotedDays === 1 ? "day" : "days"}` : ""}
+            {hasQuotedDays ? ` · ${quotedDays} covered ${quotedDays === 1 ? 'day' : 'days'}` : ''}
           </span>
           <strong className="money">
             {formatMoney(draft.quote?.totalPremium, draft.quote?.currencyCode || plan.currencyCode)}
@@ -159,10 +159,10 @@ export default function Checkout() {
         type="button"
         disabled={purchase.isPending}
         onClick={confirmPurchase}
-        style={{ width: "100%" }}
+        style={{ width: '100%' }}
       >
-        {purchase.isPending ? "Submitting…" : "Confirm purchase"}
+        {purchase.isPending ? 'Submitting…' : 'Confirm purchase'}
       </button>
     </InsuranceLayout>
-  );
+  )
 }

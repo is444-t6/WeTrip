@@ -1,51 +1,51 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { getTodayDateInputValue, isValidTripDates } from "./data";
-import { getTrip, saveTrip } from "./storage";
-import Notice from "./components/Notice";
-import InsuranceLayout from "./components/InsuranceLayout";
+import { useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { getTodayDateInputValue, isValidTripDates } from './data'
+import { getTrip, saveTrip } from './storage'
+import Notice from './components/Notice'
+import InsuranceLayout from './components/InsuranceLayout'
 
 export default function InsuranceHome() {
-  const search = useSearch({ from: "/insurance/" });
-  const savedTrip = getTrip();
-  const [destination, setDestination] = useState(search.destination || savedTrip.destination || "");
+  const search = useSearch({ from: '/insurance/' })
+  const savedTrip = getTrip()
+  const [destination, setDestination] = useState(search.destination || savedTrip.destination || '')
   const [destinationCode, setDestinationCode] = useState(
-    search.destinationCode || savedTrip.destinationCode || "",
-  );
-  const [startDate, setStartDate] = useState(search.startDate || savedTrip.startDate || "");
-  const [endDate, setEndDate] = useState(search.endDate || savedTrip.endDate || "");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const today = getTodayDateInputValue();
-  const trip = { destination, destinationCode: destinationCode.toUpperCase(), startDate, endDate };
+    search.destinationCode || savedTrip.destinationCode || '',
+  )
+  const [startDate, setStartDate] = useState(search.startDate || savedTrip.startDate || '')
+  const [endDate, setEndDate] = useState(search.endDate || savedTrip.endDate || '')
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const today = getTodayDateInputValue()
+  const trip = { destination, destinationCode: destinationCode.toUpperCase(), startDate, endDate }
 
   function updateTrip(next) {
-    const updated = { ...trip, ...next };
+    const updated = { ...trip, ...next }
     if (next.destinationCode !== undefined)
-      updated.destinationCode = next.destinationCode.toUpperCase();
-    saveTrip(updated);
+      updated.destinationCode = next.destinationCode.toUpperCase()
+    saveTrip(updated)
   }
 
   function continueToPlans(event) {
-    event.preventDefault();
+    event.preventDefault()
     if (
       !destination.trim() ||
       !/^[A-Za-z]{2}$/.test(destinationCode) ||
       !isValidTripDates(startDate, endDate, today)
     ) {
       setError(
-        "Enter a destination, its 2-letter country code, and travel dates starting today or later, with the return date on or after departure.",
-      );
-      return;
+        'Enter a destination, its 2-letter country code, and travel dates starting today or later, with the return date on or after departure.',
+      )
+      return
     }
 
-    saveTrip(trip);
-    navigate({ to: "/insurance/plans" });
+    saveTrip(trip)
+    navigate({ to: '/insurance/plans' })
   }
 
   return (
     <InsuranceLayout>
-      <h1 style={{ fontSize: "1.5rem", marginBottom: 6 }}>Travel insurance</h1>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: 6 }}>Travel insurance</h1>
       <p className="muted">
         First, tell us where and when you’re travelling. You’ll choose an insurance plan next.
       </p>
@@ -59,8 +59,8 @@ export default function InsuranceHome() {
             id="destination"
             value={destination}
             onChange={(e) => {
-              setDestination(e.target.value);
-              updateTrip({ destination: e.target.value });
+              setDestination(e.target.value)
+              updateTrip({ destination: e.target.value })
             }}
             placeholder="e.g. Tokyo, Japan"
             required
@@ -72,8 +72,8 @@ export default function InsuranceHome() {
             id="destinationCode"
             value={destinationCode}
             onChange={(e) => {
-              setDestinationCode(e.target.value);
-              updateTrip({ destinationCode: e.target.value });
+              setDestinationCode(e.target.value)
+              updateTrip({ destinationCode: e.target.value })
             }}
             placeholder="JP"
             maxLength={2}
@@ -91,8 +91,8 @@ export default function InsuranceHome() {
               min={today}
               value={startDate}
               onChange={(e) => {
-                setStartDate(e.target.value);
-                updateTrip({ startDate: e.target.value });
+                setStartDate(e.target.value)
+                updateTrip({ startDate: e.target.value })
               }}
               required
             />
@@ -105,14 +105,14 @@ export default function InsuranceHome() {
               min={startDate > today ? startDate : today}
               value={endDate}
               onChange={(e) => {
-                setEndDate(e.target.value);
-                updateTrip({ endDate: e.target.value });
+                setEndDate(e.target.value)
+                updateTrip({ endDate: e.target.value })
               }}
               required
             />
           </div>
         </div>
-        <button type="submit" style={{ width: "100%" }}>
+        <button type="submit" style={{ width: '100%' }}>
           Continue to insurance plans
         </button>
       </form>
@@ -120,5 +120,5 @@ export default function InsuranceHome() {
         View My Insurance →
       </Link>
     </InsuranceLayout>
-  );
+  )
 }

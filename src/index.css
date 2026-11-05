@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* surfaces */
   --bg: #f3f5f9;
@@ -177,7 +177,7 @@ a {
   border-bottom: 2px solid transparent;
 }
 
-.nav-link[data-active="true"] {
+.nav-link[data-active='true'] {
   color: var(--nav-text);
   border-bottom-color: var(--brand-grad-3);
 }
@@ -230,7 +230,7 @@ a {
   opacity: 0.65;
 }
 
-.insurance-tab[data-active="true"] {
+.insurance-tab[data-active='true'] {
   background: rgba(91, 124, 255, 0.16);
   color: var(--nav-text);
   opacity: 1;
@@ -548,7 +548,7 @@ tr:last-child td {
   inset: 0 0 auto;
   height: 3px;
   background: linear-gradient(90deg, var(--brand-grad-2), var(--brand-grad-3));
-  content: "";
+  content: '';
 }
 
 .insurance-plan-card:hover {

@@ -1,133 +1,133 @@
-import { Link, useParams } from "@tanstack/react-router";
-import { formatMoney, planLabel } from "./data";
-import { useInsurancePlanBenefits, useInsurancePlans } from "./queries";
-import Notice from "./components/Notice";
-import InsuranceLayout from "./components/InsuranceLayout";
+import { Link, useParams } from '@tanstack/react-router'
+import { formatMoney, planLabel } from './data'
+import { useInsurancePlanBenefits, useInsurancePlans } from './queries'
+import Notice from './components/Notice'
+import InsuranceLayout from './components/InsuranceLayout'
 
 const BENEFIT_NAME_FIELDS = [
-  "name",
-  "benefitName",
-  "title",
-  "coverageBenefit",
-  "benefit",
-  "category",
-];
-const BENEFIT_DESCRIPTION_FIELDS = ["description", "benefitDescription", "details"];
+  'name',
+  'benefitName',
+  'title',
+  'coverageBenefit',
+  'benefit',
+  'category',
+]
+const BENEFIT_DESCRIPTION_FIELDS = ['description', 'benefitDescription', 'details']
 const BENEFIT_VALUE_FIELDS = [
-  "coverageLimit",
-  "benefitLimit",
-  "coverageAmount",
-  "benefitAmount",
-  "maximumCoverage",
-  "limit",
-  "value",
-];
-const BENEFIT_STATUS_FIELDS = ["isCovered", "covered", "included", "status"];
-const BENEFIT_METADATA_FIELDS = ["id", "benefitId", "insurancePlanId", "displayOrder"];
+  'coverageLimit',
+  'benefitLimit',
+  'coverageAmount',
+  'benefitAmount',
+  'maximumCoverage',
+  'limit',
+  'value',
+]
+const BENEFIT_STATUS_FIELDS = ['isCovered', 'covered', 'included', 'status']
+const BENEFIT_METADATA_FIELDS = ['id', 'benefitId', 'insurancePlanId', 'displayOrder']
 
 function travellerCount(maxTravellers) {
-  const count = Number(maxTravellers);
-  if (!Number.isFinite(count) || count < 1) return "Not specified";
-  return `${count} ${count === 1 ? "person" : "people"}`;
+  const count = Number(maxTravellers)
+  if (!Number.isFinite(count) || count < 1) return 'Not specified'
+  return `${count} ${count === 1 ? 'person' : 'people'}`
 }
 
 function benefitLabel(key) {
-  return key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (letter) => letter.toUpperCase());
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, (letter) => letter.toUpperCase())
 }
 
 function formatBenefitValue(value) {
   const formatAmount = (amount) =>
-    `S$${new Intl.NumberFormat("en-SG", { maximumFractionDigits: 0 }).format(amount)}`;
-  if (typeof value === "number" && Number.isFinite(value)) return formatAmount(value);
-  if (typeof value !== "string") return String(value);
+    `S$${new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 }).format(amount)}`
+  if (typeof value === 'number' && Number.isFinite(value)) return formatAmount(value)
+  if (typeof value !== 'string') return String(value)
 
   return value.replace(/S?\$?\s*(\d[\d,]*(?:\.\d+)?)/g, (match, amount) => {
-    const numericAmount = Number(amount.replaceAll(",", ""));
-    return Number.isFinite(numericAmount) ? formatAmount(numericAmount) : match;
-  });
+    const numericAmount = Number(amount.replaceAll(',', ''))
+    return Number.isFinite(numericAmount) ? formatAmount(numericAmount) : match
+  })
 }
 
 function sortBenefits(benefits) {
   return benefits
     .map((benefit, index) => {
-      const rawOrder = benefit?.displayOrder;
+      const rawOrder = benefit?.displayOrder
       const order =
-        rawOrder === null || rawOrder === undefined || rawOrder === ""
+        rawOrder === null || rawOrder === undefined || rawOrder === ''
           ? Number.NaN
-          : Number(rawOrder);
-      return { benefit, index, order };
+          : Number(rawOrder)
+      return { benefit, index, order }
     })
     .sort((a, b) => {
-      const aHasOrder = Number.isFinite(a.order);
-      const bHasOrder = Number.isFinite(b.order);
-      if (aHasOrder && bHasOrder) return a.order - b.order || a.index - b.index;
-      if (aHasOrder) return -1;
-      if (bHasOrder) return 1;
-      return a.index - b.index;
+      const aHasOrder = Number.isFinite(a.order)
+      const bHasOrder = Number.isFinite(b.order)
+      if (aHasOrder && bHasOrder) return a.order - b.order || a.index - b.index
+      if (aHasOrder) return -1
+      if (bHasOrder) return 1
+      return a.index - b.index
     })
-    .map(({ benefit }) => benefit);
+    .map(({ benefit }) => benefit)
 }
 
 function benefitDetails(benefit) {
-  if (typeof benefit === "string") return { title: benefit, description: "", details: [] };
-  if (!benefit || typeof benefit !== "object" || Array.isArray(benefit)) {
-    throw new Error("The insurance benefits endpoint returned an invalid benefit.");
+  if (typeof benefit === 'string') return { title: benefit, description: '', details: [] }
+  if (!benefit || typeof benefit !== 'object' || Array.isArray(benefit)) {
+    throw new Error('The insurance benefits endpoint returned an invalid benefit.')
   }
 
   const nameField = BENEFIT_NAME_FIELDS.find(
-    (field) => benefit[field] != null && benefit[field] !== "",
-  );
+    (field) => benefit[field] != null && benefit[field] !== '',
+  )
   const descriptionField = BENEFIT_DESCRIPTION_FIELDS.find(
-    (field) => benefit[field] != null && benefit[field] !== "",
-  );
+    (field) => benefit[field] != null && benefit[field] !== '',
+  )
   const valueField = BENEFIT_VALUE_FIELDS.find(
-    (field) => benefit[field] != null && benefit[field] !== "",
-  );
+    (field) => benefit[field] != null && benefit[field] !== '',
+  )
   const statusField = BENEFIT_STATUS_FIELDS.find(
-    (field) => benefit[field] != null && benefit[field] !== "",
-  );
+    (field) => benefit[field] != null && benefit[field] !== '',
+  )
   const excludedFields = new Set([
     ...BENEFIT_NAME_FIELDS,
     ...BENEFIT_DESCRIPTION_FIELDS,
     ...BENEFIT_VALUE_FIELDS,
     ...BENEFIT_STATUS_FIELDS,
     ...BENEFIT_METADATA_FIELDS,
-  ]);
+  ])
   const details = Object.entries(benefit)
     .filter(
-      ([key, value]) => !excludedFields.has(key) && value != null && typeof value !== "object",
+      ([key, value]) => !excludedFields.has(key) && value != null && typeof value !== 'object',
     )
-    .map(([key, value]) => ({ label: benefitLabel(key), value: String(value) }));
+    .map(([key, value]) => ({ label: benefitLabel(key), value: String(value) }))
 
   if (valueField)
-    details.unshift({ label: "Benefit limit", value: formatBenefitValue(benefit[valueField]) });
+    details.unshift({ label: 'Benefit limit', value: formatBenefitValue(benefit[valueField]) })
   if (statusField) {
-    const status = benefit[statusField];
+    const status = benefit[statusField]
     details.unshift({
-      label: "Status",
-      value: typeof status === "boolean" ? (status ? "Included" : "Not included") : String(status),
-    });
+      label: 'Status',
+      value: typeof status === 'boolean' ? (status ? 'Included' : 'Not included') : String(status),
+    })
   }
 
   return {
-    title: nameField ? String(benefit[nameField]) : "Plan benefit",
-    description: descriptionField ? String(benefit[descriptionField]) : "",
+    title: nameField ? String(benefit[nameField]) : 'Plan benefit',
+    description: descriptionField ? String(benefit[descriptionField]) : '',
     details,
-  };
+  }
 }
 
 export default function PlanDetails() {
-  const { planId } = useParams({ from: "/insurance/plan/$planId" });
-  const { data: plans = [], isLoading, error } = useInsurancePlans();
-  const benefits = useInsurancePlanBenefits(planId);
-  const plan = plans.find((p) => String(p.id) === String(planId));
+  const { planId } = useParams({ from: '/insurance/plan/$planId' })
+  const { data: plans = [], isLoading, error } = useInsurancePlans()
+  const benefits = useInsurancePlanBenefits(planId)
+  const plan = plans.find((p) => String(p.id) === String(planId))
 
   if (isLoading)
     return (
       <InsuranceLayout>
         <div className="card muted">Loading plan…</div>
       </InsuranceLayout>
-    );
+    )
   if (error)
     return (
       <InsuranceLayout>
@@ -136,7 +136,7 @@ export default function PlanDetails() {
           <Link to="/insurance/plans">Back to plans</Link>
         </div>
       </InsuranceLayout>
-    );
+    )
   if (!plan)
     return (
       <InsuranceLayout>
@@ -144,7 +144,7 @@ export default function PlanDetails() {
           Plan not found. <Link to="/insurance/plans">Back to plans</Link>
         </div>
       </InsuranceLayout>
-    );
+    )
 
   return (
     <InsuranceLayout>
@@ -160,11 +160,11 @@ export default function PlanDetails() {
           >
             <div className="insurance-plan-detail-intro">
               <span className="insurance-plan-detail-eyebrow">Travel insurance plan</span>
-              <span className={`badge ${plan.isActive ? "active" : "removed"}`}>
-                {plan.isActive ? "Available" : "Unavailable"}
+              <span className={`badge ${plan.isActive ? 'active' : 'removed'}`}>
+                {plan.isActive ? 'Available' : 'Unavailable'}
               </span>
               <h1 id="insurance-plan-detail-title">{planLabel(plan)}</h1>
-              <p>{plan.description || "Review the plan limits and details before continuing."}</p>
+              <p>{plan.description || 'Review the plan limits and details before continuing.'}</p>
             </div>
           </section>
 
@@ -181,7 +181,7 @@ export default function PlanDetails() {
             <dl className="insurance-plan-detail-facts">
               <div>
                 <dt>Cover type</dt>
-                <dd>{plan.coverageType || "Travel cover"}</dd>
+                <dd>{plan.coverageType || 'Travel cover'}</dd>
               </div>
               <div>
                 <dt>Maximum travellers</dt>
@@ -220,7 +220,7 @@ export default function PlanDetails() {
             {benefits.isSuccess && benefits.data.length > 0 && (
               <ul className="insurance-plan-benefit-list">
                 {sortBenefits(benefits.data).map((benefit, index) => {
-                  const details = benefitDetails(benefit);
+                  const details = benefitDetails(benefit)
                   return (
                     <li
                       className="insurance-plan-benefit"
@@ -237,8 +237,8 @@ export default function PlanDetails() {
                             {details.details.map((detail) => (
                               <div
                                 className={
-                                  detail.label === "Benefit limit"
-                                    ? "insurance-plan-benefit-limit"
+                                  detail.label === 'Benefit limit'
+                                    ? 'insurance-plan-benefit-limit'
                                     : undefined
                                 }
                                 key={detail.label}
@@ -251,7 +251,7 @@ export default function PlanDetails() {
                         )}
                       </div>
                     </li>
-                  );
+                  )
                 })}
               </ul>
             )}
@@ -298,5 +298,5 @@ export default function PlanDetails() {
         </article>
       </div>
     </InsuranceLayout>
-  );
+  )
 }

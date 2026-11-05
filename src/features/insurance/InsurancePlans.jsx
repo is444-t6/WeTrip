@@ -1,59 +1,59 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { formatMoney, isValidTripDates, planLabel } from "./data";
-import { useInsurancePlans } from "./queries";
-import { getTrip } from "./storage";
-import Notice from "./components/Notice";
-import InsuranceLayout from "./components/InsuranceLayout";
+import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { formatMoney, isValidTripDates, planLabel } from './data'
+import { useInsurancePlans } from './queries'
+import { getTrip } from './storage'
+import Notice from './components/Notice'
+import InsuranceLayout from './components/InsuranceLayout'
 
 function travellerLimit(maxTravellers) {
-  return Number(maxTravellers) > 1 ? `Up to ${maxTravellers} people` : null;
+  return Number(maxTravellers) > 1 ? `Up to ${maxTravellers} people` : null
 }
 
 function coverageBadgeClass(coverageType) {
-  const type = (coverageType || "").toLowerCase();
-  if (type.includes("family")) return "insurance-coverage-badge insurance-coverage-family";
-  if (type.includes("individual")) return "insurance-coverage-badge insurance-coverage-individual";
-  return "insurance-coverage-badge";
+  const type = (coverageType || '').toLowerCase()
+  if (type.includes('family')) return 'insurance-coverage-badge insurance-coverage-family'
+  if (type.includes('individual')) return 'insurance-coverage-badge insurance-coverage-individual'
+  return 'insurance-coverage-badge'
 }
 
 export default function InsurancePlans() {
-  const [compare, setCompare] = useState(false);
-  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans();
-  const trip = getTrip();
-  const highestCoverageByCurrency = new Map();
+  const [compare, setCompare] = useState(false)
+  const { data: plans = [], isLoading, error: plansError } = useInsurancePlans()
+  const trip = getTrip()
+  const highestCoverageByCurrency = new Map()
   for (const plan of plans) {
-    const coverage = Number(plan.maxCoverageAmount);
-    const currency = plan.currencyCode || "SGD";
+    const coverage = Number(plan.maxCoverageAmount)
+    const currency = plan.currencyCode || 'SGD'
     if (
       Number.isFinite(coverage) &&
       (!highestCoverageByCurrency.has(currency) ||
         coverage > highestCoverageByCurrency.get(currency))
     ) {
-      highestCoverageByCurrency.set(currency, coverage);
+      highestCoverageByCurrency.set(currency, coverage)
     }
   }
   const hasTrip = Boolean(
     trip.destination?.trim() &&
-    /^[A-Za-z]{2}$/.test(trip.destinationCode || "") &&
+    /^[A-Za-z]{2}$/.test(trip.destinationCode || '') &&
     isValidTripDates(trip.startDate, trip.endDate),
-  );
+  )
 
   return (
     <InsuranceLayout>
       <Link to="/insurance" className="muted">
         ← Edit destination details
       </Link>
-      <h1 style={{ fontSize: "1.5rem", marginTop: 16, marginBottom: 6 }}>
+      <h1 style={{ fontSize: '1.5rem', marginTop: 16, marginBottom: 6 }}>
         Choose an insurance plan
       </h1>
       <p className="muted">
-        Compare plans for {trip.destination || "your trip"} and select the cover that suits you.
+        Compare plans for {trip.destination || 'your trip'} and select the cover that suits you.
       </p>
       <Notice />
       {!hasTrip && (
         <div className="banner">
-          Enter your destination and travel dates before choosing a plan.{" "}
+          Enter your destination and travel dates before choosing a plan.{' '}
           <Link to="/insurance">Add trip details</Link>
         </div>
       )}
@@ -72,7 +72,7 @@ export default function InsurancePlans() {
       <div className="row-between">
         <div className="section-title">Available plans</div>
         <label className="row insurance-compare-toggle">
-          <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />{" "}
+          <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />{' '}
           Compare plans
         </label>
       </div>
@@ -88,7 +88,7 @@ export default function InsurancePlans() {
               <p className="muted">Review coverage and plan details side by side.</p>
             </div>
             <span className="badge">
-              {plans.length} {plans.length === 1 ? "plan" : "plans"}
+              {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
             </span>
           </div>
           <div
@@ -107,7 +107,7 @@ export default function InsurancePlans() {
                     <th scope="col" key={plan.id}>
                       <span className="insurance-plan-name">{planLabel(plan)}</span>
                       <span className="insurance-plan-type">
-                        {plan.coverageType || "Travel cover"}
+                        {plan.coverageType || 'Travel cover'}
                       </span>
                     </th>
                   ))}
@@ -119,16 +119,16 @@ export default function InsurancePlans() {
                     Maximum coverage
                   </th>
                   {plans.map((plan) => {
-                    const currency = plan.currencyCode || "SGD";
+                    const currency = plan.currencyCode || 'SGD'
                     const isHighest =
                       Number(plan.maxCoverageAmount) === highestCoverageByCurrency.get(currency) &&
-                      plans.filter((p) => (p.currencyCode || "SGD") === currency).length > 1;
+                      plans.filter((p) => (p.currencyCode || 'SGD') === currency).length > 1
                     return (
-                      <td key={plan.id} className={isHighest ? "insurance-highlight" : ""}>
+                      <td key={plan.id} className={isHighest ? 'insurance-highlight' : ''}>
                         {formatMoney(plan.maxCoverageAmount, currency)}
                         {isHighest && <span className="insurance-cell-note">Most cover</span>}
                       </td>
-                    );
+                    )
                   })}
                 </tr>
                 <tr>
@@ -136,7 +136,7 @@ export default function InsurancePlans() {
                     Travellers covered
                   </th>
                   {plans.map((plan) => (
-                    <td key={plan.id}>{travellerLimit(plan.maxTravellers) || "—"}</td>
+                    <td key={plan.id}>{travellerLimit(plan.maxTravellers) || '—'}</td>
                   ))}
                 </tr>
                 <tr>
@@ -145,7 +145,7 @@ export default function InsurancePlans() {
                   </th>
                   {plans.map((plan) => (
                     <td key={plan.id} className="insurance-description">
-                      {plan.description || "—"}
+                      {plan.description || '—'}
                     </td>
                   ))}
                 </tr>
@@ -157,7 +157,7 @@ export default function InsurancePlans() {
                     <td key={plan.id}>
                       <Link to="/insurance/plan/$planId" params={{ planId: String(plan.id) }}>
                         <button disabled={!hasTrip || !plan.isActive}>
-                          {plan.isActive ? "Choose plan" : "Unavailable"}
+                          {plan.isActive ? 'Choose plan' : 'Unavailable'}
                         </button>
                       </Link>
                     </td>
@@ -181,7 +181,7 @@ export default function InsurancePlans() {
               <div className="insurance-plan-header-coverage">
                 <div className="insurance-plan-type-slot">
                   <span className={`badge ${coverageBadgeClass(plan.coverageType)}`}>
-                    {plan.coverageType || "Travel cover"}
+                    {plan.coverageType || 'Travel cover'}
                   </span>
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function InsurancePlans() {
                 </Link>
                 <Link to="/insurance/plan/$planId" params={{ planId: String(plan.id) }}>
                   <button disabled={!hasTrip || !plan.isActive}>
-                    {plan.isActive ? "Choose plan" : "Unavailable"}
+                    {plan.isActive ? 'Choose plan' : 'Unavailable'}
                   </button>
                 </Link>
               </div>
@@ -217,5 +217,5 @@ export default function InsurancePlans() {
         View My Insurance →
       </Link>
     </InsuranceLayout>
-  );
+  )
 }
