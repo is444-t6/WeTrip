@@ -26,7 +26,7 @@ export function createClient({
   normalize = false,
 }) {
   async function call(method, path, body) {
-    const token = getToken()
+    const token = auth === 'none' ? '' : getToken()
     let url = `${base}/${path}`
     let payload = body
 
@@ -41,8 +41,9 @@ export function createClient({
 
     const res = await fetch(url, {
       method,
-      headers:
-        auth === 'params'
+      headers: auth === 'none'
+        ? payload ? { 'Content-Type': 'application/json' } : undefined
+        : auth === 'params'
           ? { 'Content-Type': 'application/json' }
           : {
               'Content-Type': 'application/json',
