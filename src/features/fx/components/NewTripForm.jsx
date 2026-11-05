@@ -56,11 +56,11 @@ export default function NewTripForm() {
   if (!open) {
     return (
       <button
-        style={{ width: "100%" }}
+        style={{ width: '100%' }}
         onClick={() => setOpen(true)}
         disabled={active.length === 0}
       >
-        {active.length === 0 ? "Link a child first" : "New trip goal"}
+        {active.length === 0 ? 'Link a child first' : 'New trip goal'}
       </button>
     );
   }
@@ -171,9 +171,9 @@ export default function NewTripForm() {
         <div
           className="row-between"
           style={{
-            background: "var(--accent-soft)",
-            padding: "10px 14px",
-            borderRadius: "var(--radius-sm)",
+            background: 'var(--accent-soft)',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-sm)',
             marginBottom: 14,
           }}
         >
@@ -183,8 +183,8 @@ export default function NewTripForm() {
               {quote.data?.forwardRate
                 ? Number(quote.data.forwardRate).toFixed(4)
                 : quote.isLoading
-                  ? "…"
-                  : "—"}{" "}
+                  ? '…'
+                  : '—'}{' '}
               {currency}
             </strong>
             <span className="muted" style={{ fontSize: "0.8em" }}>

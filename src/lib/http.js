@@ -22,7 +22,7 @@ export function createClient({
   base,
   apiKey,
   getToken = getSessionToken,
-  auth = "header",
+  auth = 'header',
   normalize = false,
 }) {
   async function call(method, path, body) {
@@ -66,10 +66,10 @@ export function createClient({
 
   function qs(params) {
     const entries = Object.entries(params).filter(
-      ([, v]) => v !== undefined && v !== null && v !== "",
-    );
-    if (entries.length === 0) return "";
-    return "?" + new URLSearchParams(entries).toString();
+      ([, v]) => v !== undefined && v !== null && v !== '',
+    )
+    if (entries.length === 0) return ''
+    return '?' + new URLSearchParams(entries).toString()
   }
 
   return { call, qs };
