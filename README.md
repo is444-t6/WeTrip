@@ -28,13 +28,13 @@ folders needs to change.
 
 ## Screens
 
-| Route | What |
-|---|---|
-| `/family` | role-aware family home |
-| `/family/dev-login` | dev session stub |
-| `/family/child/:familyLinkId` | budget, allowance, top-up, expenses, trend |
-| `/fx` | trip goals (parent) / trips (child), live quote, check-now |
-| `/fx/trips/:tripId` | locked pot, rate watch, locks, spending, close & convert back |
+| Route                         | What                                                          |
+| ----------------------------- | ------------------------------------------------------------- |
+| `/family`                     | role-aware family home                                        |
+| `/family/dev-login`           | dev session stub                                              |
+| `/family/child/:familyLinkId` | budget, allowance, top-up, expenses, trend                    |
+| `/fx`                         | trip goals (parent) / trips (child), live quote, check-now    |
+| `/fx/trips/:tripId`           | locked pot, rate watch, locks, spending, close & convert back |
 
 ## Test the OutSystems setup
 

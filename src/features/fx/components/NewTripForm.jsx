@@ -55,7 +55,11 @@ export default function NewTripForm() {
 
   if (!open) {
     return (
-      <button style={{ width: '100%' }} onClick={() => setOpen(true)} disabled={active.length === 0}>
+      <button
+        style={{ width: '100%' }}
+        onClick={() => setOpen(true)}
+        disabled={active.length === 0}
+      >
         {active.length === 0 ? 'Link a child first' : 'New trip goal'}
       </button>
     )
@@ -65,7 +69,9 @@ export default function NewTripForm() {
     <div className="card">
       <div className="card-header">
         <h3>New trip goal</h3>
-        <button className="ghost" type="button" onClick={() => setOpen(false)}>Close</button>
+        <button className="ghost" type="button" onClick={() => setOpen(false)}>
+          Close
+        </button>
       </div>
       <Banner>{create.error?.message}</Banner>
 
@@ -94,13 +100,20 @@ export default function NewTripForm() {
         <div className="grid-2">
           <div className="field">
             <label>Destination</label>
-            <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Tokyo" required />
+            <input
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="Tokyo"
+              required
+            />
           </div>
           <div className="field">
             <label>Currency</label>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
+                <option key={c.code} value={c.code}>
+                  {c.code} — {c.name}
+                </option>
               ))}
             </select>
           </div>
@@ -109,30 +122,67 @@ export default function NewTripForm() {
         <div className="grid-2">
           <div className="field">
             <label>Depart</label>
-            <input type="date" value={tripStartDate} onChange={(e) => setTripStartDate(e.target.value)} required />
+            <input
+              type="date"
+              value={tripStartDate}
+              onChange={(e) => setTripStartDate(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Return</label>
-            <input type="date" value={tripEndDate} onChange={(e) => setTripEndDate(e.target.value)} required />
+            <input
+              type="date"
+              value={tripEndDate}
+              onChange={(e) => setTripEndDate(e.target.value)}
+              required
+            />
           </div>
         </div>
 
         <div className="grid-2">
           <div className="field">
             <label>Budget (SGD)</label>
-            <input type="number" step="0.01" min="1" value={targetBudgetSgd} onChange={(e) => setTargetBudgetSgd(e.target.value)} required />
+            <input
+              type="number"
+              step="0.01"
+              min="1"
+              value={targetBudgetSgd}
+              onChange={(e) => setTargetBudgetSgd(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Target rate ({currency} per SGD)</label>
-            <input type="number" step="0.0001" min="0.0001" value={targetRate} onChange={(e) => setTargetRate(e.target.value)} required />
+            <input
+              type="number"
+              step="0.0001"
+              min="0.0001"
+              value={targetRate}
+              onChange={(e) => setTargetRate(e.target.value)}
+              required
+            />
           </div>
         </div>
 
-        <div className="row-between" style={{ background: 'var(--accent-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: 14 }}>
+        <div
+          className="row-between"
+          style={{
+            background: 'var(--accent-soft)',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: 14,
+          }}
+        >
           <div className="stack">
             <span className="muted">Live quote · {period}</span>
             <strong className="money">
-              {quote.data?.forwardRate ? Number(quote.data.forwardRate).toFixed(4) : quote.isLoading ? '…' : '—'} {currency}
+              {quote.data?.forwardRate
+                ? Number(quote.data.forwardRate).toFixed(4)
+                : quote.isLoading
+                  ? '…'
+                  : '—'}{' '}
+              {currency}
             </strong>
             <span className="muted" style={{ fontSize: '0.8em' }}>
               spot {quote.data?.spotRate ? Number(quote.data.spotRate).toFixed(4) : '—'}
@@ -149,8 +199,14 @@ export default function NewTripForm() {
         </div>
 
         <label className="row" style={{ marginBottom: 14 }}>
-          <input type="checkbox" checked={autoLockEnabled} onChange={(e) => setAutoLockEnabled(e.target.checked)} />
-          <span className="muted" style={{ marginLeft: 8 }}>Lock automatically when the target rate is hit</span>
+          <input
+            type="checkbox"
+            checked={autoLockEnabled}
+            onChange={(e) => setAutoLockEnabled(e.target.checked)}
+          />
+          <span className="muted" style={{ marginLeft: 8 }}>
+            Lock automatically when the target rate is hit
+          </span>
         </label>
 
         <button type="submit" disabled={create.isPending} style={{ width: '100%' }}>

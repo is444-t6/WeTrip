@@ -50,7 +50,11 @@ export default function ChildHome() {
         label={dash.nickname ? `${dash.nickname}'s balance` : 'Your balance'}
         amount={dash.balance}
         currency={dash.hostCurrency}
-        sub={dash.rate > 0 && dash.hostCurrency !== 'SGD' ? `rate ${dash.rate} SGD/${dash.hostCurrency}` : undefined}
+        sub={
+          dash.rate > 0 && dash.hostCurrency !== 'SGD'
+            ? `rate ${dash.rate} SGD/${dash.hostCurrency}`
+            : undefined
+        }
       />
 
       <div className="card">
@@ -64,8 +68,12 @@ export default function ChildHome() {
               <div style={{ width: `${pct}%` }} />
             </div>
             <div className="row-between">
-              <span className="money"><Money amount={dash.spent} /></span>
-              <span className="muted">of <Money amount={dash.budget} /></span>
+              <span className="money">
+                <Money amount={dash.spent} />
+              </span>
+              <span className="muted">
+                of <Money amount={dash.budget} />
+              </span>
             </div>
             <p className="muted" style={{ marginTop: 6 }}>
               <Money amount={dash.remaining} /> remaining
@@ -80,7 +88,9 @@ export default function ChildHome() {
               {dash.byCategory.map((c) => (
                 <tr key={c.category}>
                   <td>{c.category}</td>
-                  <td style={{ textAlign: 'right' }}><Money amount={c.total} /></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <Money amount={c.total} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -95,12 +105,23 @@ export default function ChildHome() {
         <form onSubmit={pay}>
           <div className="field">
             <label>Merchant account id</label>
-            <input value={merchantAccountId} onChange={(e) => setMerchantAccountId(e.target.value)} required />
+            <input
+              value={merchantAccountId}
+              onChange={(e) => setMerchantAccountId(e.target.value)}
+              required
+            />
           </div>
           <div className="grid-2">
             <div className="field">
               <label>Amount</label>
-              <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+              />
             </div>
             <div className="field">
               <label>Category</label>
@@ -111,7 +132,9 @@ export default function ChildHome() {
             <label>Note (optional)</label>
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
-          <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>Pay</button>
+          <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
+            Pay
+          </button>
         </form>
       </div>
     </div>

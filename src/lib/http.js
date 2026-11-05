@@ -18,7 +18,13 @@ export function decap(obj) {
 // `auth: 'params'` sends them as query/body fields instead of headers — the
 // SmartFX composite can't read request headers without a cross-module
 // dependency on HTTPRequestHandler.
-export function createClient({ base, apiKey, getToken = getSessionToken, auth = 'header', normalize = false }) {
+export function createClient({
+  base,
+  apiKey,
+  getToken = getSessionToken,
+  auth = 'header',
+  normalize = false,
+}) {
   async function call(method, path, body) {
     const token = auth === 'none' ? '' : getToken()
     let url = `${base}/${path}`
@@ -56,7 +62,9 @@ export function createClient({ base, apiKey, getToken = getSessionToken, auth = 
   }
 
   function qs(params) {
-    const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    const entries = Object.entries(params).filter(
+      ([, v]) => v !== undefined && v !== null && v !== '',
+    )
     if (entries.length === 0) return ''
     return '?' + new URLSearchParams(entries).toString()
   }

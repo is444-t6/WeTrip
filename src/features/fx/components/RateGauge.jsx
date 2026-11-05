@@ -8,7 +8,9 @@ export default function RateGauge({ current, target, currency }) {
     <div className="card">
       <div className="card-header">
         <h3>Rate watch</h3>
-        <span className={`badge ${hit ? 'active' : 'pending'}`}>{hit ? 'target hit' : 'watching'}</span>
+        <span className={`badge ${hit ? 'active' : 'pending'}`}>
+          {hit ? 'target hit' : 'watching'}
+        </span>
       </div>
 
       <div className="row-between" style={{ marginBottom: 8 }}>
@@ -23,7 +25,9 @@ export default function RateGauge({ current, target, currency }) {
       </div>
 
       <div className="row-between muted" style={{ fontSize: '0.82em', marginTop: 6 }}>
-        <span>Target {tgt ? tgt.toFixed(4) : '—'} {currency}</span>
+        <span>
+          Target {tgt ? tgt.toFixed(4) : '—'} {currency}
+        </span>
         <span>{hit ? 'auto-lock condition met' : `${Math.max(0, pct).toFixed(0)}% of target`}</span>
       </div>
     </div>

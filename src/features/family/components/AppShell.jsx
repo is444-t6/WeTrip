@@ -13,7 +13,13 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
                   stroke="#fff"
                   strokeWidth="1.6"
                 />
-                <path d="M7.5 12.5 10.5 15.5 16.5 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M7.5 12.5 10.5 15.5 16.5 9"
+                  stroke="#fff"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
             WeTrip
@@ -26,7 +32,9 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
             </div>
             {onSignOut && (
-              <button className="ghost" onClick={onSignOut}>Sign out</button>
+              <button className="ghost" onClick={onSignOut}>
+                Sign out
+              </button>
             )}
           </div>
         </div>

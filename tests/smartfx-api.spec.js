@@ -9,10 +9,15 @@ import { test, expect } from '@playwright/test'
 //
 // Run: npm run test:smartfx
 
-const BASE = process.env.SMARTFX_BASE ?? 'https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX'
+const BASE =
+  process.env.SMARTFX_BASE ??
+  'https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX'
 const API_KEY = process.env.SMARTFX_API_KEY ?? 'changeme'
 
-const PARENT = { id: process.env.PARENT_CUSTOMER_ID ?? '0000002169', account: process.env.PARENT_ACCOUNT_ID ?? '0000004554' }
+const PARENT = {
+  id: process.env.PARENT_CUSTOMER_ID ?? '0000002169',
+  account: process.env.PARENT_ACCOUNT_ID ?? '0000004554',
+}
 const CHILD = { id: process.env.CHILD_CUSTOMER_ID ?? '0000002828' }
 const FAMILY_LINK_ID = Number(process.env.FAMILY_LINK_ID ?? 1)
 const CURRENCY = process.env.SMARTFX_CURRENCY ?? 'JPY'
@@ -27,9 +32,11 @@ function withAuth(path) {
 }
 
 const get = (request, path) => request.get(withAuth(path))
-const post = (request, path, data) => request.post(`${BASE}/${path}`, { data: { ...(data ?? {}), ...auth } })
+const post = (request, path, data) =>
+  request.post(`${BASE}/${path}`, { data: { ...(data ?? {}), ...auth } })
 
-const today = (offsetDays = 0) => new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10)
+const today = (offsetDays = 0) =>
+  new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10)
 const near = (actual, expected, tolerance = 0.01) =>
   Math.abs(Number(actual) - Number(expected)) <= Math.abs(Number(expected)) * tolerance
 
@@ -49,7 +56,9 @@ test.describe.serial('SmartFX API', () => {
     quote = body
   })
 
-  test('GetRate rejects an unsupported currency (KRW has no benchmark rate)', async ({ request }) => {
+  test('GetRate rejects an unsupported currency (KRW has no benchmark rate)', async ({
+    request,
+  }) => {
     const res = await get(request, 'GetRate?currency=KRW&period=3M')
     expect(res.ok()).toBeFalsy()
     expect((await res.json()).Errors?.[0]).toMatch(/bad request/i)
