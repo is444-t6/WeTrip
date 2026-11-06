@@ -37,6 +37,12 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               </Link>
               {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
             </div>
+            <div className="nav-budget-menu">
+              <Link to="/budget" className="nav-link">
+                Budget
+              </Link>
+              {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
+            </div>
             {onSignOut && (
               <button className="ghost" onClick={onSignOut}>
                 Sign out

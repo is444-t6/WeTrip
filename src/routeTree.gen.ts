@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BudgetIndexRouteImport } from './routes/budget.index'
+import { Route as BudgetTripIdRouteImport } from './routes/budget.$tripId'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
 import { Route as FamilyDevLoginRouteImport } from './routes/family.dev-login'
 import { Route as FxIndexRouteImport } from './routes/fx.index'
@@ -26,6 +28,16 @@ import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetIndexRoute = BudgetIndexRouteImport.update({
+  id: '/budget/',
+  path: '/budget/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetTripIdRoute = BudgetTripIdRouteImport.update({
+  id: '/budget/$tripId',
+  path: '/budget/$tripId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FamilyIndexRoute = FamilyIndexRouteImport.update({
@@ -91,12 +103,14 @@ const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
@@ -106,12 +120,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/budget': typeof BudgetIndexRoute
   '/family': typeof FamilyIndexRoute
   '/fx': typeof FxIndexRoute
   '/insurance': typeof InsuranceIndexRoute
@@ -122,12 +138,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
@@ -139,12 +157,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
@@ -154,12 +174,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/budget'
     | '/family'
     | '/fx'
     | '/insurance'
@@ -169,12 +191,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
@@ -185,12 +209,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BudgetTripIdRoute: typeof BudgetTripIdRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
   InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
   InsuranceConfirmationRoute: typeof InsuranceConfirmationRoute
   InsurancePlansRoute: typeof InsurancePlansRoute
   InsurancePoliciesRoute: typeof InsurancePoliciesRoute
   InsuranceTravellersRoute: typeof InsuranceTravellersRoute
+  BudgetIndexRoute: typeof BudgetIndexRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
   FxIndexRoute: typeof FxIndexRoute
   InsuranceIndexRoute: typeof InsuranceIndexRoute
@@ -206,6 +232,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budget/': {
+      id: '/budget/'
+      path: '/budget'
+      fullPath: '/budget/'
+      preLoaderRoute: typeof BudgetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budget/$tripId': {
+      id: '/budget/$tripId'
+      path: '/budget/$tripId'
+      fullPath: '/budget/$tripId'
+      preLoaderRoute: typeof BudgetTripIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/family/': {
@@ -297,12 +337,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BudgetTripIdRoute: BudgetTripIdRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,
   InsuranceCheckoutRoute: InsuranceCheckoutRoute,
   InsuranceConfirmationRoute: InsuranceConfirmationRoute,
   InsurancePlansRoute: InsurancePlansRoute,
   InsurancePoliciesRoute: InsurancePoliciesRoute,
   InsuranceTravellersRoute: InsuranceTravellersRoute,
+  BudgetIndexRoute: BudgetIndexRoute,
   FamilyIndexRoute: FamilyIndexRoute,
   FxIndexRoute: FxIndexRoute,
   InsuranceIndexRoute: InsuranceIndexRoute,

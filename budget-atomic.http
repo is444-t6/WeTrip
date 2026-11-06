@@ -1,0 +1,11 @@
+### Set budget (atomic)
+POST https://smuedu-dev.outsystemsenterprise.com/WeTrip_Budget_Atomic/rest/BudgetAPI/budgets
+Content-Type: application/json
+
+{
+  "TripId": 1,
+  "ChildAccountId": "ACC001",
+  "CategoryId": 1,
+  "LimitAmount": 200,
+  "Currency": "SGD"
+}
