@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import {
   useBalanceTrend,
@@ -56,7 +56,11 @@ export default function ChildDetail() {
             {child.nickname || child.childCustomerId}
           </h1>
           <div className="section-title">Budget</div>
-          <BudgetCard familyLinkId={familyLinkId} />
+          <BudgetCard
+            familyLinkId={familyLinkId}
+            currentBudget={child.budget}
+            currentPeriod={child.period}
+          />
           <div className="section-title">Allowance</div>
           <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
           <div className="section-title">Top up</div>
@@ -71,9 +75,9 @@ export default function ChildDetail() {
   )
 }
 
-function BudgetCard({ familyLinkId }) {
-  const [period, setPeriod] = useState('Monthly')
-  const [amount, setAmount] = useState('')
+function BudgetCard({ familyLinkId, currentBudget, currentPeriod }) {
+  const [period, setPeriod] = useState(currentPeriod === 'Weekly' ? 'Weekly' : 'Monthly')
+  const [amount, setAmount] = useState(currentBudget > 0 ? String(Number(currentBudget)) : '')
   const [ok, setOk] = useState('')
   const setBudget = useSetBudget()
 
@@ -124,6 +128,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
   const [weeklyMonthly, setWeeklyMonthly] = useState('Monthly')
   const [startDate, setStartDate] = useState('')
   const [ok, setOk] = useState('')
+  const [confirmingStop, setConfirmingStop] = useState(false)
   const setup = useSetupAllowance()
   const stop = useStopAllowance()
   const busy = setup.isPending || stop.isPending
@@ -149,10 +154,6 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
           active
         </span>
       )}
-      <p className="muted">
-        Test <code>AddStandingInstruction</code> alone in Postman first to confirm which exact
-        string SMUtBank accepts for weeklyMonthly (Task 17.3 note) — "Weekly"/"Monthly" is a guess.
-      </p>
       <Banner>{setup.error?.message || stop.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
       <form onSubmit={submit}>
@@ -184,16 +185,41 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
           <button disabled={busy} type="submit">
             Set up allowance
           </button>
-          <button
-            disabled={busy}
-            type="button"
-            className="secondary"
-            onClick={() =>
-              stop.mutate(Number(familyLinkId), { onSuccess: () => setOk('Allowance stopped.') })
-            }
-          >
-            Stop allowance
-          </button>
+          {confirmingStop ? (
+            <>
+              <button
+                disabled={busy}
+                type="button"
+                className="danger"
+                onClick={() =>
+                  stop.mutate(Number(familyLinkId), {
+                    onSuccess: () => setOk('Allowance stopped.'),
+                    onSettled: () => setConfirmingStop(false),
+                  })
+                }
+              >
+                Confirm stop
+              </button>
+              <button
+                disabled={busy}
+                type="button"
+                className="secondary"
+                onClick={() => setConfirmingStop(false)}
+              >
+                Keep allowance
+              </button>
+            </>
+          ) : (
+            <button
+              disabled={busy || !hasAllowance}
+              type="button"
+              className="secondary"
+              title={hasAllowance ? undefined : 'No allowance is set up for this child'}
+              onClick={() => setConfirmingStop(true)}
+            >
+              Stop allowance
+            </button>
+          )}
         </div>
       </form>
     </div>
@@ -213,7 +239,7 @@ function TopUpCard({ familyLinkId }) {
       { familyLinkId: Number(familyLinkId), amount: Number(amount), narrative },
       {
         onSuccess: (r) => {
-          setOk(`Transferred. New balance: ${r.balanceAfter}`)
+          setOk(`Transferred. Your balance is now SGD ${Number(r.balanceAfter).toFixed(2)}.`)
           setAmount('')
           setNarrative('')
         },
@@ -284,7 +310,7 @@ function ExpensesCard({ familyLinkId }) {
           <div className="row-between" style={{ marginTop: 10, marginBottom: 4 }}>
             <span className="muted">Total</span>
             <span className="money">
-              <Money amount={result.total ?? 0} currency={result.hostCurrency} />
+              <Money amount={result.total ?? 0} />
             </span>
           </div>
           <table>
@@ -325,8 +351,18 @@ function ExpensesCard({ familyLinkId }) {
 }
 
 function BalanceTrendCard({ familyLinkId }) {
+  // `monthsText` is what the user is typing; `months` is the last valid value
+  // and the only one that fires a request (debounced).
+  const [monthsText, setMonthsText] = useState('6')
   const [months, setMonths] = useState(6)
   const { data: points, error } = useBalanceTrend(Number(familyLinkId), months)
+
+  useEffect(() => {
+    const n = Number(monthsText)
+    if (!Number.isInteger(n) || n < 1 || n > 24) return
+    const t = setTimeout(() => setMonths(n), 400)
+    return () => clearTimeout(t)
+  }, [monthsText])
 
   return (
     <div className="card">
@@ -337,8 +373,8 @@ function BalanceTrendCard({ familyLinkId }) {
           type="number"
           min="1"
           max="24"
-          value={months}
-          onChange={(e) => setMonths(Number(e.target.value) || 6)}
+          value={monthsText}
+          onChange={(e) => setMonthsText(e.target.value)}
         />
       </div>
       {points && (
@@ -346,9 +382,13 @@ function BalanceTrendCard({ familyLinkId }) {
           <tbody>
             {points.map((p) => (
               <tr key={p.yearMonth}>
-                <td>{p.yearMonth}</td>
+                <td>{String(p.yearMonth).slice(0, 7)}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <Money amount={p.balance} />
+                  {p.balance == null ? (
+                    <span className="muted">—</span>
+                  ) : (
+                    <Money amount={p.balance} />
+                  )}
                 </td>
               </tr>
             ))}
@@ -359,11 +399,18 @@ function BalanceTrendCard({ familyLinkId }) {
   )
 }
 
+// Local-date YYYY-MM-DD. toISOString() converts to UTC, which shifts the date
+// by a day for anyone east of Greenwich (e.g. Singapore, UTC+8).
+function ymd(d) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  return ymd(new Date())
 }
 
 function firstOfMonth() {
   const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10)
+  return ymd(new Date(d.getFullYear(), d.getMonth(), 1))
 }

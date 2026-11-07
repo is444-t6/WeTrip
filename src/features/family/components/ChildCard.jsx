@@ -39,7 +39,7 @@ export default function ChildCard({ child }) {
           <div className="row-between" style={{ marginTop: 16 }}>
             <span className="muted">Balance</span>
             <span className="money">
-              <Money amount={child.balance} currency={child.hostCurrency} />
+              <Money amount={child.balance} />
             </span>
           </div>
 

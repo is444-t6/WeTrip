@@ -58,6 +58,15 @@ export default function FamilyHome() {
       {role === 'Parent' && <ParentHome />}
       {role === 'Child' && <ChildHome />}
       {(role === 'Pending' || role === 'None') && <ChildInvite />}
+      {role && !['Parent', 'Child', 'Pending', 'None'].includes(role) && (
+        <div className="card empty">
+          <p>Your family link isn't active.</p>
+          <p className="muted">
+            If you think this is a mistake, ask your parent to link you again from their WeTrip
+            Family screen.
+          </p>
+        </div>
+      )}
     </AppShell>
   )
 }

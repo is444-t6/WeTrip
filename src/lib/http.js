@@ -13,6 +13,28 @@ export function decap(obj) {
   return out
 }
 
+// Backend errors can carry a whole upstream HTML page or a JSON blob
+// ("SMUtBank error 400: {...}"). Surface the readable part, or a generic
+// message when there isn't one.
+export function friendlyError(raw, status) {
+  const generic = `Something went wrong (${status}). Please try again.`
+  if (typeof raw !== 'string' || !raw.trim()) return generic
+  let msg = raw.trim()
+  if (/<\s*(!doctype|html|body)/i.test(msg)) return generic
+  const upstream = msg.match(/^[\w ]+ error \d+:\s*([\s\S]*)$/)
+  if (upstream) {
+    msg = upstream[1].trim()
+    try {
+      const parsed = JSON.parse(msg)
+      msg = parsed?.Errors?.[0] || parsed?.Message || parsed?.message || ''
+    } catch {
+      // not JSON — keep the text as is
+    }
+  }
+  if (!msg || msg.length > 200) return generic
+  return msg
+}
+
 // One HTTP client shape for every WeTrip composite: API key + stub session
 // token, OutSystems `Errors[0]` surfaced as the thrown message.
 // `auth: 'params'` sends them as query/body fields instead of headers — the
@@ -58,8 +80,7 @@ export function createClient({
 
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const message = data?.Errors?.[0] || `Request failed (${res.status})`
-      throw new Error(message)
+      throw new Error(friendlyError(data?.Errors?.[0], res.status))
     }
     return normalize ? decap(data) : data
   }

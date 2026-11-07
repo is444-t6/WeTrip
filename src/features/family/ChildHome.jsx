@@ -49,10 +49,9 @@ export default function ChildHome() {
       <BalanceHero
         label={dash.nickname ? `${dash.nickname}'s balance` : 'Your balance'}
         amount={dash.balance}
-        currency={dash.hostCurrency}
         sub={
-          dash.rate > 0 && dash.hostCurrency !== 'SGD'
-            ? `rate ${dash.rate} SGD/${dash.hostCurrency}`
+          dash.rate > 0 && dash.hostCurrency && dash.hostCurrency !== 'SGD'
+            ? `≈ ${dash.hostCurrency} ${(dash.balance * dash.rate).toFixed(2)} · 1 SGD = ${Number(dash.rate).toFixed(2)} ${dash.hostCurrency}`
             : undefined
         }
       />
