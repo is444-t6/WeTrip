@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BudgetIndexRouteImport } from './routes/budget.index'
+import { Route as BudgetTripIdRouteImport } from './routes/budget.$tripId'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
 import { Route as FamilyDevLoginRouteImport } from './routes/family.dev-login'
 import { Route as FxIndexRouteImport } from './routes/fx.index'
@@ -19,6 +21,8 @@ import { Route as InsuranceConfirmationRouteImport } from './routes/insurance.co
 import { Route as InsurancePlansRouteImport } from './routes/insurance.plans'
 import { Route as InsurancePoliciesRouteImport } from './routes/insurance.policies'
 import { Route as InsuranceTravellersRouteImport } from './routes/insurance.travellers'
+import { Route as PayIndexRouteImport } from './routes/pay.index'
+import { Route as PayHistoryRouteImport } from './routes/pay.history'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
 import { Route as FxTripsTripIdRouteImport } from './routes/fx.trips.$tripId'
 import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan.$planId'
@@ -26,6 +30,16 @@ import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetIndexRoute = BudgetIndexRouteImport.update({
+  id: '/budget/',
+  path: '/budget/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetTripIdRoute = BudgetTripIdRouteImport.update({
+  id: '/budget/$tripId',
+  path: '/budget/$tripId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FamilyIndexRoute = FamilyIndexRouteImport.update({
@@ -73,6 +87,16 @@ const InsuranceTravellersRoute = InsuranceTravellersRouteImport.update({
   path: '/insurance/travellers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PayIndexRoute = PayIndexRouteImport.update({
+  id: '/pay/',
+  path: '/pay/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayHistoryRoute = PayHistoryRouteImport.update({
+  id: '/pay/history',
+  path: '/pay/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FamilyChildFamilyLinkIdRoute = FamilyChildFamilyLinkIdRouteImport.update({
   id: '/family/child/$familyLinkId',
   path: '/family/child/$familyLinkId',
@@ -91,30 +115,38 @@ const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
+  '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
+  '/pay/': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
+  '/budget': typeof BudgetIndexRoute
   '/family': typeof FamilyIndexRoute
   '/fx': typeof FxIndexRoute
   '/insurance': typeof InsuranceIndexRoute
+  '/pay': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
@@ -122,15 +154,19 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
   '/insurance/confirmation': typeof InsuranceConfirmationRoute
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
+  '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
+  '/pay/': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
@@ -139,45 +175,57 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
+    | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
+    | '/pay/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
+    | '/budget'
     | '/family'
     | '/fx'
     | '/insurance'
+    | '/pay'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
   id:
     | '__root__'
     | '/'
+    | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
     | '/insurance/confirmation'
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
+    | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
+    | '/pay/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
@@ -185,15 +233,19 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BudgetTripIdRoute: typeof BudgetTripIdRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
   InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
   InsuranceConfirmationRoute: typeof InsuranceConfirmationRoute
   InsurancePlansRoute: typeof InsurancePlansRoute
   InsurancePoliciesRoute: typeof InsurancePoliciesRoute
   InsuranceTravellersRoute: typeof InsuranceTravellersRoute
+  PayHistoryRoute: typeof PayHistoryRoute
+  BudgetIndexRoute: typeof BudgetIndexRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
   FxIndexRoute: typeof FxIndexRoute
   InsuranceIndexRoute: typeof InsuranceIndexRoute
+  PayIndexRoute: typeof PayIndexRoute
   FamilyChildFamilyLinkIdRoute: typeof FamilyChildFamilyLinkIdRoute
   FxTripsTripIdRoute: typeof FxTripsTripIdRoute
   InsurancePlanPlanIdRoute: typeof InsurancePlanPlanIdRoute
@@ -206,6 +258,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budget/': {
+      id: '/budget/'
+      path: '/budget'
+      fullPath: '/budget/'
+      preLoaderRoute: typeof BudgetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budget/$tripId': {
+      id: '/budget/$tripId'
+      path: '/budget/$tripId'
+      fullPath: '/budget/$tripId'
+      preLoaderRoute: typeof BudgetTripIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/family/': {
@@ -271,6 +337,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InsuranceTravellersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pay/': {
+      id: '/pay/'
+      path: '/pay'
+      fullPath: '/pay/'
+      preLoaderRoute: typeof PayIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/history': {
+      id: '/pay/history'
+      path: '/pay/history'
+      fullPath: '/pay/history'
+      preLoaderRoute: typeof PayHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/family/child/$familyLinkId': {
       id: '/family/child/$familyLinkId'
       path: '/family/child/$familyLinkId'
@@ -297,15 +377,19 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BudgetTripIdRoute: BudgetTripIdRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,
   InsuranceCheckoutRoute: InsuranceCheckoutRoute,
   InsuranceConfirmationRoute: InsuranceConfirmationRoute,
   InsurancePlansRoute: InsurancePlansRoute,
   InsurancePoliciesRoute: InsurancePoliciesRoute,
   InsuranceTravellersRoute: InsuranceTravellersRoute,
+  PayHistoryRoute: PayHistoryRoute,
+  BudgetIndexRoute: BudgetIndexRoute,
   FamilyIndexRoute: FamilyIndexRoute,
   FxIndexRoute: FxIndexRoute,
   InsuranceIndexRoute: InsuranceIndexRoute,
+  PayIndexRoute: PayIndexRoute,
   FamilyChildFamilyLinkIdRoute: FamilyChildFamilyLinkIdRoute,
   FxTripsTripIdRoute: FxTripsTripIdRoute,
   InsurancePlanPlanIdRoute: InsurancePlanPlanIdRoute,

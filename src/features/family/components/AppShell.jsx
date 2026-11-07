@@ -37,6 +37,18 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               </Link>
               {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
             </div>
+            <div className="nav-budget-menu">
+              <Link to="/budget" className="nav-link">
+                Budget
+              </Link>
+              {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
+            </div>
+            <Link to="/pay" className="nav-link" activeOptions={{ exact: true }}>
+              Scan to Pay
+            </Link>
+            <Link to="/pay/history" className="nav-link">
+              My Payments
+            </Link>
             {onSignOut && (
               <button className="ghost" onClick={onSignOut}>
                 Sign out

@@ -20,6 +20,18 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/fx/, '/WeTrip_SmartFX_Composite/rest/SmartFX'),
       },
+      '/api/budget': {
+        target: 'https://smuedu-dev.outsystemsenterprise.com',
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(/^\/api\/budget/, '/WeTrip_Budget_Composite/rest/BudgetComposite'),
+      },
+      // Scan-to-Pay lives in a separate OutSystems environment.
+      '/scantopay': {
+        target: 'https://personal-esnstley.outsystemscloud.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/scantopay/, '/ScanToPay/rest/ScanToPay'),
+      },
     },
   },
 })
