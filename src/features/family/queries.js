@@ -37,10 +37,22 @@ export const usePendingRequests = () =>
   useQuery({ queryKey: keys.requests, queryFn: FamilyApi.getPendingRequests, ...authed() })
 
 export const useMyInvite = () =>
-  useQuery({ queryKey: keys.invite, queryFn: FamilyApi.getMyLinkInvite, ...authed() })
+  useQuery({
+    queryKey: keys.invite,
+    queryFn: FamilyApi.getMyLinkInvite,
+    // "No link yet" can arrive as an error; retrying only delays the answer.
+    retry: false,
+    ...authed(),
+  })
 
 export const useAccounts = () =>
-  useQuery({ queryKey: keys.accounts, queryFn: FamilyApi.getMyAccounts, ...authed() })
+  useQuery({
+    queryKey: keys.accounts,
+    queryFn: FamilyApi.getMyAccounts,
+    // Optional helper for the invite screen; fail fast and let it fall back.
+    retry: false,
+    ...authed(),
+  })
 
 export const useChildDashboard = () =>
   useQuery({ queryKey: keys.dash, queryFn: FamilyApi.getChildDashboard, ...authed() })

@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import { useAcceptLink, useMyInvite } from './queries'
+import { useAcceptLink, useAccounts, useMyInvite } from './queries'
 import Banner from './components/Banner'
+
+// The backend answers "no link for this customer" as a not-found error on some
+// paths and as an empty / hasInvite:false body on others. Both mean the same
+// thing to the child, so neither should read as a failure.
+const isNoLink = (error) => /not found|no family link/i.test(error?.message ?? '')
 
 export default function ChildInvite() {
   const { data: invite, error } = useMyInvite()
+  const accounts = useAccounts()
   const accept = useAcceptLink()
   const [accountId, setAccountId] = useState('')
   const [done, setDone] = useState(false)
@@ -19,15 +25,15 @@ export default function ChildInvite() {
     )
   }
 
-  if (error) return <Banner>{error.message}</Banner>
-  if (!invite) return <p className="muted">Loading…</p>
+  if (error && !isNoLink(error)) return <Banner>{error.message}</Banner>
+  if (!invite && !error) return <p className="muted">Loading…</p>
 
   // FamilyHome renders this for role "Pending" (a real invite exists) and
   // "None" (nobody's linked this customer either way) alike, so this branch
-  // covers genuinely having nothing to accept — not gating on
-  // invite.hasInvite, since that field has been unreliable in testing.
-  // familyLinkId is what AcceptLink actually needs.
-  if (!invite.familyLinkId) {
+  // covers genuinely having nothing to accept. familyLinkId is what AcceptLink
+  // actually needs; hasInvite:false rules out an already-active link.
+  const pending = invite?.familyLinkId && invite.hasInvite !== false
+  if (!pending) {
     return (
       <div className="card empty">
         <p>You're not linked to a family yet.</p>
@@ -37,6 +43,12 @@ export default function ChildInvite() {
       </div>
     )
   }
+
+  // A dropdown of the child's own accounts when the lookup works; the plain
+  // text box when it doesn't, so a failing account list never blocks accepting.
+  const choices = Array.isArray(accounts.data)
+    ? accounts.data.filter((a) => a.accountId && a.currentStatus !== 'Closed')
+    : []
 
   return (
     <div className="card">
@@ -59,14 +71,33 @@ export default function ChildInvite() {
       >
         <div className="field">
           <label>Which of your accounts should they manage?</label>
-          <input
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            placeholder="Your deposit AccountId"
-            required
-          />
+          {accounts.isLoading ? (
+            <p className="muted">Loading your accounts…</p>
+          ) : choices.length > 0 ? (
+            <select value={accountId} onChange={(e) => setAccountId(e.target.value)} required>
+              <option value="">Choose an account</option>
+              {choices.map((a) => (
+                <option key={a.accountId} value={a.accountId}>
+                  {a.accountId}
+                  {a.currency ? ` · ${a.currency}` : ''}
+                  {a.balance != null ? ` ${Number(a.balance).toFixed(2)}` : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              placeholder="Your deposit AccountId"
+              required
+            />
+          )}
         </div>
-        <button disabled={accept.isPending} type="submit" style={{ width: '100%' }}>
+        <button
+          disabled={accept.isPending || accounts.isLoading}
+          type="submit"
+          style={{ width: '100%' }}
+        >
           Accept invite
         </button>
       </form>

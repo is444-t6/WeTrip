@@ -182,8 +182,8 @@ function LinkChildForm() {
             }}
           >
             <div className="stack">
-              <strong>{found.name}</strong>
-              <span className="muted">{found.customerId}</span>
+              <strong>{found.name || 'Customer found'}</strong>
+              <span className="muted">Customer id {found.customerId}</span>
             </div>
             <span className="badge active">found</span>
           </div>

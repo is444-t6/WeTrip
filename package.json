@@ -16,6 +16,7 @@
     "test:composite": "node --env-file=.env.test scripts/test-composite.mjs",
     "test:smartfx": "playwright test tests/smartfx-api.spec.js",
     "test:ui": "playwright test tests/family.spec.js",
+    "test:ui:mocked": "playwright test tests/family-mocked.spec.js",
     "test:e2e": "playwright test",
     "test:ui:report": "playwright show-report"
   },

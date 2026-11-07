@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 
-// Demo accounts already seeded in the sandbox (see docs/family-module-diagnosis.md).
+// Live tests: they read the real sandbox, so they need the seeded demo accounts
+// below (including a parent with children "Jamie" and "Second kid", and link 3).
+// tests/family-mocked.spec.js covers the same screens against a faked API and
+// does not depend on sandbox data.
 const PARENT = { id: '0000002169', account: '0000004554', name: 'Parent Demo' }
 const CHILD = { id: '0000002828', account: '0000006064', name: 'Jamie' }
 
