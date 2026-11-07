@@ -21,6 +21,8 @@ import { Route as InsuranceConfirmationRouteImport } from './routes/insurance.co
 import { Route as InsurancePlansRouteImport } from './routes/insurance.plans'
 import { Route as InsurancePoliciesRouteImport } from './routes/insurance.policies'
 import { Route as InsuranceTravellersRouteImport } from './routes/insurance.travellers'
+import { Route as PayIndexRouteImport } from './routes/pay.index'
+import { Route as PayHistoryRouteImport } from './routes/pay.history'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
 import { Route as FxTripsTripIdRouteImport } from './routes/fx.trips.$tripId'
 import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan.$planId'
@@ -85,6 +87,16 @@ const InsuranceTravellersRoute = InsuranceTravellersRouteImport.update({
   path: '/insurance/travellers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PayIndexRoute = PayIndexRouteImport.update({
+  id: '/pay/',
+  path: '/pay/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayHistoryRoute = PayHistoryRouteImport.update({
+  id: '/pay/history',
+  path: '/pay/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FamilyChildFamilyLinkIdRoute = FamilyChildFamilyLinkIdRouteImport.update({
   id: '/family/child/$familyLinkId',
   path: '/family/child/$familyLinkId',
@@ -110,10 +122,12 @@ export interface FileRoutesByFullPath {
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
   '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
+  '/pay/': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
@@ -127,10 +141,12 @@ export interface FileRoutesByTo {
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
   '/budget': typeof BudgetIndexRoute
   '/family': typeof FamilyIndexRoute
   '/fx': typeof FxIndexRoute
   '/insurance': typeof InsuranceIndexRoute
+  '/pay': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
@@ -145,10 +161,12 @@ export interface FileRoutesById {
   '/insurance/plans': typeof InsurancePlansRoute
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
+  '/pay/history': typeof PayHistoryRoute
   '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
   '/insurance/': typeof InsuranceIndexRoute
+  '/pay/': typeof PayIndexRoute
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
@@ -164,10 +182,12 @@ export interface FileRouteTypes {
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
     | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
+    | '/pay/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
@@ -181,10 +201,12 @@ export interface FileRouteTypes {
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
     | '/budget'
     | '/family'
     | '/fx'
     | '/insurance'
+    | '/pay'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
@@ -198,10 +220,12 @@ export interface FileRouteTypes {
     | '/insurance/plans'
     | '/insurance/policies'
     | '/insurance/travellers'
+    | '/pay/history'
     | '/budget/'
     | '/family/'
     | '/fx/'
     | '/insurance/'
+    | '/pay/'
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
@@ -216,10 +240,12 @@ export interface RootRouteChildren {
   InsurancePlansRoute: typeof InsurancePlansRoute
   InsurancePoliciesRoute: typeof InsurancePoliciesRoute
   InsuranceTravellersRoute: typeof InsuranceTravellersRoute
+  PayHistoryRoute: typeof PayHistoryRoute
   BudgetIndexRoute: typeof BudgetIndexRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
   FxIndexRoute: typeof FxIndexRoute
   InsuranceIndexRoute: typeof InsuranceIndexRoute
+  PayIndexRoute: typeof PayIndexRoute
   FamilyChildFamilyLinkIdRoute: typeof FamilyChildFamilyLinkIdRoute
   FxTripsTripIdRoute: typeof FxTripsTripIdRoute
   InsurancePlanPlanIdRoute: typeof InsurancePlanPlanIdRoute
@@ -311,6 +337,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InsuranceTravellersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pay/': {
+      id: '/pay/'
+      path: '/pay'
+      fullPath: '/pay/'
+      preLoaderRoute: typeof PayIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/history': {
+      id: '/pay/history'
+      path: '/pay/history'
+      fullPath: '/pay/history'
+      preLoaderRoute: typeof PayHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/family/child/$familyLinkId': {
       id: '/family/child/$familyLinkId'
       path: '/family/child/$familyLinkId'
@@ -344,10 +384,12 @@ const rootRouteChildren: RootRouteChildren = {
   InsurancePlansRoute: InsurancePlansRoute,
   InsurancePoliciesRoute: InsurancePoliciesRoute,
   InsuranceTravellersRoute: InsuranceTravellersRoute,
+  PayHistoryRoute: PayHistoryRoute,
   BudgetIndexRoute: BudgetIndexRoute,
   FamilyIndexRoute: FamilyIndexRoute,
   FxIndexRoute: FxIndexRoute,
   InsuranceIndexRoute: InsuranceIndexRoute,
+  PayIndexRoute: PayIndexRoute,
   FamilyChildFamilyLinkIdRoute: FamilyChildFamilyLinkIdRoute,
   FxTripsTripIdRoute: FxTripsTripIdRoute,
   InsurancePlanPlanIdRoute: InsurancePlanPlanIdRoute,

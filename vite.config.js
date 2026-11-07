@@ -26,6 +26,12 @@ export default defineConfig({
         rewrite: (path) =>
           path.replace(/^\/api\/budget/, '/WeTrip_Budget_Composite/rest/BudgetComposite'),
       },
+      // Scan-to-Pay lives in a separate OutSystems environment.
+      '/scantopay': {
+        target: 'https://personal-esnstley.outsystemscloud.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/scantopay/, '/ScanToPay/rest/ScanToPay'),
+      },
     },
   },
 })

@@ -1,0 +1,74 @@
+.scantopay-reader {
+  overflow: hidden;
+  margin-bottom: 14px;
+  border-radius: var(--radius-sm);
+  background: #000;
+}
+
+.scantopay-reader video {
+  display: block;
+}
+
+.scantopay-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.scantopay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.scantopay-actions button,
+.scantopay-actions a {
+  display: block;
+  width: 100%;
+}
+
+.scantopay-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scantopay-plan {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.scantopay-plan:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.scantopay-plan input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.scantopay-plan small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.banner.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
