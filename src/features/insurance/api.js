@@ -46,8 +46,6 @@ export const insuranceApi = {
   getPlans: async () => {
     const response = await call('GET', 'Plans')
 
-    console.log('Insurance Plans API response:', response)
-
     const plans = Array.isArray(response) ? response : (response.plans ?? response.Plans ?? [])
 
     return Array.isArray(plans) ? plans : []

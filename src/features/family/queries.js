@@ -28,6 +28,14 @@ export function useRole() {
   })
 }
 
+export function useRoleInfo() {
+  return useQuery({
+    queryKey: keys.role,
+    queryFn: FamilyApi.getMyFamilyRole,
+    ...authed(),
+  })
+}
+
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: FamilyApi.getMe, ...authed() })
 
 export const useChildren = () =>

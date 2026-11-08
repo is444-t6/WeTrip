@@ -1,34 +1,28 @@
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import Money from '../../family/components/Money'
-
-const badge = {
-  Watching: 'pending',
-  PartiallyLocked: 'active',
-  Locked: 'active',
-  Spending: 'active',
-  Completed: 'removed',
-  Cancelled: 'removed',
-}
+import { tripStatus } from '../status'
 
 export default function TripCard({ trip }) {
+  const navigate = useNavigate()
   const target = Number(trip.targetBudgetSgd) || 0
   const locked = Number(trip.lockedSgd) || 0
   const pct = target ? Math.min(100, (locked / target) * 100) : 0
+  const status = tripStatus(trip.status)
 
   return (
-    <div className="card">
-      <div className="row-between">
-        <div className="stack">
+    <article className="card trip-card">
+      <div className="trip-top">
+        <div>
           <strong>{trip.destination}</strong>
-          <span className="muted">
+          <div className="trip-meta">
             {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)}
             {trip.childNickname ? ` · ${trip.childNickname}` : ''}
-          </span>
+          </div>
         </div>
-        <span className={`badge ${badge[trip.status] || 'pending'}`}>{trip.status}</span>
+        <span className={`badge ${status.tone}`}>{status.label}</span>
       </div>
 
-      <div className="progress" style={{ marginTop: 16 }}>
+      <div className="progress" style={{ marginTop: 18 }}>
         <div style={{ width: `${pct}%` }} />
       </div>
       <div className="row-between muted" style={{ fontSize: '0.82em' }}>
@@ -40,7 +34,7 @@ export default function TripCard({ trip }) {
         </span>
       </div>
 
-      <div className="row-between" style={{ marginTop: 12 }}>
+      <div className="trip-rate">
         <span className="muted">Rate</span>
         <span className="money">
           {trip.currentRate ? `${Number(trip.currentRate).toFixed(4)} ${trip.currency}` : '—'}
@@ -48,11 +42,15 @@ export default function TripCard({ trip }) {
         </span>
       </div>
 
-      <Link to="/fx/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
-          Open trip
-        </button>
-      </Link>
-    </div>
+      <button
+        className="secondary"
+        style={{ width: '100%', marginTop: 16 }}
+        onClick={() =>
+          navigate({ to: '/fx/trips/$tripId', params: { tripId: String(trip.tripId) } })
+        }
+      >
+        Open trip
+      </button>
+    </article>
   )
 }

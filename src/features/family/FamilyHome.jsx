@@ -1,48 +1,34 @@
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useRole } from './queries'
 import { isLoggedIn, clearSession } from './session'
 import ParentHome from './ParentHome'
 import ChildHome from './ChildHome'
 import ChildInvite from './ChildInvite'
 import AppShell from './components/AppShell'
+import AuthShell from './components/AuthShell'
 import Banner from './components/Banner'
+import { usePageTitle } from '../../lib/usePageTitle'
 
 export default function FamilyHome() {
   const { data: role, error } = useRole()
+  const navigate = useNavigate()
+  usePageTitle(isLoggedIn() ? 'Family' : 'Sign in')
 
   if (!isLoggedIn()) {
     return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <div className="brand-mark" style={{ margin: '0 auto 14px' }}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              width={15}
-              height={15}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9-9-4.03-9-9Z"
-                stroke="#fff"
-                strokeWidth="1.6"
-              />
-              <path
-                d="M7.5 12.5 10.5 15.5 16.5 9"
-                stroke="#fff"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2>WeTrip Family</h2>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login">
-            <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
-          </Link>
-        </div>
-      </div>
+      <AuthShell>
+        <span className="eyebrow">WeTrip Family</span>
+        <h2>You're not signed in yet.</h2>
+        <p>Sign in to see balances, manage the kids&rsquo; budgets and keep every trip on track.</p>
+        <button
+          className="btn"
+          style={{ width: '100%' }}
+          onClick={() => navigate({ to: '/family/dev-login' })}
+        >
+          Continue to sign in
+        </button>
+        <p className="auth-footnote">Demo build · shared family wallet</p>
+      </AuthShell>
     )
   }
 

@@ -11,8 +11,10 @@ import Banner from './components/Banner'
 import ChildCard from './components/ChildCard'
 import Money from './components/Money'
 import BalanceHero from './components/BalanceHero'
+import { usePageTitle } from '../../lib/usePageTitle'
 
 export default function ParentHome() {
+  usePageTitle('Family wallet')
   const me = useMe()
   const children = useChildren()
   const requests = usePendingRequests()
@@ -22,6 +24,7 @@ export default function ParentHome() {
 
   return (
     <div>
+      <h1 className="visually-hidden">WeTrip Family wallet</h1>
       <Banner>{error?.message}</Banner>
 
       {me.data && (
@@ -42,16 +45,18 @@ export default function ParentHome() {
 
       {requests.data?.length > 0 && <PendingRequests requests={requests.data} />}
 
-      <div className="section-title">Your children</div>
+      <h2 className="section-title">Your children</h2>
       {children.isLoading && <p className="muted">Loading…</p>}
       {children.data?.length === 0 && (
         <div className="card empty">No children linked yet — add one below.</div>
       )}
-      {children.data?.map((c) => (
-        <ChildCard key={c.familyLinkId} child={c} />
-      ))}
+      <div className="children-grid">
+        {children.data?.map((c) => (
+          <ChildCard key={c.familyLinkId} child={c} />
+        ))}
+      </div>
 
-      <div className="section-title">Link a child</div>
+      <h2 className="section-title">Link a child</h2>
       <LinkChildForm />
     </div>
   )
@@ -64,20 +69,17 @@ function PendingRequests({ requests }) {
   return (
     <div className="card">
       <div className="card-header">
-        <h3>Pending approvals</h3>
+        <div>
+          <h2>Pending approvals</h2>
+          <p className="muted" style={{ margin: '2px 0 0' }}>
+            Spending requests waiting for your yes.
+          </p>
+        </div>
         <span className="badge pending">{requests.length}</span>
       </div>
       <Banner>{decide.error?.message}</Banner>
-      {requests.map((r, i) => (
-        <div
-          key={r.requestId}
-          className="row-between"
-          style={{
-            paddingTop: i === 0 ? 0 : 14,
-            marginTop: i === 0 ? 0 : 14,
-            borderTop: i === 0 ? 'none' : '1px solid var(--card-border)',
-          }}
-        >
+      {requests.map((r) => (
+        <div key={r.requestId} className="request-row">
           <div className="stack">
             <span>
               <strong>{r.nickname}</strong> &rarr; {r.merchantAccountId}
@@ -148,18 +150,23 @@ function LinkChildForm() {
         <Banner kind="ok">Invite sent — the child needs to accept it on their side.</Banner>
       ) : !found ? (
         <form onSubmit={lookup}>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Find your child by the phone number on their WeTrip account.
+          </p>
           <div className="grid-2">
             <div className="field">
-              <label>Country code</label>
+              <label htmlFor="link-country">Country code</label>
               <input
+                id="link-country"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
                 required
               />
             </div>
             <div className="field">
-              <label>Phone number</label>
+              <label htmlFor="link-phone">Phone number</label>
               <input
+                id="link-phone"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 required
@@ -172,15 +179,7 @@ function LinkChildForm() {
         </form>
       ) : (
         <form onSubmit={send}>
-          <div
-            className="row-between"
-            style={{
-              background: 'var(--accent-soft)',
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-sm)',
-              marginBottom: 14,
-            }}
-          >
+          <div className="found-row">
             <div className="stack">
               <strong>{found.name || 'Customer found'}</strong>
               <span className="muted">Customer id {found.customerId}</span>
@@ -189,16 +188,21 @@ function LinkChildForm() {
           </div>
           <div className="grid-2">
             <div className="field">
-              <label>Nickname</label>
+              <label htmlFor="link-nickname">Nickname</label>
               <input
+                id="link-nickname"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="e.g. Jamie (Seoul)"
               />
             </div>
             <div className="field">
-              <label>Host currency</label>
-              <input value={hostCurrency} onChange={(e) => setHostCurrency(e.target.value)} />
+              <label htmlFor="link-currency">Host currency</label>
+              <input
+                id="link-currency"
+                value={hostCurrency}
+                onChange={(e) => setHostCurrency(e.target.value)}
+              />
             </div>
           </div>
           <div className="row">

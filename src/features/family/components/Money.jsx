@@ -1,8 +1,8 @@
+// Existing WeTrip screens and tests use a plain two-decimal amount.
 export default function Money({ amount, currency = 'SGD' }) {
-  const n = Number(amount ?? 0)
   return (
     <span>
-      {currency} {n.toFixed(2)}
+      {currency} {Number(amount ?? 0).toFixed(2)}
     </span>
   )
 }

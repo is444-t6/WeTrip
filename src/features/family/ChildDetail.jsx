@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   useBalanceTrend,
   useChildExpenses,
@@ -11,23 +11,36 @@ import {
 } from './queries'
 import { clearSession, isLoggedIn } from './session'
 import AppShell from './components/AppShell'
+import AuthShell from './components/AuthShell'
 import Banner from './components/Banner'
 import Money from './components/Money'
+import { formatAmount } from '../../lib/money'
+import BalanceHero from './components/BalanceHero'
+import { usePageTitle } from '../../lib/usePageTitle'
+
+function periodCopy(period) {
+  if (period === 'Weekly') return 'this week'
+  if (period === 'Monthly') return 'this month'
+  return 'this period'
+}
 
 export default function ChildDetail() {
   const { familyLinkId } = useParams({ from: '/family/child/$familyLinkId' })
+  const navigate = useNavigate()
   const { data: children, error } = useChildren()
+  const child = children?.find((c) => String(c.familyLinkId) === String(familyLinkId)) || null
+  usePageTitle(child?.nickname || 'Child details')
 
   if (!isLoggedIn()) {
     return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login">
-            <button style={{ width: '100%' }}>Sign in</button>
-          </Link>
-        </div>
-      </div>
+      <AuthShell>
+        <span className="eyebrow">WeTrip Family</span>
+        <h2>You're not signed in yet.</h2>
+        <p>Sign in to manage budgets, allowances and spending for your child.</p>
+        <button style={{ width: '100%' }} onClick={() => navigate({ to: '/family/dev-login' })}>
+          Sign in
+        </button>
+      </AuthShell>
     )
   }
 
@@ -36,38 +49,69 @@ export default function ChildDetail() {
     window.location.reload()
   }
 
-  const child = children?.find((c) => String(c.familyLinkId) === String(familyLinkId)) || null
   const notFound = children && !child ? 'Could not find that child in your list.' : null
 
   return (
     <AppShell onSignOut={signOut}>
-      <Link
-        to="/family"
-        className="muted"
-        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
-      >
+      <Link to="/family" className="back-link">
         &larr; Back to children
       </Link>
       <Banner>{error?.message || notFound}</Banner>
       {!child && !error && !notFound && <p className="muted">Loading…</p>}
       {child && (
         <>
-          <h1 style={{ fontSize: '1.4rem', marginBottom: 18 }}>
-            {child.nickname || child.childCustomerId}
-          </h1>
-          <div className="section-title">Budget</div>
-          <BudgetCard
-            familyLinkId={familyLinkId}
-            currentBudget={child.budget}
-            currentPeriod={child.period}
+          <div className="detail-head">
+            <div>
+              <span className="badge active" style={{ marginBottom: 10 }}>
+                {child.status}
+              </span>
+              <h1>{child.nickname || child.childCustomerId}</h1>
+              <p className="muted" style={{ margin: 0 }}>
+                {child.childCustomerId}
+              </p>
+            </div>
+          </div>
+
+          <BalanceHero
+            label={child.nickname || child.childCustomerId}
+            amount={child.balance}
+            currency={child.hostCurrency}
+            sub={
+              child.budget > 0
+                ? `${formatAmount(child.spent, 'SGD')} SGD spent of ${formatAmount(child.budget, 'SGD')} SGD ${periodCopy(child.period)}`
+                : 'No budget set yet'
+            }
+            foot={
+              <>
+                <span>{child.hasAllowance ? 'Allowance active' : 'No allowance'}</span>
+                <span>{child.status}</span>
+              </>
+            }
           />
-          <div className="section-title">Allowance</div>
-          <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
-          <div className="section-title">Top up</div>
-          <TopUpCard familyLinkId={familyLinkId} />
-          <div className="section-title">Expenses</div>
+
+          <div className="detail-grid three">
+            <div>
+              <h2 className="section-title">Budget</h2>
+              <BudgetCard
+                familyLinkId={familyLinkId}
+                currentBudget={child.budget}
+                currentPeriod={child.period}
+              />
+            </div>
+            <div>
+              <h2 className="section-title">Allowance</h2>
+              <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
+            </div>
+            <div>
+              <h2 className="section-title">Top up</h2>
+              <TopUpCard familyLinkId={familyLinkId} />
+            </div>
+          </div>
+
+          <h2 className="section-title">Expenses</h2>
           <ExpensesCard familyLinkId={familyLinkId} />
-          <div className="section-title">Balance trend</div>
+
+          <h2 className="section-title">Balance trend</h2>
           <BalanceTrendCard familyLinkId={familyLinkId} />
         </>
       )}
@@ -97,15 +141,16 @@ function BudgetCard({ familyLinkId, currentBudget, currentPeriod }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Period</label>
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+            <label htmlFor="budget-period">Period</label>
+            <select id="budget-period" value={period} onChange={(e) => setPeriod(e.target.value)}>
               <option value="Weekly">Weekly</option>
               <option value="Monthly">Monthly</option>
             </select>
           </div>
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="budget-amount">Amount (SGD)</label>
             <input
+              id="budget-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -150,17 +195,21 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
   return (
     <div className="card">
       {hasAllowance && (
-        <span className="badge active" style={{ marginBottom: 10, display: 'inline-flex' }}>
+        <span className="badge active" style={{ marginBottom: 12, display: 'inline-flex' }}>
           active
         </span>
       )}
+      <p className="muted" style={{ marginTop: 0 }}>
+        Set a repeating top-up so your child always has a little spending money.
+      </p>
       <Banner>{setup.error?.message || stop.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="allowance-amount">Amount (SGD)</label>
             <input
+              id="allowance-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -170,19 +219,28 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
             />
           </div>
           <div className="field">
-            <label>Frequency</label>
-            <select value={weeklyMonthly} onChange={(e) => setWeeklyMonthly(e.target.value)}>
+            <label htmlFor="allowance-frequency">Frequency</label>
+            <select
+              id="allowance-frequency"
+              value={weeklyMonthly}
+              onChange={(e) => setWeeklyMonthly(e.target.value)}
+            >
               <option value="Weekly">Weekly</option>
               <option value="Monthly">Monthly</option>
             </select>
           </div>
         </div>
         <div className="field">
-          <label>Start date (optional, defaults to tomorrow)</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <label htmlFor="allowance-start">Start date (optional, defaults to tomorrow)</label>
+          <input
+            id="allowance-start"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
         </div>
-        <div className="row">
-          <button disabled={busy} type="submit">
+        <div className="row allowance-actions">
+          <button disabled={busy} type="submit" style={{ width: '100%' }}>
             Set up allowance
           </button>
           {confirmingStop ? (
@@ -191,6 +249,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
                 disabled={busy}
                 type="button"
                 className="danger"
+                style={{ width: '100%' }}
                 onClick={() =>
                   stop.mutate(Number(familyLinkId), {
                     onSuccess: () => setOk('Allowance stopped.'),
@@ -204,6 +263,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
                 disabled={busy}
                 type="button"
                 className="secondary"
+                style={{ width: '100%' }}
                 onClick={() => setConfirmingStop(false)}
               >
                 Keep allowance
@@ -214,6 +274,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
               disabled={busy || !hasAllowance}
               type="button"
               className="secondary"
+              style={{ width: '100%' }}
               title={hasAllowance ? undefined : 'No allowance is set up for this child'}
               onClick={() => setConfirmingStop(true)}
             >
@@ -239,7 +300,7 @@ function TopUpCard({ familyLinkId }) {
       { familyLinkId: Number(familyLinkId), amount: Number(amount), narrative },
       {
         onSuccess: (r) => {
-          setOk(`Transferred. Your balance is now SGD ${Number(r.balanceAfter).toFixed(2)}.`)
+          setOk(`Your balance is now SGD ${Number(r.balanceAfter).toFixed(2)}.`)
           setAmount('')
           setNarrative('')
         },
@@ -254,8 +315,9 @@ function TopUpCard({ familyLinkId }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="topup-amount">Amount (SGD)</label>
             <input
+              id="topup-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -265,8 +327,12 @@ function TopUpCard({ familyLinkId }) {
             />
           </div>
           <div className="field">
-            <label>Note (optional)</label>
-            <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+            <label htmlFor="topup-note">Note (optional)</label>
+            <input
+              id="topup-note"
+              value={narrative}
+              onChange={(e) => setNarrative(e.target.value)}
+            />
           </div>
         </div>
         <button disabled={topUp.isPending} type="submit" style={{ width: '100%' }}>
@@ -280,8 +346,6 @@ function TopUpCard({ familyLinkId }) {
 function ExpensesCard({ familyLinkId }) {
   const [from, setFrom] = useState(firstOfMonth())
   const [to, setTo] = useState(today())
-  // Draft inputs vs the range actually queried: the old screen only refetched
-  // when Refresh was pressed, so changing a date must not fire a request.
   const [applied, setApplied] = useState({ from, to })
   const { data: result, error } = useChildExpenses(Number(familyLinkId), applied.from, applied.to)
 
@@ -293,57 +357,67 @@ function ExpensesCard({ familyLinkId }) {
           e.preventDefault()
           setApplied({ from, to })
         }}
-        className="row"
+        className="row expenses-filters"
       >
         <div className="field" style={{ flex: 1 }}>
-          <label>From</label>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <label htmlFor="expenses-from">From</label>
+          <input
+            id="expenses-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
         </div>
         <div className="field" style={{ flex: 1 }}>
-          <label>To</label>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <label htmlFor="expenses-to">To</label>
+          <input id="expenses-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
-        <button type="submit">Refresh</button>
+        <button type="submit" style={{ alignSelf: 'flex-end', marginBottom: 16 }}>
+          Refresh
+        </button>
       </form>
       {result && (
         <>
-          <div className="row-between" style={{ marginTop: 10, marginBottom: 4 }}>
+          <div className="row-between" style={{ marginTop: 6, marginBottom: 10 }}>
             <span className="muted">Total</span>
-            <span className="money">
+            <span className="money" style={{ fontSize: 20 }}>
               <Money amount={result.total ?? 0} />
             </span>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>To</th>
-                <th>Category</th>
-                <th style={{ textAlign: 'right' }}>Amount</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(result.expenses ?? []).map((x) => (
-                <tr key={x.transactionId}>
-                  <td>{String(x.date).slice(0, 10)}</td>
-                  <td>{x.accountTo}</td>
-                  <td>{x.category}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <Money amount={x.amount} currency={x.currency} />
-                  </td>
-                  <td className="muted">{x.source}</td>
-                </tr>
-              ))}
-              {(result.expenses ?? []).length === 0 && (
+          <p className="table-hint">Swipe to see all columns &rarr;</p>
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Expenses">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={5} className="muted">
-                    No outgoing payments in this range.
-                  </td>
+                  <th>Date</th>
+                  <th>To</th>
+                  <th>Category</th>
+                  <th style={{ textAlign: 'right' }}>Amount</th>
+                  <th>Source</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(result.expenses ?? []).map((x) => (
+                  <tr key={x.transactionId}>
+                    <td>{String(x.date).slice(0, 10)}</td>
+                    <td>{x.accountTo}</td>
+                    <td>{x.category}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Money amount={x.amount} currency={x.currency} />
+                    </td>
+                    <td className="muted">{x.source}</td>
+                  </tr>
+                ))}
+                {(result.expenses ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="muted">
+                      No outgoing payments in this range.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>
@@ -356,6 +430,7 @@ function BalanceTrendCard({ familyLinkId }) {
   const [monthsText, setMonthsText] = useState('6')
   const [months, setMonths] = useState(6)
   const { data: points, error } = useBalanceTrend(Number(familyLinkId), months)
+  const allZero = (points ?? []).every((p) => !p.balance || Number(p.balance) === 0)
 
   useEffect(() => {
     const n = Number(monthsText)
@@ -367,9 +442,10 @@ function BalanceTrendCard({ familyLinkId }) {
   return (
     <div className="card">
       <Banner>{error?.message}</Banner>
-      <div className="field" style={{ maxWidth: 120 }}>
-        <label>Months</label>
+      <div className="field" style={{ maxWidth: 180 }}>
+        <label htmlFor="trend-months">Months</label>
         <input
+          id="trend-months"
           type="number"
           min="1"
           max="24"
@@ -377,23 +453,26 @@ function BalanceTrendCard({ familyLinkId }) {
           onChange={(e) => setMonthsText(e.target.value)}
         />
       </div>
-      {points && (
-        <table>
-          <tbody>
-            {points.map((p) => (
-              <tr key={p.yearMonth}>
-                <td>{String(p.yearMonth).slice(0, 7)}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {p.balance == null ? (
-                    <span className="muted">—</span>
-                  ) : (
-                    <Money amount={p.balance} />
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {points && allZero && <p className="muted">No balance history yet.</p>}
+      {points && !allZero && (
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Balance trend">
+          <table style={{ minWidth: 320 }}>
+            <tbody>
+              {points.map((p) => (
+                <tr key={p.yearMonth}>
+                  <td>{String(p.yearMonth).slice(0, 7)}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    {p.balance == null ? (
+                      <span className="muted">—</span>
+                    ) : (
+                      <Money amount={p.balance} />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

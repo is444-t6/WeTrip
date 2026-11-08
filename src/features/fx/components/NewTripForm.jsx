@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useChildren } from '../../family/queries'
 import { getSessionCustomerId } from '../../family/session'
 import Banner from '../../family/components/Banner'
 import { CURRENCIES, tenorFor } from '../api'
 import { useCreateTrip, useRate } from '../queries'
-import { Link } from '@tanstack/react-router'
 
 export default function NewTripForm() {
   const { data: children } = useChildren()
   const active = (children || []).filter((c) => c.status === 'Active')
 
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef(null)
+  const childRef = useRef(null)
   const [familyLinkId, setFamilyLinkId] = useState('')
   const [destination, setDestination] = useState('')
   const [currency, setCurrency] = useState('JPY')
@@ -48,16 +50,29 @@ export default function NewTripForm() {
           setTargetBudgetSgd('')
           setTargetRate('')
           setOpen(false)
+          requestAnimationFrame(() => triggerRef.current?.focus())
         },
       },
     )
   }
 
+  function openForm() {
+    setOpen(true)
+    requestAnimationFrame(() => childRef.current?.focus())
+  }
+
+  function closeForm() {
+    setOpen(false)
+    requestAnimationFrame(() => triggerRef.current?.focus())
+  }
+
   if (!open) {
     return (
       <button
+        ref={triggerRef}
+        className="btn"
         style={{ width: '100%' }}
-        onClick={() => setOpen(true)}
+        onClick={openForm}
         disabled={active.length === 0}
       >
         {active.length === 0 ? 'Link a child first' : 'New trip goal'}
@@ -66,22 +81,29 @@ export default function NewTripForm() {
   }
 
   return (
-    <div className="card">
+    <div className="card new-trip-form">
       <div className="card-header">
-        <h3>New trip goal</h3>
-        <button className="ghost" type="button" onClick={() => setOpen(false)}>
+        <div>
+          <h3>New trip goal</h3>
+          <p className="muted" style={{ margin: '2px 0 0' }}>
+            Set a budget and target rate — SmartFX watches the market for you.
+          </p>
+        </div>
+        <button className="secondary" type="button" onClick={closeForm}>
           Close
         </button>
       </div>
       <Banner>{create.error?.message}</Banner>
 
-      <div className="banner" style={{ background: 'var(--accent-soft)', color: 'var(--text)' }}>
-        <strong>Travel insurance is optional.</strong> Compare illustrative cover for this trip
-        after planning.
+      <div className="quote-panel" style={{ marginBottom: 16 }}>
+        <div className="stack">
+          <strong>Travel insurance is optional.</strong>
+          <span className="muted">Compare illustrative cover for this trip after planning.</span>
+        </div>
         <Link
           to="/insurance"
           search={{ destination, startDate: tripStartDate, endDate: tripEndDate }}
-          style={{ display: 'block', marginTop: 6, fontWeight: 700 }}
+          className="btn btn-sm"
         >
           Explore travel insurance →
         </Link>
@@ -89,8 +111,14 @@ export default function NewTripForm() {
 
       <form onSubmit={submit}>
         <div className="field">
-          <label>Child</label>
-          <select value={familyLinkId} onChange={(e) => setFamilyLinkId(e.target.value)} required>
+          <label htmlFor="trip-child">Child</label>
+          <select
+            id="trip-child"
+            ref={childRef}
+            value={familyLinkId}
+            onChange={(e) => setFamilyLinkId(e.target.value)}
+            required
+          >
             <option value="">Select a child</option>
             {active.map((c) => (
               <option key={c.familyLinkId} value={c.familyLinkId}>
@@ -102,8 +130,9 @@ export default function NewTripForm() {
 
         <div className="grid-2">
           <div className="field">
-            <label>Destination</label>
+            <label htmlFor="trip-destination">Destination</label>
             <input
+              id="trip-destination"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Tokyo"
@@ -111,11 +140,15 @@ export default function NewTripForm() {
             />
           </div>
           <div className="field">
-            <label>Currency</label>
-            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <label htmlFor="trip-currency">Currency</label>
+            <select
+              id="trip-currency"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code} — {c.name}
+                  {c.code} · {c.name}
                 </option>
               ))}
             </select>
@@ -124,8 +157,9 @@ export default function NewTripForm() {
 
         <div className="grid-2">
           <div className="field">
-            <label>Depart</label>
+            <label htmlFor="trip-depart">Depart</label>
             <input
+              id="trip-depart"
               type="date"
               value={tripStartDate}
               onChange={(e) => setTripStartDate(e.target.value)}
@@ -133,8 +167,9 @@ export default function NewTripForm() {
             />
           </div>
           <div className="field">
-            <label>Return</label>
+            <label htmlFor="trip-return">Return</label>
             <input
+              id="trip-return"
               type="date"
               value={tripEndDate}
               onChange={(e) => setTripEndDate(e.target.value)}
@@ -145,8 +180,9 @@ export default function NewTripForm() {
 
         <div className="grid-2">
           <div className="field">
-            <label>Budget (SGD)</label>
+            <label htmlFor="trip-budget">Budget (SGD)</label>
             <input
+              id="trip-budget"
               type="number"
               step="0.01"
               min="1"
@@ -156,8 +192,9 @@ export default function NewTripForm() {
             />
           </div>
           <div className="field">
-            <label>Target rate ({currency} per SGD)</label>
+            <label htmlFor="trip-target">Target rate ({currency} per SGD)</label>
             <input
+              id="trip-target"
               type="number"
               step="0.0001"
               min="0.0001"
@@ -168,18 +205,10 @@ export default function NewTripForm() {
           </div>
         </div>
 
-        <div
-          className="row-between"
-          style={{
-            background: 'var(--accent-soft)',
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: 14,
-          }}
-        >
+        <div className="quote-panel">
           <div className="stack">
             <span className="muted">Live quote · {period}</span>
-            <strong className="money">
+            <strong className="money" style={{ fontSize: 20 }}>
               {quote.data?.forwardRate
                 ? Number(quote.data.forwardRate).toFixed(4)
                 : quote.isLoading
@@ -201,7 +230,7 @@ export default function NewTripForm() {
           </button>
         </div>
 
-        <label className="row" style={{ marginBottom: 14 }}>
+        <label className="row" style={{ marginBottom: 16, fontSize: 14 }}>
           <input
             type="checkbox"
             checked={autoLockEnabled}

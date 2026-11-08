@@ -5,26 +5,23 @@ export default function RateGauge({ current, target, currency }) {
   const hit = tgt > 0 && cur >= tgt
 
   return (
-    <div className="card">
+    <div className="card rate-watch">
       <div className="card-header">
-        <h3>Rate watch</h3>
+        <h2>Rate watch</h2>
         <span className={`badge ${hit ? 'active' : 'pending'}`}>
           {hit ? 'target hit' : 'watching'}
         </span>
       </div>
 
-      <div className="row-between" style={{ marginBottom: 8 }}>
-        <span className="muted">1 SGD</span>
-        <span className="money">
-          {cur ? cur.toFixed(4) : '—'} {currency}
-        </span>
+      <div className="rate-big">
+        {cur ? cur.toFixed(4) : '—'} <small>{currency} per SGD</small>
       </div>
 
-      <div className="progress">
+      <div className="progress" style={{ marginTop: 16 }}>
         <div style={{ width: `${pct}%` }} />
       </div>
 
-      <div className="row-between muted" style={{ fontSize: '0.82em', marginTop: 6 }}>
+      <div className="row-between muted" style={{ fontSize: '0.85em', marginTop: 8 }}>
         <span>
           Target {tgt ? tgt.toFixed(4) : '—'} {currency}
         </span>
