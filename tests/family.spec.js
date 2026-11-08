@@ -104,7 +104,10 @@ test.describe('child view', () => {
   test('dashboard shows the balance, budget progress and pay form', async ({ page }) => {
     await page.goto('/family')
 
-    await expect(page.getByText(/balance/).first()).toBeVisible()
+    // The child dashboard waits on an exchange-rate lookup that can take ~10s
+    // when the rate source is slow, so the first assertion gets a long timeout.
+    // By then everything else on the page is there.
+    await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByRole('heading', { name: /Budget this/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()
