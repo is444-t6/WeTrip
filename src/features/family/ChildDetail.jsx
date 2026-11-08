@@ -18,6 +18,12 @@ import { formatAmount } from '../../lib/money'
 import BalanceHero from './components/BalanceHero'
 import { usePageTitle } from '../../lib/usePageTitle'
 
+function badgeClass(status) {
+  if (status === 'Active') return 'active'
+  if (status === 'Pending') return 'pending'
+  return 'removed'
+}
+
 function periodCopy(period) {
   if (period === 'Weekly') return 'this week'
   if (period === 'Monthly') return 'this month'
@@ -62,7 +68,7 @@ export default function ChildDetail() {
         <>
           <div className="detail-head">
             <div>
-              <span className="badge active" style={{ marginBottom: 10 }}>
+              <span className={`badge ${badgeClass(child.status)}`} style={{ marginBottom: 10 }}>
                 {child.status}
               </span>
               <h1>{child.nickname || child.childCustomerId}</h1>
@@ -75,11 +81,15 @@ export default function ChildDetail() {
           <BalanceHero
             label={child.nickname || child.childCustomerId}
             amount={child.balance}
-            currency={child.hostCurrency}
             sub={
-              child.budget > 0
+              (child.budget > 0
                 ? `${formatAmount(child.spent, 'SGD')} SGD spent of ${formatAmount(child.budget, 'SGD')} SGD ${periodCopy(child.period)}`
-                : 'No budget set yet'
+                : 'No budget set yet') +
+              (child.hostCurrency && child.hostCurrency !== 'SGD'
+                ? Number(child.rate) > 0
+                  ? ` · ≈ ${child.hostCurrency} ${(Number(child.balance) * Number(child.rate)).toFixed(2)} (1 SGD = ${Number(child.rate).toFixed(2)} ${child.hostCurrency})`
+                  : ` · Host currency ${child.hostCurrency}`
+                : '')
             }
             foot={
               <>
@@ -430,7 +440,7 @@ function BalanceTrendCard({ familyLinkId }) {
   const [monthsText, setMonthsText] = useState('6')
   const [months, setMonths] = useState(6)
   const { data: points, error } = useBalanceTrend(Number(familyLinkId), months)
-  const allZero = (points ?? []).every((p) => !p.balance || Number(p.balance) === 0)
+  const hasBalance = (points ?? []).some((p) => p.balance != null)
 
   useEffect(() => {
     const n = Number(monthsText)
@@ -453,8 +463,8 @@ function BalanceTrendCard({ familyLinkId }) {
           onChange={(e) => setMonthsText(e.target.value)}
         />
       </div>
-      {points && allZero && <p className="muted">No balance history yet.</p>}
-      {points && !allZero && (
+      {points && !hasBalance && <p className="muted">No balance history yet.</p>}
+      {points && hasBalance && (
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Balance trend">
           <table style={{ minWidth: 320 }}>
             <tbody>

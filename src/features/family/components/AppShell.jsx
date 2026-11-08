@@ -1,4 +1,5 @@
-import { Link } from '@tanstack/react-router'
+import { useEffect, useRef } from 'react'
+import { Link, useLocation } from '@tanstack/react-router'
 
 function BrandMark() {
   return (
@@ -18,7 +19,7 @@ function BrandMark() {
 
 export function Brand() {
   return (
-    <Link to="/family" className="brand">
+    <Link to="/family" className="brand" aria-label="WeTrip home">
       <BrandMark />
       <span className="brand-word">wetrip</span>
     </Link>
@@ -40,22 +41,21 @@ function InsuranceMenu({ secondaryNav }) {
   )
 }
 
-function BudgetMenu({ secondaryNav }) {
-  return (
-    <div className="nav-budget-menu">
-      <Link
-        to="/budget"
-        className="nav-link"
-        activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
-      >
-        Budget
-      </Link>
-      {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
-    </div>
-  )
-}
-
 export default function AppShell({ onSignOut, secondaryNav, children }) {
+  const { pathname } = useLocation()
+  const mainRef = useRef(null)
+  const firstRender = useRef(true)
+
+  // Keep keyboard and screen-reader users at the top of each new page instead
+  // of leaving focus on a nav link (or dropping it to <body>).
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    mainRef.current?.focus()
+  }, [pathname])
+
   return (
     <>
       <a className="skip-link" href="#wetrip-main">
@@ -79,7 +79,13 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
             >
               SmartFX
             </Link>
-            <BudgetMenu secondaryNav={secondaryNav} />
+            <Link
+              to="/budget"
+              className="nav-link"
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
+              Budget
+            </Link>
             <InsuranceMenu secondaryNav={secondaryNav} />
             <Link
               to="/pay"
@@ -104,7 +110,7 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
           )}
         </div>
       </header>
-      <main className="page" id="wetrip-main">
+      <main className="page" id="wetrip-main" ref={mainRef} tabIndex={-1}>
         {children}
       </main>
     </>

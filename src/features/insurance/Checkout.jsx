@@ -85,7 +85,9 @@ export default function Checkout() {
     return (
       <InsuranceLayout>
         <div className="card">
-          <div className="banner error">Could not load plans: {plansError.message}</div>
+          <div className="banner error" role="alert">
+            Could not load plans: {plansError.message}
+          </div>
           <Link to="/insurance">Start again</Link>
         </div>
       </InsuranceLayout>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { formatMoney, isValidTripDates, planLabel } from './data'
 import { useInsurancePlans } from './queries'
 import { getTrip } from './storage'
+import Banner from '../family/components/Banner'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
 
@@ -18,6 +19,7 @@ function coverageBadgeClass(coverageType) {
 }
 
 export default function InsurancePlans() {
+  const navigate = useNavigate()
   const [compare, setCompare] = useState(false)
   const { data: plans = [], isLoading, error: plansError } = useInsurancePlans()
   const trip = getTrip()
@@ -44,18 +46,16 @@ export default function InsurancePlans() {
       <Link to="/insurance" className="muted">
         ← Edit destination details
       </Link>
-      <h1 style={{ fontSize: '1.5rem', marginTop: 16, marginBottom: 6 }}>
-        Choose an insurance plan
-      </h1>
+      <h1 style={{ marginTop: 16, marginBottom: 6 }}>Choose an insurance plan</h1>
       <p className="muted">
         Compare plans for {trip.destination || 'your trip'} and select the cover that suits you.
       </p>
       <Notice />
       {!hasTrip && (
-        <div className="banner">
+        <Banner kind="warn">
           Enter your destination and travel dates before choosing a plan.{' '}
           <Link to="/insurance">Add trip details</Link>
-        </div>
+        </Banner>
       )}
       {hasTrip && (
         <div className="card">
@@ -70,16 +70,14 @@ export default function InsurancePlans() {
         </div>
       )}
       <div className="row-between">
-        <div className="section-title">Available plans</div>
+        <h2 className="section-title">Available plans</h2>
         <label className="row insurance-compare-toggle">
           <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />{' '}
           Compare plans
         </label>
       </div>
       {isLoading && <div className="card muted">Loading plans…</div>}
-      {plansError && (
-        <div className="banner error">Could not load insurance plans: {plansError.message}</div>
-      )}
+      {plansError && <Banner>Could not load insurance plans: {plansError.message}</Banner>}
       {compare && plans.length > 0 && (
         <section className="insurance-comparison card" aria-label="Compare insurance plans">
           <div className="insurance-comparison-heading">
@@ -155,11 +153,18 @@ export default function InsurancePlans() {
                   </th>
                   {plans.map((plan) => (
                     <td key={plan.id}>
-                      <Link to="/insurance/plan/$planId" params={{ planId: String(plan.id) }}>
-                        <button disabled={!hasTrip || !plan.isActive}>
-                          {plan.isActive ? 'Choose plan' : 'Unavailable'}
-                        </button>
-                      </Link>
+                      <button
+                        type="button"
+                        disabled={!hasTrip || !plan.isActive}
+                        onClick={() =>
+                          navigate({
+                            to: '/insurance/plan/$planId',
+                            params: { planId: String(plan.id) },
+                          })
+                        }
+                      >
+                        {plan.isActive ? 'Choose plan' : 'Unavailable'}
+                      </button>
                     </td>
                   ))}
                 </tr>
@@ -201,14 +206,30 @@ export default function InsurancePlans() {
             </div>
             <div className="insurance-plan-card-footer">
               <div className="row insurance-plan-actions">
-                <Link to="/insurance/plan/$planId" params={{ planId: String(plan.id) }}>
-                  <button className="secondary">Plan details</button>
-                </Link>
-                <Link to="/insurance/plan/$planId" params={{ planId: String(plan.id) }}>
-                  <button disabled={!hasTrip || !plan.isActive}>
-                    {plan.isActive ? 'Choose plan' : 'Unavailable'}
-                  </button>
-                </Link>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() =>
+                    navigate({
+                      to: '/insurance/plan/$planId',
+                      params: { planId: String(plan.id) },
+                    })
+                  }
+                >
+                  Plan details
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasTrip || !plan.isActive}
+                  onClick={() =>
+                    navigate({
+                      to: '/insurance/plan/$planId',
+                      params: { planId: String(plan.id) },
+                    })
+                  }
+                >
+                  {plan.isActive ? 'Choose plan' : 'Unavailable'}
+                </button>
               </div>
             </div>
           </article>

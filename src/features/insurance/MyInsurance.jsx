@@ -26,18 +26,20 @@ export default function MyInsurance() {
 
   return (
     <InsuranceLayout>
-      <h1 style={{ fontSize: '1.5rem' }}>My Insurance</h1>
+      <h1>My Insurance</h1>
       <p className="muted">Policies returned by the insurance service.</p>
       {policies.isLoading && <div className="card muted">Loading your policies…</div>}
       {policies.error && (
-        <div className="banner error">Could not load your policies: {policies.error.message}</div>
+        <div className="banner error" role="alert">
+          Could not load your policies: {policies.error.message}
+        </div>
       )}
       {policies.isSuccess && items.length === 0 && (
         <div className="card empty">
           No insurance policies were returned.
           <div style={{ marginTop: 14 }}>
-            <Link to="/insurance">
-              <button>Explore plans</button>
+            <Link to="/insurance" className="btn">
+              Explore plans
             </Link>
           </div>
         </div>
@@ -147,10 +149,8 @@ export default function MyInsurance() {
           </section>
         )
       })}
-      <Link to="/insurance">
-        <button className="secondary" style={{ width: '100%' }}>
-          Explore plans
-        </button>
+      <Link to="/insurance" className="btn" style={{ display: 'block', textAlign: 'center' }}>
+        Explore plans
       </Link>
     </InsuranceLayout>
   )

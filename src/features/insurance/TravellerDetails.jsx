@@ -41,7 +41,9 @@ export default function TravellerDetails() {
     return (
       <InsuranceLayout>
         <div className="card">
-          <div className="banner error">Could not load plans: {plansError.message}</div>
+          <div className="banner error" role="alert">
+            Could not load plans: {plansError.message}
+          </div>
           <Link to="/insurance/plans">Browse plans</Link>
         </div>
       </InsuranceLayout>
@@ -177,7 +179,11 @@ export default function TravellerDetails() {
       <p className="muted">{planLabel(plan)}</p>
       <Notice />
       <form onSubmit={submit} className="card">
-        {error && <div className="banner error">{error}</div>}
+        {error && (
+          <div className="banner error" role="alert">
+            {error}
+          </div>
+        )}
         <div className="field">
           <label htmlFor="cover">Who are you covering?</label>
           <select

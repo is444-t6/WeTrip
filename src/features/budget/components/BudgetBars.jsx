@@ -26,7 +26,7 @@ export default function BudgetBars({ lines }) {
                   <span className={`badge ${BADGE[l.alertLevel] ?? ''}`}>{l.alertLevel}</span>
                 )}
                 <span className="money">
-                  {Number(l.spentAmount).toFixed(2)} / {Number(l.limitAmount).toFixed(2)}
+                  {Number(l.spentAmount ?? 0).toFixed(2)} / {Number(l.limitAmount ?? 0).toFixed(2)}
                 </span>
               </span>
             </div>

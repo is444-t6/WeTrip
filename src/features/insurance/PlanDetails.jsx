@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { formatMoney, planLabel } from './data'
 import { useInsurancePlanBenefits, useInsurancePlans } from './queries'
 import Notice from './components/Notice'
@@ -117,6 +117,7 @@ function benefitDetails(benefit) {
 }
 
 export default function PlanDetails() {
+  const navigate = useNavigate()
   const { planId } = useParams({ from: '/insurance/plan/$planId' })
   const { data: plans = [], isLoading, error } = useInsurancePlans()
   const benefits = useInsurancePlanBenefits(planId)
@@ -132,7 +133,9 @@ export default function PlanDetails() {
     return (
       <InsuranceLayout>
         <div className="card">
-          <div className="banner error">Could not load plans: {error.message}</div>
+          <div className="banner error" role="alert">
+            Could not load plans: {error.message}
+          </div>
           <Link to="/insurance/plans">Back to plans</Link>
         </div>
       </InsuranceLayout>
@@ -287,11 +290,16 @@ export default function PlanDetails() {
 
           <div className="insurance-plan-detail-action">
             {plan.isActive ? (
-              <Link to="/insurance/travellers" search={{ planId: String(plan.id) }}>
-                <button>Choose this plan</button>
-              </Link>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate({ to: '/insurance/travellers', search: { planId: String(plan.id) } })
+                }
+              >
+                Choose this plan
+              </button>
             ) : (
-              <p className="banner">This plan is currently unavailable.</p>
+              <p className="banner warn">This plan is currently unavailable.</p>
             )}
             <p>Your final premium will be shown before you confirm your purchase.</p>
           </div>

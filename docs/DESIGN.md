@@ -453,9 +453,10 @@ same identity tightens into a working fintech UI:
 - **App shell** - 72px `primary-deep` bar with the WeTrip wordmark, pill nav
   tabs (active tab is a mint pill with deep-purple text) and an outline Sign out.
   Family, SmartFX, Budget, Insurance, Scan to Pay and My Payments share one pill
-  rail; on mobile the rail becomes a horizontally scrollable second header row.
-  Insurance (and Budget when relevant) uses a hover/focus submenu for secondary
-  screens rather than adding more top-level pills.
+  rail; on mobile the rail wraps onto a second header row rather than scrolling
+  off-screen. Insurance uses a hover/focus submenu for its secondary screens
+  rather than adding more top-level pills; the submenu stays open while the
+  pointer or focus is inside it.
 - **Balance hero** - 28px-radius purple gradient card; 56px Poppins 800 amount,
   translucent chips for context, and one oversized outlined currency code
   (`SGD`, `JPY`) bleeding off the bottom-right corner.

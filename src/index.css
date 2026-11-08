@@ -58,7 +58,7 @@
   --card-border: #eadff5;
   --text: #2b2140;
   --muted: #6f6385;
-  --muted-2: #8b7ba1;
+  --muted-2: #6f6385;
 
   --radius: 24px;
   --radius-sm: 14px;
@@ -134,8 +134,14 @@ code {
   color: var(--primary-deep);
 }
 :focus-visible {
-  outline: 2px solid var(--mint);
+  outline: 2px solid var(--primary-deep);
   outline-offset: 3px;
+}
+.navbar :focus-visible {
+  outline-color: var(--mint);
+}
+.page:focus {
+  outline: none;
 }
 .visually-hidden {
   position: absolute !important;
@@ -426,6 +432,8 @@ code {
   position: absolute;
   top: calc(100% + 10px);
   left: 50%;
+  margin-top: -10px;
+  padding-top: 18px;
   z-index: 20;
   min-width: 190px;
   padding: 8px;
@@ -649,9 +657,14 @@ input::placeholder {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: none;
   border-color: var(--mint);
   box-shadow: 0 0 0 4px rgba(16, 219, 172, 0.15);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-deep);
+  outline-offset: 2px;
 }
 label {
   display: block;
@@ -732,6 +745,28 @@ button.ghost {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
+button:disabled,
+button:disabled:hover,
+.btn:disabled {
+  opacity: 1;
+  background: #f1e9fb;
+  border-color: #e6d9f2;
+  color: var(--muted-2);
+  cursor: not-allowed;
+  transform: none;
+}
+button.secondary:disabled,
+button.secondary:disabled:hover {
+  background: #f7f2fc;
+  border-color: var(--card-border);
+  color: var(--muted-2);
+}
+button.danger:disabled,
+button.danger:disabled:hover {
+  background: var(--coral-soft);
+  border-color: transparent;
+  color: var(--danger);
+}
 
 /* ------------------------------- banners ----------------------------- */
 
@@ -750,6 +785,10 @@ button.ghost {
 .banner.ok {
   background: var(--mint-soft);
   color: #08775b;
+}
+.banner.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
 }
 
 /* ------------------------------ progress ----------------------------- */
@@ -1175,12 +1214,9 @@ tr:last-child td {
     order: 3;
     flex: 0 0 100%;
     width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
     padding: 3px;
-  }
-  .nav-tabs::-webkit-scrollbar {
-    display: none;
   }
   .nav-link {
     white-space: nowrap;
@@ -1193,7 +1229,8 @@ tr:last-child td {
     display: inline;
   }
   .navbar-subnav {
-    left: 0;
+    right: 0;
+    left: auto;
     transform: translate(0, -4px);
   }
   .nav-insurance-menu:hover .navbar-subnav,
@@ -1421,6 +1458,7 @@ tr:last-child td {
 .insurance-plan-description {
   margin: 0;
   padding: 0 20px 16px;
+  max-width: 68ch;
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.55;

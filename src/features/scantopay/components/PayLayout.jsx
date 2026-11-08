@@ -15,7 +15,7 @@ export default function PayLayout({ title, children }) {
 
   return (
     <AppShell onSignOut={isLoggedIn() ? signOut : undefined}>
-      <h2 style={{ margin: 0 }}>{title}</h2>
+      <h1 style={{ margin: 0 }}>{title}</h1>
       <p className="muted" style={{ marginTop: 4 }}>
         Customer <span className="money">{customerId}</span>
         {customerId === DEMO_CUSTOMER_ID && ' (demo)'}
