@@ -220,7 +220,7 @@ export default function TravellerDetails() {
               <div className="insurance-child-picker" aria-label="Linked children">
                 {childrenLoading && <p className="muted">Loading your linked children…</p>}
                 {childrenError && (
-                  <p className="banner error">
+                  <p className="banner error" role="alert">
                     Could not load your linked children: {childrenError.message}
                   </p>
                 )}

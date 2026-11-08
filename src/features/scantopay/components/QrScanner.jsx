@@ -72,7 +72,7 @@ export default function QrScanner({ onScan }) {
   return (
     <>
       {cameraError && (
-        <p className="muted" role="status">
+        <p className="muted" role="alert">
           {cameraError}
         </p>
       )}

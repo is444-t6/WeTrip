@@ -92,7 +92,8 @@ test.describe('child view', () => {
   test('dashboard shows the balance, budget progress and pay form', async ({ page }) => {
     await page.goto('/family')
 
-    await expect(page.getByText(/balance/).first()).toBeVisible()
+    // The live composite can take ~10s to answer a cold child dashboard.
+    await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('heading', { name: /Budget this/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()

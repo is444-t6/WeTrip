@@ -1,5 +1,10 @@
-import { useEffect, useRef } from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { Link } from '@tanstack/react-router'
+
+// Pages mount their own AppShell, so this flag lives outside the component and
+// survives route changes. The first mount is the page load; every later mount
+// is a navigation and should put focus back at the top of the new page.
+let hasMounted = false
 
 function BrandMark() {
   return (
@@ -42,19 +47,13 @@ function InsuranceMenu({ secondaryNav }) {
 }
 
 export default function AppShell({ onSignOut, secondaryNav, children }) {
-  const { pathname } = useLocation()
-  const mainRef = useRef(null)
-  const firstRender = useRef(true)
-
-  // Keep keyboard and screen-reader users at the top of each new page instead
-  // of leaving focus on a nav link (or dropping it to <body>).
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false
+    if (!hasMounted) {
+      hasMounted = true
       return
     }
-    mainRef.current?.focus()
-  }, [pathname])
+    document.getElementById('wetrip-main')?.focus()
+  }, [])
 
   return (
     <>
@@ -110,7 +109,7 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
           )}
         </div>
       </header>
-      <main className="page" id="wetrip-main" ref={mainRef} tabIndex={-1}>
+      <main className="page" id="wetrip-main" tabIndex={-1}>
         {children}
       </main>
     </>

@@ -137,7 +137,8 @@ code {
   outline: 2px solid var(--primary-deep);
   outline-offset: 3px;
 }
-.navbar :focus-visible {
+.navbar :focus-visible,
+.auth-brand :focus-visible {
   outline-color: var(--mint);
 }
 .page:focus {
@@ -422,8 +423,7 @@ code {
 .navbar .ghost:hover {
   background: rgba(255, 255, 255, 0.1);
 }
-.nav-insurance-menu,
-.nav-budget-menu {
+.nav-insurance-menu {
   position: relative;
   display: flex;
   align-items: center;
@@ -433,7 +433,6 @@ code {
   top: calc(100% + 10px);
   left: 50%;
   margin-top: -10px;
-  padding-top: 18px;
   z-index: 20;
   min-width: 190px;
   padding: 8px;
@@ -451,9 +450,7 @@ code {
     visibility 0.15s;
 }
 .nav-insurance-menu:hover .navbar-subnav,
-.nav-insurance-menu:focus-within .navbar-subnav,
-.nav-budget-menu:hover .navbar-subnav,
-.nav-budget-menu:focus-within .navbar-subnav {
+.nav-insurance-menu:focus-within .navbar-subnav {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
@@ -696,6 +693,9 @@ label.row {
 
 button,
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -723,12 +723,14 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-button.secondary {
+button.secondary,
+.btn.secondary {
   background: #fff;
   color: var(--primary-2);
   border-color: var(--card-border);
 }
-button.secondary:hover {
+button.secondary:hover,
+.btn.secondary:hover {
   background: var(--violet-soft);
   border-color: #d9c8f2;
 }
@@ -756,7 +758,8 @@ button:disabled:hover,
   transform: none;
 }
 button.secondary:disabled,
-button.secondary:disabled:hover {
+button.secondary:disabled:hover,
+.btn.secondary:disabled {
   background: #f7f2fc;
   border-color: var(--card-border);
   color: var(--muted-2);
@@ -1211,12 +1214,16 @@ tr:last-child td {
     padding-bottom: 9px;
   }
   .nav-tabs {
+    position: relative;
     order: 3;
     flex: 0 0 100%;
     width: 100%;
     flex-wrap: wrap;
     justify-content: center;
     padding: 3px;
+  }
+  .nav-insurance-menu {
+    position: static;
   }
   .nav-link {
     white-space: nowrap;
@@ -1229,15 +1236,16 @@ tr:last-child td {
     display: inline;
   }
   .navbar-subnav {
+    top: 100%;
     right: 0;
-    left: auto;
-    transform: translate(0, -4px);
+    left: 0;
+    min-width: 0;
+    margin-top: 0;
+    transform: translateY(-4px);
   }
   .nav-insurance-menu:hover .navbar-subnav,
-  .nav-insurance-menu:focus-within .navbar-subnav,
-  .nav-budget-menu:hover .navbar-subnav,
-  .nav-budget-menu:focus-within .navbar-subnav {
-    transform: translate(0, 0);
+  .nav-insurance-menu:focus-within .navbar-subnav {
+    transform: translateY(0);
   }
   .navbar .brand {
     font-size: 1.1rem;
@@ -1841,7 +1849,7 @@ tr:last-child td {
   padding-bottom: 18px;
 }
 
-.insurance-comparison-table td > a > button {
+.insurance-comparison-table td > button {
   white-space: nowrap;
 }
 
