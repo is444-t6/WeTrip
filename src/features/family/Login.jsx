@@ -15,7 +15,7 @@ export default function Login() {
   function submit(e) {
     e.preventDefault()
     setDevSession(customerId.trim(), accountId.trim(), displayName.trim())
-    navigate({ to: '/family' })
+    navigate({ to: '/' })
   }
 
   return (
@@ -73,20 +73,26 @@ export default function Login() {
           )}
           <form onSubmit={submit}>
             <div className="field">
-              <label>CustomerId</label>
+              <label>CustomerId (the number, not the username)</label>
               <input
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
-                placeholder="SMU_TUSER2"
+                placeholder="0000003018"
+                inputMode="numeric"
+                pattern="\d+"
+                title="Digits only, e.g. 0000003018. Not the SMU_TUSER2 username."
                 required
               />
             </div>
             <div className="field">
-              <label>Deposit AccountId</label>
+              <label>Deposit AccountId (the number)</label>
               <input
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
                 placeholder="0000006385"
+                inputMode="numeric"
+                pattern="\d+"
+                title="Digits only, e.g. 0000006385."
                 required
               />
             </div>

@@ -1,15 +1,9 @@
 import { Link } from '@tanstack/react-router'
+import { budgetStatus, periodBounds, periodTiming } from '../insights'
+import Avatar from './Avatar'
+import PaceBar from './PaceBar'
 import Money from './Money'
-
-function initials(name) {
-  if (!name) return '?'
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('')
-}
+import NextTripLine from './NextTripLine'
 
 function badgeClass(status) {
   if (status === 'Active') return 'active'
@@ -18,14 +12,16 @@ function badgeClass(status) {
 }
 
 export default function ChildCard({ child }) {
-  const pct = child.budget ? Math.min(100, (child.spent / child.budget) * 100) : 0
+  const bounds = periodBounds(child.period === 'Weekly' ? 'Weekly' : 'Monthly')
+  const { daysLeft } = periodTiming(bounds)
   const label = child.nickname || child.childCustomerId
+  const { level } = budgetStatus(child.spent, child.budget)
 
   return (
     <div className="card">
       <div className="row-between">
         <div className="row">
-          <div className="avatar">{initials(label)}</div>
+          <Avatar name={label} />
           <div className="stack">
             <strong>{label}</strong>
             <span className="muted">{child.childCustomerId}</span>
@@ -45,15 +41,17 @@ export default function ChildCard({ child }) {
 
           {child.budget > 0 ? (
             <>
-              <div className={`progress ${pct >= 100 ? 'over' : ''}`}>
-                <div style={{ width: `${pct}%` }} />
-              </div>
+              <PaceBar spent={child.spent} budget={child.budget} bounds={bounds} />
               <div className="row-between muted" style={{ fontSize: '0.82em' }}>
                 <span>
-                  <Money amount={child.spent} /> of <Money amount={child.budget} /> this{' '}
-                  {child.period?.toLowerCase()}
+                  <Money amount={child.spent} /> of <Money amount={child.budget} /> · {daysLeft}{' '}
+                  {daysLeft === 1 ? 'day' : 'days'} left
                 </span>
-                {child.hasAllowance && <span className="badge active">allowance</span>}
+                <span className="row">
+                  {level === 'near' && <span className="badge pending">80%+ used</span>}
+                  {level === 'over' && <span className="badge removed">over budget</span>}
+                  {child.hasAllowance && <span className="badge active">allowance</span>}
+                </span>
               </div>
             </>
           ) : (
@@ -61,6 +59,7 @@ export default function ChildCard({ child }) {
               No budget set yet
             </p>
           )}
+          <NextTripLine familyLinkId={child.familyLinkId} />
         </>
       )}
 

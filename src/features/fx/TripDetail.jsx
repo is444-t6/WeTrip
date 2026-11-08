@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
-import { getSessionAccountId } from '../family/session'
+import { clearSession, getSessionAccountId, isLoggedIn } from '../family/session'
+import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
+import SignedOutCard from '../family/components/SignedOutCard'
 import Money from '../family/components/Money'
 import BalanceHero from '../family/components/BalanceHero'
 import RateGauge from './components/RateGauge'
@@ -19,8 +21,18 @@ export default function TripDetail() {
   const locks = data?.locks || []
   const spends = data?.spends || []
 
-  if (error) return <Banner>{error.message}</Banner>
-  if (isLoading || !trip) return <p className="muted">Loading…</p>
+  function signOut() {
+    clearSession()
+    window.location.reload()
+  }
+
+  // Every state of the page sits inside the app shell, so the navbar and the
+  // side gutter are always there, including while loading or after an error.
+  const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
+
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip SmartFX" />
+  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (isLoading || !trip) return shell(<p className="muted">Loading…</p>)
 
   const spentForeign = spends.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
   const remainingForeign = Math.max(0, (Number(trip.lockedForeign) || 0) - spentForeign)
@@ -28,8 +40,8 @@ export default function TripDetail() {
     0,
     (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0),
   )
-  return (
-    <div>
+  return shell(
+    <>
       <Link
         to="/fx"
         className="muted"
@@ -81,7 +93,7 @@ export default function TripDetail() {
       <div className="card">
         {locks.length === 0 && <p className="muted">Nothing locked yet.</p>}
         {locks.length > 0 && (
-          <table>
+          <table className="stack-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -94,13 +106,17 @@ export default function TripDetail() {
             <tbody>
               {locks.map((l) => (
                 <tr key={l.lockId}>
-                  <td>{String(l.createdAt).slice(0, 10)}</td>
-                  <td>{Number(l.lockedRate).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td data-label="Date">{String(l.createdAt).slice(0, 10)}</td>
+                  <td data-label="Rate">{Number(l.lockedRate).toFixed(4)}</td>
+                  <td data-label="SGD" style={{ textAlign: 'right' }}>
                     <Money amount={l.sgdAmount} />
                   </td>
-                  <td style={{ textAlign: 'right' }}>{Number(l.foreignAmount).toFixed(2)}</td>
-                  <td className="muted">{l.source}</td>
+                  <td data-label={trip.currency} style={{ textAlign: 'right' }}>
+                    {Number(l.foreignAmount).toFixed(2)}
+                  </td>
+                  <td data-label="Source" className="muted">
+                    {l.source}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -112,7 +128,7 @@ export default function TripDetail() {
       <div className="card">
         {spends.length === 0 && <p className="muted">No spending recorded.</p>}
         {spends.length > 0 && (
-          <table>
+          <table className="stack-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -124,10 +140,12 @@ export default function TripDetail() {
             <tbody>
               {spends.map((s) => (
                 <tr key={s.spendId}>
-                  <td>{String(s.createdAt).slice(0, 10)}</td>
-                  <td>{s.category}</td>
-                  <td className="muted">{s.merchantAccountId}</td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td data-label="Date">{String(s.createdAt).slice(0, 10)}</td>
+                  <td data-label="Category">{s.category}</td>
+                  <td data-label="To" className="muted">
+                    {s.merchantAccountId}
+                  </td>
+                  <td data-label="Amount" style={{ textAlign: 'right' }}>
                     {Number(s.amount).toFixed(2)} {trip.currency}
                   </td>
                 </tr>
@@ -154,7 +172,7 @@ export default function TripDetail() {
           </div>
         </div>
       )}
-    </div>
+    </>,
   )
 }
 
@@ -211,9 +229,10 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         not at a rate you type.
       </p>
 
-      <div className="row" style={{ marginTop: 6 }}>
+      <div className="actions-grid">
         <button
           type="button"
+          className="span-2"
           disabled={lock.isPending || remainingSgd <= 0}
           onClick={() =>
             lock.mutate({
@@ -240,7 +259,7 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         </button>
         <button
           type="button"
-          className="danger"
+          className="danger span-2"
           disabled={cancel.isPending || trip.status === 'Completed'}
           onClick={() => cancel.mutate(trip.tripId)}
         >

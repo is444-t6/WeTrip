@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import {
   useBalanceTrend,
   useChildExpenses,
   useChildren,
+  useMe,
   useSetBudget,
   useSetupAllowance,
   useStopAllowance,
@@ -12,11 +13,26 @@ import {
 import { clearSession, isLoggedIn } from './session'
 import AppShell from './components/AppShell'
 import Banner from './components/Banner'
+import ChildOverview from './components/ChildOverview'
 import Money from './components/Money'
+import SpendingInsights from './components/SpendingInsights'
+import Tabs from './components/Tabs'
+import TrendChart from './components/TrendChart'
+import TripsPanel from './components/TripsPanel'
+import { monthLabel } from './chart'
+import { percentChange, ymd } from './insights'
+import { useChildSpending } from './useChildSpending'
+
+const TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'manage', label: 'Manage' },
+  { id: 'activity', label: 'Activity' },
+]
 
 export default function ChildDetail() {
   const { familyLinkId } = useParams({ from: '/family/child/$familyLinkId' })
   const { data: children, error } = useChildren()
+  const [tab, setTab] = useState('overview')
 
   if (!isLoggedIn()) {
     return (
@@ -52,34 +68,52 @@ export default function ChildDetail() {
       {!child && !error && !notFound && <p className="muted">Loading…</p>}
       {child && (
         <>
-          <h1 style={{ fontSize: '1.4rem', marginBottom: 18 }}>
-            {child.nickname || child.childCustomerId}
-          </h1>
-          <div className="section-title">Budget</div>
-          <BudgetCard
-            familyLinkId={familyLinkId}
-            currentBudget={child.budget}
-            currentPeriod={child.period}
-          />
-          <div className="section-title">Allowance</div>
-          <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
-          <div className="section-title">Top up</div>
-          <TopUpCard familyLinkId={familyLinkId} />
-          <div className="section-title">Expenses</div>
-          <ExpensesCard familyLinkId={familyLinkId} />
-          <div className="section-title">Balance trend</div>
-          <BalanceTrendCard familyLinkId={familyLinkId} />
+          <ChildOverview child={child} onSetBudget={() => setTab('manage')} />
+          <Tabs tabs={TABS} active={tab} onChange={setTab} label="Child sections" />
+
+          {tab === 'overview' && (
+            <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+              <div className="section-title">Spending insights</div>
+              <SpendingInsights child={child} />
+              <div className="section-title">Trips</div>
+              <TripsPanel familyLinkId={familyLinkId} />
+            </div>
+          )}
+
+          {tab === 'manage' && (
+            <div role="tabpanel" id="panel-manage" aria-labelledby="tab-manage">
+              <div className="section-title">Budget</div>
+              <BudgetCard child={child} />
+              <div className="section-title">Allowance</div>
+              <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
+              <div className="section-title">Top up</div>
+              <TopUpCard child={child} />
+            </div>
+          )}
+
+          {tab === 'activity' && (
+            <div role="tabpanel" id="panel-activity" aria-labelledby="tab-activity">
+              <div className="section-title">Expenses</div>
+              <ExpensesCard familyLinkId={familyLinkId} />
+              <div className="section-title">Balance trend</div>
+              <BalanceTrendCard familyLinkId={familyLinkId} />
+            </div>
+          )}
         </>
       )}
     </AppShell>
   )
 }
 
-function BudgetCard({ familyLinkId, currentBudget, currentPeriod }) {
-  const [period, setPeriod] = useState(currentPeriod === 'Weekly' ? 'Weekly' : 'Monthly')
-  const [amount, setAmount] = useState(currentBudget > 0 ? String(Number(currentBudget)) : '')
+function BudgetCard({ child }) {
+  const familyLinkId = child.familyLinkId
+  const [period, setPeriod] = useState(child.period === 'Weekly' ? 'Weekly' : 'Monthly')
+  const [amount, setAmount] = useState(child.budget > 0 ? String(Number(child.budget)) : '')
   const [ok, setOk] = useState('')
   const setBudget = useSetBudget()
+  const { span, previous } = useChildSpending(child)
+  // Last period's spending is a realistic starting point for the next budget.
+  const lastSpend = Number(previous.data?.total ?? 0)
 
   function submit(e) {
     e.preventDefault()
@@ -115,6 +149,16 @@ function BudgetCard({ familyLinkId, currentBudget, currentPeriod }) {
             />
           </div>
         </div>
+        {lastSpend > 0 && Number(amount) !== Number(lastSpend.toFixed(2)) && (
+          <button
+            type="button"
+            className="chip"
+            onClick={() => setAmount(lastSpend.toFixed(2))}
+            style={{ marginBottom: 12 }}
+          >
+            Use last {span}'s spending (SGD {lastSpend.toFixed(2)})
+          </button>
+        )}
         <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>
           Save budget
         </button>
@@ -226,17 +270,27 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
   )
 }
 
-function TopUpCard({ familyLinkId }) {
+const TOP_UP_AMOUNTS = [10, 20, 50, 100]
+
+function TopUpCard({ child }) {
+  const familyLinkId = child.familyLinkId
   const [amount, setAmount] = useState('')
   const [narrative, setNarrative] = useState('')
   const [ok, setOk] = useState('')
   const topUp = useTopUp()
+  const me = useMe()
+
+  const value = Number(amount)
+  const mine = me.data ? Number(me.data.balance ?? 0) : null
+  const childBalance = Number(child.balance ?? 0)
+  const name = child.nickname || child.childCustomerId
+  const tooMuch = mine !== null && value > mine
 
   function submit(e) {
     e.preventDefault()
     setOk('')
     topUp.mutate(
-      { familyLinkId: Number(familyLinkId), amount: Number(amount), narrative },
+      { familyLinkId: Number(familyLinkId), amount: value, narrative },
       {
         onSuccess: (r) => {
           setOk(`Transferred. Your balance is now SGD ${Number(r.balanceAfter).toFixed(2)}.`)
@@ -252,6 +306,18 @@ function TopUpCard({ familyLinkId }) {
       <Banner>{topUp.error?.message}</Banner>
       <Banner kind="ok">{ok}</Banner>
       <form onSubmit={submit}>
+        <div className="chips">
+          {TOP_UP_AMOUNTS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`chip ${value === n ? 'active' : ''}`}
+              onClick={() => setAmount(String(n))}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
         <div className="grid-2">
           <div className="field">
             <label>Amount (SGD)</label>
@@ -269,7 +335,24 @@ function TopUpCard({ familyLinkId }) {
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
         </div>
-        <button disabled={topUp.isPending} type="submit" style={{ width: '100%' }}>
+        {value > 0 && mine !== null && (
+          <div className="preview">
+            <div className="row-between">
+              <span className="muted">Your balance</span>
+              <span className="money">
+                <Money amount={mine} /> → <Money amount={Math.max(0, mine - value)} />
+              </span>
+            </div>
+            <div className="row-between">
+              <span className="muted">{name}'s balance</span>
+              <span className="money">
+                <Money amount={childBalance} /> → <Money amount={childBalance + value} />
+              </span>
+            </div>
+          </div>
+        )}
+        {tooMuch && <Banner>You only have SGD {mine.toFixed(2)} to send.</Banner>}
+        <button disabled={topUp.isPending || tooMuch} type="submit" style={{ width: '100%' }}>
           Top up
         </button>
       </form>
@@ -305,6 +388,11 @@ function ExpensesCard({ familyLinkId }) {
         </div>
         <button type="submit">Refresh</button>
       </form>
+      {!result && !error && (
+        <p className="muted" style={{ marginTop: 10 }}>
+          Loading…
+        </p>
+      )}
       {result && (
         <>
           <div className="row-between" style={{ marginTop: 10, marginBottom: 4 }}>
@@ -350,60 +438,51 @@ function ExpensesCard({ familyLinkId }) {
   )
 }
 
+const TREND_MONTHS = [3, 6, 12]
+
 function BalanceTrendCard({ familyLinkId }) {
-  // `monthsText` is what the user is typing; `months` is the last valid value
-  // and the only one that fires a request (debounced).
-  const [monthsText, setMonthsText] = useState('6')
   const [months, setMonths] = useState(6)
   const { data: points, error } = useBalanceTrend(Number(familyLinkId), months)
 
-  useEffect(() => {
-    const n = Number(monthsText)
-    if (!Number.isInteger(n) || n < 1 || n > 24) return
-    const t = setTimeout(() => setMonths(n), 400)
-    return () => clearTimeout(t)
-  }, [monthsText])
+  const known = (points ?? []).filter((p) => p.balance != null)
+  const now = known.at(-1)
+  const before = known.at(-2)
+  const delta = now && before ? Number(now.balance) - Number(before.balance) : null
+  const pct = now && before ? percentChange(now.balance, before.balance) : null
 
   return (
     <div className="card">
       <Banner>{error?.message}</Banner>
-      <div className="field" style={{ maxWidth: 120 }}>
-        <label>Months</label>
-        <input
-          type="number"
-          min="1"
-          max="24"
-          value={monthsText}
-          onChange={(e) => setMonthsText(e.target.value)}
-        />
+      <div className="row-between">
+        <div className="segmented" role="group" aria-label="Months to show">
+          {TREND_MONTHS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={m === months ? 'active' : ''}
+              aria-pressed={m === months}
+              onClick={() => setMonths(m)}
+            >
+              {m} months
+            </button>
+          ))}
+        </div>
+        {now && (
+          <span className="money">
+            <Money amount={now.balance} />
+          </span>
+        )}
       </div>
-      {points && (
-        <table>
-          <tbody>
-            {points.map((p) => (
-              <tr key={p.yearMonth}>
-                <td>{String(p.yearMonth).slice(0, 7)}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {p.balance == null ? (
-                    <span className="muted">—</span>
-                  ) : (
-                    <Money amount={p.balance} />
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {points && <TrendChart points={points} />}
+      {delta !== null && (
+        <p className="muted">
+          {delta === 0
+            ? `Balance is unchanged since ${monthLabel(before.yearMonth)}.`
+            : `Balance is ${delta > 0 ? 'up' : 'down'} SGD ${Math.abs(delta).toFixed(2)}${pct === null ? '' : ` (${Math.abs(pct)}%)`} since ${monthLabel(before.yearMonth)}.`}
+        </p>
       )}
     </div>
   )
-}
-
-// Local-date YYYY-MM-DD. toISOString() converts to UTC, which shifts the date
-// by a day for anyone east of Greenwich (e.g. Singapore, UTC+8).
-function ymd(d) {
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 function today() {

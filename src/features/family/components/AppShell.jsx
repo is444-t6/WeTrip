@@ -5,7 +5,7 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
     <>
       <div className="navbar">
         <div className="navbar-inner">
-          <Link to="/family" className="brand" style={{ textDecoration: 'none' }}>
+          <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
             <span className="brand-mark">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -25,6 +25,9 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
             WeTrip
           </Link>
           <div className="row">
+            <Link to="/" className="nav-link" activeOptions={{ exact: true }}>
+              Home
+            </Link>
             <Link to="/family" className="nav-link">
               Family
             </Link>

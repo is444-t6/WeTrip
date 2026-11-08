@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { useChildDashboard, useChildSpend } from './queries'
+import { payNotice, periodBounds, periodTiming, safeDailySpend } from './insights'
 import Banner from './components/Banner'
+import BudgetAlert from './components/BudgetAlert'
 import Money from './components/Money'
+import MyTripCard from './components/MyTripCard'
+import PaceBar from './components/PaceBar'
 import BalanceHero from './components/BalanceHero'
+
+const CATEGORIES = ['General', 'Food', 'Transport', 'Study', 'Fun']
 
 export default function ChildHome() {
   const { data: dash, error } = useChildDashboard()
@@ -43,6 +49,17 @@ export default function ChildHome() {
   if (!dash) return <p className="muted">Loading…</p>
 
   const pct = dash.budget ? Math.min(100, (dash.spent / dash.budget) * 100) : 0
+  const period = dash.period === 'Weekly' ? 'Weekly' : 'Monthly'
+  const span = period === 'Weekly' ? 'week' : 'month'
+  const bounds = periodBounds(period)
+  const { daysLeft } = periodTiming(bounds)
+  const safe = safeDailySpend(dash.remaining, daysLeft)
+  const notice = payNotice({
+    amount,
+    balance: dash.balance,
+    remaining: dash.remaining,
+    hasBudget: dash.hasBudget,
+  })
 
   return (
     <div>
@@ -56,16 +73,18 @@ export default function ChildHome() {
         }
       />
 
+      {dash.hasBudget && (
+        <BudgetAlert who="child" spent={dash.spent} budget={dash.budget} period={dash.period} />
+      )}
+
       <div className="card">
         <div className="card-header">
-          <h3>Budget this {dash.period?.toLowerCase() || 'period'}</h3>
+          <h3>Budget this {span}</h3>
           {pct >= 100 && <span className="badge removed">over</span>}
         </div>
         {dash.hasBudget ? (
           <>
-            <div className={`progress ${pct >= 100 ? 'over' : ''}`}>
-              <div style={{ width: `${pct}%` }} />
-            </div>
+            <PaceBar spent={dash.spent} budget={dash.budget} bounds={bounds} />
             <div className="row-between">
               <span className="money">
                 <Money amount={dash.spent} />
@@ -76,6 +95,13 @@ export default function ChildHome() {
             </div>
             <p className="muted" style={{ marginTop: 6 }}>
               <Money amount={dash.remaining} /> remaining
+              {safe > 0 && (
+                <>
+                  {' '}
+                  · about <Money amount={safe} /> a day for {daysLeft}{' '}
+                  {daysLeft === 1 ? 'day' : 'days'}
+                </>
+              )}
             </p>
           </>
         ) : (
@@ -97,6 +123,8 @@ export default function ChildHome() {
         )}
       </div>
 
+      <MyTripCard />
+
       <div className="card">
         <h3>Pay a merchant</h3>
         <Banner>{spend.error?.message}</Banner>
@@ -110,27 +138,38 @@ export default function ChildHome() {
               required
             />
           </div>
-          <div className="grid-2">
-            <div className="field">
-              <label>Amount</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-            <div className="field">
-              <label>Category</label>
-              <input value={category} onChange={(e) => setCategory(e.target.value)} />
+          <div className="field">
+            <label>Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label>Category</label>
+            <div className="chips">
+              {CATEGORIES.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`chip ${category === name ? 'active' : ''}`}
+                  aria-pressed={category === name}
+                  onClick={() => setCategory(name)}
+                >
+                  {name}
+                </button>
+              ))}
             </div>
           </div>
           <div className="field">
             <label>Note (optional)</label>
             <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
           </div>
+          {notice && <div className={`banner ${notice.kind}`}>{notice.text}</div>}
           <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
             Pay
           </button>

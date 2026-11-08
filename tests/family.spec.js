@@ -27,14 +27,15 @@ test.describe('auth', () => {
   test('the dev login form stores a session and opens the parent home', async ({ page }) => {
     await page.goto('/family/dev-login')
 
-    await page.getByPlaceholder('SMU_TUSER2').fill(PARENT.id)
+    await page.getByPlaceholder('0000003018').fill(PARENT.id)
     await page.getByPlaceholder('0000006385').fill(PARENT.account)
     await page.getByPlaceholder('timothy.loo').fill(PARENT.name)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page).toHaveURL(/\/family$/)
-    await expect(page.getByText('Your WeTrip balance')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByText(PARENT.name)).toBeVisible()
+    // Signing in lands on the home page, not the Family screen.
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByText('Hi, Parent!')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Available balance')).toBeVisible()
   })
 })
 
@@ -58,15 +59,26 @@ test.describe('parent view', () => {
     await expect(page.getByText(/children linked/)).toBeVisible()
   })
 
-  test('child detail exposes budget, allowance, top-up, expenses and trend', async ({ page }) => {
+  test('child detail has an overview, then budget/allowance/top-up and expenses/trend tabs', async ({
+    page,
+  }) => {
     await page.goto('/family/child/3')
 
-    await expect(page.getByRole('heading', { name: 'Jamie' })).toBeVisible({ timeout: 15_000 })
-    for (const section of ['Budget', 'Allowance', 'Top up', 'Expenses', 'Balance trend']) {
+    // Overview is the default: who the child is, then insights.
+    await expect(page.locator('.overview')).toContainText('Jamie', { timeout: 15_000 })
+    await expect(page.getByText('Spending insights')).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Manage' }).click()
+    for (const section of ['Budget', 'Allowance', 'Top up']) {
       await expect(page.getByText(section, { exact: true }).first()).toBeVisible()
     }
     await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Top up' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Top up', exact: true })).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Activity' }).click()
+    for (const section of ['Expenses', 'Balance trend']) {
+      await expect(page.getByText(section, { exact: true }).first()).toBeVisible()
+    }
   })
 
   test('SmartFX home lists trip goals for the parent', async ({ page }) => {

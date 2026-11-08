@@ -1,6 +1,9 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
+import { clearSession, isLoggedIn } from '../family/session'
+import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
+import SignedOutCard from '../family/components/SignedOutCard'
 import BalanceHero from '../family/components/BalanceHero'
 import { DEFAULT_CURRENCY } from './constants'
 import { useDashboard } from './queries'
@@ -14,15 +17,25 @@ export default function BudgetDetail() {
   const { data, error, isLoading } = useDashboard(tripId)
   const { data: role } = useRole()
 
-  if (error) return <Banner>{error.message}</Banner>
-  if (isLoading || !data) return <p className="muted">Loading…</p>
+  function signOut() {
+    clearSession()
+    window.location.reload()
+  }
+
+  // Every state of the page sits inside the app shell, so the navbar and the
+  // side gutter are always there, including while loading or after an error.
+  const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
+
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip Budget" />
+  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (isLoading || !data) return shell(<p className="muted">Loading…</p>)
 
   const summary = data.summary || {}
   const lines = summary.lines || []
   const alerts = lines.filter((l) => l.alertLevel !== 'OK').length
 
-  return (
-    <div>
+  return shell(
+    <>
       <Link
         to="/budget"
         className="muted"
@@ -54,6 +67,6 @@ export default function BudgetDetail() {
 
       <div className="section-title">Expenses</div>
       <ExpenseList expenses={data.expenses} />
-    </div>
+    </>,
   )
 }

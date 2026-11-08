@@ -101,9 +101,16 @@ async function mockApi(page, over = {}) {
     StopAllowance: () => ({}),
     ChildSpend: () => ({ Status: 'Completed', Remaining: 140 }),
     DecideRequest: (b) => ({ Status: b.approve ? 'Approved' : 'Rejected' }),
+    // SmartFX reads the Family screens make. Faked too, so a mocked run never
+    // reaches the live sandbox through the dev proxy.
+    GetTrips: () => [],
+    GetTrip: () => ({ Trip: {}, Locks: [], Spends: [] }),
+    GetRate: () => ({ spotRate: 123.548, forwardRate: 121.0494, period: '6M', currency: 'JPY' }),
+    // The home page, where sign-in now lands, also lists recent Scan to Pay payments.
+    GetHistory: () => ({ Payments: [], BnplPlans: [] }),
     ...over,
   }
-  await page.route('**/api/family/**', (route) => {
+  const serve = (route) => {
     const url = new URL(route.request().url())
     const name = url.pathname.split('/').pop()
     const raw = route.request().postData()
@@ -111,16 +118,21 @@ async function mockApi(page, over = {}) {
     calls.push({ name, body, query: Object.fromEntries(url.searchParams) })
     const h = handlers[name]
     if (!h) return route.fulfill(reply({ Errors: [`unmocked ${name}`] }, 500))
-    const out = h(body)
+    const out = h(body, Object.fromEntries(url.searchParams))
     return out && out.__status
       ? route.fulfill(reply(out.body, out.__status))
       : route.fulfill(reply(out))
-  })
+  }
+  await page.route('**/api/family/**', serve)
+  await page.route('**/api/fx/**', serve)
+  // Path match, not a glob: a glob would also catch /src/features/scantopay/ modules.
+  await page.route((url) => url.pathname.startsWith('/scantopay/'), serve)
   return calls
 }
 const last = (calls, name) => calls.filter((c) => c.name === name).at(-1)
 const field = (scope, label) =>
   scope.locator('.field', { hasText: label }).locator('input,select').first()
+const openTab = (page, name) => page.getByRole('tab', { name }).click()
 const card = (page, btn) =>
   page.locator('.card', { has: page.getByRole('button', { name: btn, exact: true }) })
 
@@ -132,13 +144,14 @@ test.describe('signed out / login', () => {
   test('dev login stores the session token', async ({ page }) => {
     await mockApi(page)
     await page.goto('/family/dev-login')
-    await page.getByPlaceholder('SMU_TUSER2').fill('0000002169')
+    await page.getByPlaceholder('0000003018').fill('0000002169')
     await page.getByPlaceholder('0000006385').fill('0000004554')
     await page.getByPlaceholder('timothy.loo').fill('Parent Demo')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page).toHaveURL(/\/family$/)
+    await expect(page).toHaveURL(/\/$/)
     expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(PARENT)
-    await expect(page.getByText('Your WeTrip balance')).toBeVisible()
+    await expect(page.getByText('Hi, Parent!')).toBeVisible()
+    await expect(page.getByText('Available balance')).toBeVisible()
   })
 })
 
@@ -173,16 +186,18 @@ test.describe('parent home', () => {
     await expect
       .poll(() => last(calls, 'DecideRequest')?.body, { timeout: 10_000 })
       .toEqual({ requestId: 11, approve: true })
-    await expect(page.getByRole('button', { name: 'Reject' })).toBeEnabled()
-    await page.getByRole('button', { name: 'Reject' }).click()
-    await expect
-      .poll(() => last(calls, 'DecideRequest')?.body, { timeout: 10_000 })
-      .toEqual({ requestId: 11, approve: false })
+    // The list refetches after a decision, and a click that lands mid re-render
+    // is lost, so retry the click until the call is seen.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Reject' }).click({ timeout: 2_000 })
+      expect(last(calls, 'DecideRequest')?.body).toEqual({ requestId: 11, approve: false })
+    }).toPass({ timeout: 10_000 })
   })
 
   test('link a child: find by phone, then send the invite', async ({ page }) => {
     const calls = await mockApi(page)
     await page.goto('/family')
+    await page.getByRole('button', { name: 'Add a child' }).click()
     const form = page.locator('.card', { has: page.getByRole('button', { name: 'Find' }) })
     await field(form, 'Phone number').fill('91234567')
     await form.getByRole('button', { name: 'Find' }).click()
@@ -206,6 +221,7 @@ test.describe('parent home', () => {
   }) => {
     await mockApi(page, { FindCustomerByPhone: () => ({ CustomerId: '0000009999' }) })
     await page.goto('/family')
+    await page.getByRole('button', { name: 'Add a child' }).click()
     const form = page.locator('.card', { has: page.getByRole('button', { name: 'Find' }) })
     await field(form, 'Phone number').fill('91234567')
     await form.getByRole('button', { name: 'Find' }).click()
@@ -360,12 +376,211 @@ test.describe('child dashboard', () => {
   })
 })
 
+test.describe('budget alerts', () => {
+  const jamie = (spent) => [{ ...CHILDREN[0], spent }, CHILDREN[1]]
+
+  test('a parent hears nothing while spending is comfortably inside the budget', async ({
+    page,
+  }) => {
+    await as(page, PARENT)
+    await mockApi(page)
+    await page.goto('/family')
+    await expect(page.getByText('Second kid')).toBeVisible()
+    await expect(page.locator('.banner.warn, .banner.error')).toHaveCount(0)
+    await expect(page.getByText('80%+ used')).toHaveCount(0)
+  })
+
+  test('parent home warns at 80% and flags an over-budget child', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetChildren: () => jamie(170) })
+    await page.goto('/family')
+    await expect(
+      page.getByText('Jamie has used 85% of their weekly budget (SGD 170.00 of SGD 200.00).'),
+    ).toBeVisible()
+    await expect(page.getByText('80%+ used')).toBeVisible()
+  })
+
+  test('parent home says how far over, and that approval is now needed', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetChildren: () => jamie(230) })
+    await page.goto('/family')
+    await expect(
+      page.getByText(
+        'Jamie is over their weekly budget by SGD 30.00. New payments need your approval.',
+      ),
+    ).toBeVisible()
+    await expect(page.getByText('over budget', { exact: true })).toBeVisible()
+  })
+
+  test('the child sees how much is left, then that payments need approval', async ({ page }) => {
+    await as(page, CHILD)
+    let spent = 170
+    await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Child' }),
+      GetChildDashboard: () => ({ ...DASH, Spent: spent, Remaining: Math.max(0, 200 - spent) }),
+    })
+    await page.goto('/family')
+    await expect(
+      page.getByText("You've used 85% of this week's budget. SGD 30.00 left."),
+    ).toBeVisible()
+    spent = 200
+    await page.reload()
+    await expect(
+      page.getByText(
+        "You've reached this week's budget. New payments need your parent's approval.",
+      ),
+    ).toBeVisible()
+  })
+})
+
+test.describe('SmartFX trips in the family screens', () => {
+  const TRIP = {
+    Id: 12,
+    FamilyLinkId: 3,
+    Destination: 'Kyoto',
+    Currency: 'JPY',
+    TripStartDate: '2027-04-01',
+    TripEndDate: '2027-04-14',
+    TargetBudgetSgd: 800,
+    TargetRate: 120.8236,
+    Status: 'PartiallyLocked',
+    LockedSgd: 800,
+    LockedForeign: 96675.38,
+  }
+  // Only Jamie (link 3) has a trip.
+  const fx = (trip = TRIP) => ({
+    GetTrips: (_b, q) => (q.familyLinkId === '3' ? [trip] : []),
+    GetTrip: () => ({ Trip: trip, Locks: [], Spends: [{ Id: 1, TripId: 12, Amount: 20000 }] }),
+  })
+  const FIXED_NOW = new Date('2026-11-08T12:00:00')
+
+  test('the child card names the next trip and how soon it is', async ({ page }) => {
+    await as(page, PARENT)
+    await page.clock.setFixedTime(FIXED_NOW)
+    await mockApi(page, fx())
+    await page.goto('/family')
+    const jamie = page.locator('.card', { hasText: 'Jamie' }).filter({ hasText: 'Manage' }).first()
+    await expect(jamie).toContainText('Next trip: Kyoto')
+    await expect(jamie).toContainText('in 144 days')
+    await expect(page.getByText('Next trip:')).toHaveCount(1)
+  })
+
+  test('child detail shows the trip, its funding, and locked rate against today', async ({
+    page,
+  }) => {
+    await as(page, PARENT)
+    await page.clock.setFixedTime(FIXED_NOW)
+    const calls = await mockApi(page, fx())
+    await page.goto('/family/child/3')
+    const trip = page.locator('.card', { hasText: 'Kyoto' })
+    await expect(trip).toContainText('2027-04-01 → 2027-04-14 · in 144 days')
+    await expect(trip).toContainText('PartiallyLocked')
+    await expect(trip).toContainText('SGD 800.00 locked')
+    await expect(trip).toContainText('120.8236 JPY')
+    await expect(trip).toContainText("Today's 6M forward")
+    await expect(trip).toContainText('121.0494 JPY')
+    await expect(trip).toContainText(
+      "Locked JPY 96675.38 for SGD 800.00 (average rate 120.8442). At today's 6M forward of 121.0494 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
+    )
+    expect(last(calls, 'GetRate').query).toMatchObject({ currency: 'JPY', period: '6M' })
+    await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute(
+      'href',
+      '/fx/trips/12',
+    )
+  })
+
+  test('a child with no trips is told where trips are planned', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, fx())
+    await page.goto('/family/child/4')
+    await expect(page.getByText('No trips planned yet.')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'SmartFX' }).last()).toHaveAttribute('href', '/fx')
+  })
+
+  test('a SmartFX outage leaves the parent home working', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetTrips: () => ({ __status: 500, body: { Errors: ['boom'] } }) })
+    await page.goto('/family')
+    await expect(page.getByText('Second kid')).toBeVisible()
+    await expect(page.getByText('Jamie').first()).toBeVisible()
+    await expect(page.getByText('Next trip:')).toHaveCount(0)
+    await expect(page.locator('.banner.error')).toHaveCount(0)
+  })
+
+  test('the child sees how much trip money is left', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, { GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }), ...fx() })
+    await page.goto('/family')
+    const card = page.locator('.card', { hasText: 'My trip to Kyoto' })
+    await expect(card).toContainText('JPY 76675.38')
+    await expect(card).toContainText('left to spend')
+    await expect(card).toContainText('JPY 20000.00 spent of JPY 96675.38')
+  })
+
+  test('a trip with nothing locked yet says the parent is still saving', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
+      ...fx({ ...TRIP, LockedSgd: 0, LockedForeign: 0 }),
+    })
+    await page.goto('/family')
+    await expect(
+      page.getByText('Your parent is still setting aside money for this trip.'),
+    ).toBeVisible()
+  })
+
+  test('a child with no trip sees no trip card', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, { GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }) })
+    await page.goto('/family')
+    await expect(page.locator('.hero-amount')).toContainText('SGD 250.50')
+    await expect(page.getByText('My trip to')).toHaveCount(0)
+  })
+})
+
 test.describe('child detail (parent)', () => {
   test.beforeEach(({ page }) => as(page, PARENT))
+
+  test('spending insights: pace forecast, top categories, change on last week', async ({
+    page,
+  }) => {
+    // Wednesday: three days into the week, so 150 spent projects to 350.
+    await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'))
+    await mockApi(page, {
+      GetChildExpenses: (_b, q) =>
+        q.startDate === '2026-11-02'
+          ? {
+              Expenses: [
+                { TransactionId: 'A', Date: '2026-11-02', Amount: 100, Category: 'Food' },
+                { TransactionId: 'B', Date: '2026-11-03', Amount: 50, Category: 'Study' },
+              ],
+              Total: 150,
+            }
+          : q.startDate === '2026-10-26'
+            ? { Expenses: [], Total: 300 }
+            : { Expenses: [], Total: 0 },
+    })
+    await page.goto('/family/child/3')
+    const insights = page.locator('.card', { hasText: 'Spent this week so far' })
+    await expect(insights).toContainText('SGD 150.00')
+    await expect(insights).toContainText(
+      'At this pace: about SGD 350.00 this week, SGD 150.00 over budget.',
+    )
+    await expect(insights.locator('.insight-cat').first()).toContainText('Food')
+    await expect(insights.locator('.insight-cat').first()).toContainText('67%')
+    await expect(insights).toContainText('50% less than last week (SGD 300.00).')
+  })
+
+  test('spending insights: no budget means no forecast', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/family/child/4')
+    await expect(page.getByText('Set a budget to see a spending forecast.')).toBeVisible()
+  })
 
   test('budget form is pre-filled and saves the right payload', async ({ page }) => {
     const calls = await mockApi(page)
     await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
     const c = card(page, 'Save budget')
     await expect(field(c, 'Amount (SGD)')).toHaveValue('200')
     await expect(field(c, 'Period')).toHaveValue('Weekly')
@@ -381,6 +596,7 @@ test.describe('child detail (parent)', () => {
   test('top-up message names whose balance it is', async ({ page }) => {
     const calls = await mockApi(page)
     await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
     const c = card(page, 'Top up')
     await field(c, 'Amount (SGD)').fill('25')
     await c.getByRole('button', { name: 'Top up' }).click()
@@ -391,6 +607,7 @@ test.describe('child detail (parent)', () => {
   test('allowance: set up, and stop asks for confirmation', async ({ page }) => {
     const calls = await mockApi(page)
     await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
     await expect(page.getByText('Postman')).toHaveCount(0)
     const c = card(page, 'Set up allowance')
     await field(c, 'Amount (SGD)').fill('100')
@@ -416,6 +633,7 @@ test.describe('child detail (parent)', () => {
   test('stop allowance is disabled when the child has none', async ({ page }) => {
     await mockApi(page, { GetChildren: () => [{ ...CHILDREN[0], hasAllowance: false }] })
     await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
     await expect(page.getByRole('button', { name: 'Stop allowance' })).toBeDisabled()
   })
 
@@ -429,43 +647,432 @@ test.describe('child detail (parent)', () => {
     await page.clock.setFixedTime(new Date('2026-11-07T00:30:00+08:00'))
     const calls = await mockApi(page)
     await page.goto('/family/child/3')
+    await openTab(page, 'Activity')
     await expect(
       page.getByText('No outgoing payments').or(page.getByText('0000006718')),
     ).toBeVisible()
-    expect(calls.find((c) => c.name === 'GetChildExpenses').query).toMatchObject({
+    // The expenses card asks for the month so far; the insights card sends its
+    // own (weekly) windows alongside it.
+    expect(calls.filter((c) => c.name === 'GetChildExpenses').map((c) => c.query)).toContainEqual({
+      familyLinkId: '3',
       startDate: '2026-11-01',
       endDate: '2026-11-07',
     })
     await ctx.close()
   })
 
-  test('expenses render; trend shows a dash for empty months and trims month labels', async ({
-    page,
-  }) => {
+  test('activity lists the expenses and draws the balance trend', async ({ page }) => {
     await mockApi(page)
     await page.goto('/family/child/3')
+    await openTab(page, 'Activity')
     await expect(page.getByText('0000006718')).toBeVisible()
-    const trend = page.locator('table').last()
-    await expect(trend).toContainText('2026-11')
-    await expect(trend).not.toContainText('2026-11-07')
-    await expect(trend).toContainText('—')
+    const chart = page.getByRole('img', { name: 'Balance by month' })
+    await expect(chart).toBeVisible()
+    // Every month is labelled, including September, which has no balance yet.
+    await expect(chart.locator('.chart-label')).toHaveText(['Sep', 'Oct', 'Nov'])
+    await expect(chart.locator('.trend-dot')).toHaveCount(2)
+    await expect(page.getByText(/Balance is up SGD 150\.50/)).toBeVisible()
+    await expect(page.getByText(/since Oct\./)).toBeVisible()
   })
 
-  test('typing in the months box sends one request after a pause and can be cleared', async ({
+  test('the trend window switches between 3, 6 and 12 months', async ({ page }) => {
+    const calls = await mockApi(page)
+    await page.goto('/family/child/3')
+    await openTab(page, 'Activity')
+    await expect(page.getByRole('img', { name: 'Balance by month' })).toBeVisible()
+    expect(last(calls, 'GetBalanceTrend').query.months).toBe('6')
+    await expect(page.getByRole('button', { name: '6 months' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await page.getByRole('button', { name: '12 months' }).click()
+    await expect.poll(() => last(calls, 'GetBalanceTrend').query.months).toBe('12')
+    await page.getByRole('button', { name: '3 months' }).click()
+    await expect.poll(() => last(calls, 'GetBalanceTrend').query.months).toBe('3')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Flow and insights: the overview header, tabs, charts, and the pre-flight
+// checks on top-up, budget, approvals and payments.
+// ---------------------------------------------------------------------------
+
+// A Wednesday, three days into the week of Monday 2 Nov, so Jamie's weekly
+// budget (200, 50 spent) has five days left including today.
+const WEDNESDAY = new Date('2026-11-04T12:00:00')
+const weekExpenses = (_b, q) =>
+  q.startDate === '2026-11-02'
+    ? {
+        Expenses: [
+          { TransactionId: 'A', Date: '2026-11-02', Amount: 100, Category: 'Food' },
+          { TransactionId: 'B', Date: '2026-11-03', Amount: 50, Category: 'Study' },
+        ],
+        Total: 150,
+      }
+    : q.startDate === '2026-10-26'
+      ? { Expenses: [], Total: 300 }
+      : { Expenses: [], Total: 0 }
+const withSpent = (spent) => ({ GetChildren: () => [{ ...CHILDREN[0], spent }, CHILDREN[1]] })
+
+test.describe('child overview', () => {
+  test.beforeEach(async ({ page }) => {
+    await as(page, PARENT)
+    await page.clock.setFixedTime(WEDNESDAY)
+  })
+
+  test('summarises balance, pace, time left and the safe daily amount', async ({ page }) => {
+    await mockApi(page, { GetChildExpenses: weekExpenses })
+    await page.goto('/family/child/3')
+    const overview = page.locator('.overview')
+    await expect(overview).toContainText('Jamie')
+    await expect(overview).toContainText('SGD 250.50')
+    await expect(overview).toContainText('On track')
+    await expect(overview).toContainText('5 days left this week')
+    await expect(overview).toContainText('SGD 50.00 of SGD 200.00')
+    const tile = (label) => overview.locator('.tile', { hasText: label })
+    await expect(tile('Left to spend')).toContainText('SGD 150.00')
+    await expect(tile('Safe per day')).toContainText('SGD 30.00')
+    await expect(tile('vs last week')).toContainText('-50%')
+    await expect(overview.locator('.pace-tick')).toHaveCount(1)
+  })
+
+  test('says "Spending fast" when spending is ahead of the calendar', async ({ page }) => {
+    await mockApi(page, withSpent(120))
+    await page.goto('/family/child/3')
+    await expect(page.locator('.overview')).toContainText('Spending fast')
+  })
+
+  test('says "Over budget" with no safe daily amount once the budget is used', async ({ page }) => {
+    await mockApi(page, withSpent(230))
+    await page.goto('/family/child/3')
+    const overview = page.locator('.overview')
+    await expect(overview).toContainText('Over budget')
+    await expect(overview.locator('.tile', { hasText: 'Safe per day' })).toContainText('—')
+    await expect(overview.locator('.pace-tick')).toHaveCount(0)
+  })
+
+  test('with no budget it offers to set one instead of showing an empty pace', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/family/child/4')
+    await expect(page.getByText('No budget set yet, so there is no pace to show.')).toBeVisible()
+    await page.getByRole('button', { name: 'Set a budget' }).click()
+    await expect(page.getByRole('tab', { name: 'Manage' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
+  })
+})
+
+test.describe('child tabs', () => {
+  test('Overview is the default; Manage and Activity hold the forms and the history', async ({
+    page,
+  }) => {
+    await as(page, PARENT)
+    await mockApi(page)
+    await page.goto('/family/child/3')
+    await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    await expect(page.getByText('Spending insights')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Save budget' })).toHaveCount(0)
+    await expect(page.getByText('Balance trend')).toHaveCount(0)
+
+    await openTab(page, 'Manage')
+    await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Set up allowance' })).toBeVisible()
+    await expect(page.getByText('Spending insights')).toHaveCount(0)
+
+    await openTab(page, 'Activity')
+    await expect(page.getByText('Balance trend')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Save budget' })).toHaveCount(0)
+  })
+})
+
+test.describe('spending chart', () => {
+  test('draws a bar per day and marks days above the safe daily amount', async ({ page }) => {
+    await as(page, PARENT)
+    await page.clock.setFixedTime(WEDNESDAY)
+    await mockApi(page, { GetChildExpenses: weekExpenses })
+    await page.goto('/family/child/3')
+    const chart = page.getByRole('img', { name: 'Spending per day this period' })
+    await expect(chart.locator('.bar')).toHaveCount(3) // Mon, Tue, Wed
+    // Safe amount is SGD 30 a day: Monday (100) and Tuesday (50) are above it.
+    await expect(chart.locator('.bar-over')).toHaveCount(2)
+    await expect(chart.locator('.chart-limit')).toHaveCount(1)
+    await expect(
+      page.getByText('Dashed line: SGD 30.00 a day keeps the budget on track.'),
+    ).toBeVisible()
+  })
+
+  test('no spending, no chart', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetChildExpenses: () => ({ Expenses: [], Total: 0 }) })
+    await page.goto('/family/child/3')
+    await expect(page.getByText('Spent this week so far')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Spending per day this period' })).toHaveCount(0)
+  })
+})
+
+test.describe('manage: budget and top-up checks', () => {
+  test.beforeEach(({ page }) => as(page, PARENT))
+
+  test('the budget form offers last period’s spending as a starting point', async ({ page }) => {
+    await page.clock.setFixedTime(WEDNESDAY)
+    const calls = await mockApi(page, { GetChildExpenses: weekExpenses })
+    await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
+    const c = card(page, 'Save budget')
+    const suggestion = c.getByRole('button', { name: "Use last week's spending (SGD 300.00)" })
+    await expect(suggestion).toBeVisible()
+    await suggestion.click()
+    await expect(field(c, 'Amount (SGD)')).toHaveValue('300.00')
+    await expect(suggestion).toHaveCount(0)
+    await c.getByRole('button', { name: 'Save budget' }).click()
+    await expect.poll(() => last(calls, 'SetBudget')?.body?.amount).toBe(300)
+  })
+
+  test('no suggestion when there was no spending last period', async ({ page }) => {
+    await mockApi(page, { GetChildExpenses: () => ({ Expenses: [], Total: 0 }) })
+    await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
+    await expect(page.getByRole('button', { name: /Use last/ })).toHaveCount(0)
+  })
+
+  test('quick amounts fill the field and a preview shows both balances afterwards', async ({
     page,
   }) => {
     const calls = await mockApi(page)
     await page.goto('/family/child/3')
-    await expect(page.locator('table').last()).toBeVisible()
-    await page.waitForTimeout(600)
-    const before = calls.filter((c) => c.name === 'GetBalanceTrend').length
-    const months = page.locator('input[min="1"][max="24"]')
-    await months.fill('')
-    await months.pressSequentially('12', { delay: 60 })
-    await page.waitForTimeout(900)
-    expect(calls.filter((c) => c.name === 'GetBalanceTrend').length - before).toBe(1)
-    expect(last(calls, 'GetBalanceTrend').query.months).toBe('12')
-    await months.fill('')
-    await expect(months).toHaveValue('')
+    await openTab(page, 'Manage')
+    const c = card(page, 'Top up')
+    await expect(c.locator('.preview')).toHaveCount(0)
+    await c.getByRole('button', { name: '50', exact: true }).click()
+    await expect(field(c, 'Amount (SGD)')).toHaveValue('50')
+    await expect(c.locator('.preview')).toContainText('SGD 1000.00 → SGD 950.00')
+    await expect(c.locator('.preview')).toContainText("Jamie's balance")
+    await expect(c.locator('.preview')).toContainText('SGD 250.50 → SGD 300.50')
+    await c.getByRole('button', { name: 'Top up', exact: true }).click()
+    await expect(page.getByText('Your balance is now SGD 975.00.')).toBeVisible()
+    expect(last(calls, 'TopUp').body).toMatchObject({ familyLinkId: 3, amount: 50 })
+  })
+
+  test('sending more than you have is blocked before it reaches the bank', async ({ page }) => {
+    const calls = await mockApi(page)
+    await page.goto('/family/child/3')
+    await openTab(page, 'Manage')
+    const c = card(page, 'Top up')
+    await field(c, 'Amount (SGD)').fill('5000')
+    await expect(page.getByText('You only have SGD 1000.00 to send.')).toBeVisible()
+    await expect(c.getByRole('button', { name: 'Top up', exact: true })).toBeDisabled()
+    expect(calls.filter((x) => x.name === 'TopUp')).toHaveLength(0)
+    await field(c, 'Amount (SGD)').fill('1000')
+    await expect(c.getByRole('button', { name: 'Top up', exact: true })).toBeEnabled()
+  })
+})
+
+test.describe('parent home flow', () => {
+  test.beforeEach(({ page }) => as(page, PARENT))
+
+  const REQUEST = (id, amount) => ({
+    RequestId: id,
+    FamilyLinkId: 3,
+    Nickname: 'Jamie',
+    MerchantAccountId: '0000006718',
+    Amount: amount,
+    Category: 'Food',
+  })
+
+  test('approvals are totalled, and a request bigger than the balance is flagged', async ({
+    page,
+  }) => {
+    await mockApi(page, { GetPendingRequests: () => [REQUEST(11, 40), REQUEST(12, 9999)] })
+    await page.goto('/family')
+    await expect(page.getByText('SGD 10039.00 waiting across 2 requests')).toBeVisible()
+    // Said once for the child, then a small badge on the row that does not fit.
+    await expect(
+      page.getByText(
+        'Jamie has SGD 250.50, so 1 request above that will not go through until you top them up.',
+      ),
+    ).toBeVisible()
+    await expect(page.getByText('Over balance')).toHaveCount(1)
+    await expect(
+      page.locator('.request', { hasText: 'SGD 9999.00' }).getByText('Over balance'),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Approve' })).toHaveCount(2)
+  })
+
+  test('several requests over the balance still produce one warning', async ({ page }) => {
+    await mockApi(page, {
+      GetPendingRequests: () => [REQUEST(11, 300), REQUEST(12, 400), REQUEST(13, 9999)],
+    })
+    await page.goto('/family')
+    await expect(page.getByText(/so 3 requests above that will not go through/)).toHaveCount(1)
+    await expect(page.getByText('Over balance')).toHaveCount(3)
+  })
+
+  test('a single affordable request has no warning', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/family')
+    await expect(page.getByText('SGD 40.00 waiting across 1 request')).toBeVisible()
+    await expect(page.getByText('Over balance')).toHaveCount(0)
+    await expect(page.locator('.banner.warn')).toHaveCount(0)
+  })
+
+  test('the link-a-child form stays out of the way until asked for', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/family')
+    await expect(page.getByText('Second kid')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Find' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Add a child' }).click()
+    await expect(page.getByRole('button', { name: 'Find' })).toBeVisible()
+  })
+
+  test('with no children the link form is shown straight away', async ({ page }) => {
+    await mockApi(page, { GetChildren: () => [], GetPendingRequests: () => [] })
+    await page.goto('/family')
+    await expect(page.getByRole('button', { name: 'Find' })).toBeVisible()
+  })
+
+  test('each child card says how many days are left in the budget period', async ({ page }) => {
+    await page.clock.setFixedTime(WEDNESDAY)
+    await mockApi(page)
+    await page.goto('/family')
+    const jamie = page.locator('.card', { hasText: 'Jamie' }).filter({ hasText: 'Manage' }).first()
+    await expect(jamie).toContainText('SGD 50.00 of SGD 200.00 · 5 days left')
+    await expect(jamie.locator('.pace-tick')).toHaveCount(1)
+  })
+})
+
+test.describe('child pay flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await as(page, CHILD)
+    await page.clock.setFixedTime(WEDNESDAY)
+  })
+  const child = { GetMyFamilyRole: () => ({ role: 'Child' }) }
+
+  test('the budget card shows a daily amount to stay on track', async ({ page }) => {
+    await mockApi(page, child)
+    await page.goto('/family')
+    const budget = page.locator('.card', { hasText: 'Budget this week' })
+    await expect(budget).toContainText('SGD 150.00 remaining')
+    await expect(budget).toContainText('about SGD 30.00 a day for 5 days')
+    await expect(budget.locator('.pace-tick')).toHaveCount(1)
+  })
+
+  test('category is picked from chips, General by default', async ({ page }) => {
+    const calls = await mockApi(page, child)
+    await page.goto('/family')
+    await expect(page.getByRole('button', { name: 'General' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Amount').fill('10')
+    await page.getByRole('button', { name: 'Food', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Food', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await expect.poll(() => last(calls, 'ChildSpend')?.body?.category).toBe('Food')
+  })
+
+  test('a payment over the budget is flagged before paying', async ({ page }) => {
+    await mockApi(page, child)
+    await page.goto('/family')
+    await field(page, 'Amount').fill('10')
+    await expect(page.locator('.banner.warn, .banner.error')).toHaveCount(0)
+    await field(page, 'Amount').fill('200')
+    await expect(
+      page.getByText(
+        'That is SGD 50.00 over what is left in your budget, so it will go to your parent for approval.',
+      ),
+    ).toBeVisible()
+  })
+
+  test('a payment over the balance is flagged as an error', async ({ page }) => {
+    await mockApi(page, child)
+    await page.goto('/family')
+    await field(page, 'Amount').fill('300')
+    await expect(page.getByText('That is more than your balance (SGD 250.50).')).toBeVisible()
+  })
+})
+
+test.describe('a parent with no children yet', () => {
+  test.beforeEach(({ page }) => as(page, PARENT))
+  const nobody = {
+    GetMyFamilyRole: () => ({ role: 'None' }),
+    GetMyLinkInvite: () => ({ Errors: ['No family link for this customer'] }),
+  }
+
+  test('can still link a first child from the not-linked screen', async ({ page }) => {
+    const calls = await mockApi(page, nobody)
+    await page.goto('/family')
+    await expect(page.getByText("You're not linked to a family yet.")).toBeVisible()
+    await expect(page.getByText('Are you a parent?')).toBeVisible()
+
+    const form = page.locator('.card', { has: page.getByRole('button', { name: 'Find' }) })
+    await field(form, 'Phone number').fill('91234567')
+    await form.getByRole('button', { name: 'Find' }).click()
+    await expect(page.getByText('New Kid')).toBeVisible()
+    await field(page, 'Nickname').fill('Kiddo')
+    await page.getByRole('button', { name: 'Send invite' }).click()
+    await expect(page.getByText('Invite sent')).toBeVisible()
+    expect(last(calls, 'LinkChild').body).toEqual({
+      childCustomerId: '0000009999',
+      nickname: 'Kiddo',
+      hostCurrency: 'SGD',
+    })
+  })
+
+  test('sending the first invite refreshes the role, so the parent screen can take over', async ({
+    page,
+  }) => {
+    let linked = false
+    const calls = await mockApi(page, {
+      GetMyFamilyRole: () => (linked ? { role: 'Parent', FamilyLinkId: 9 } : { role: 'None' }),
+      GetMyLinkInvite: () => ({ Errors: ['No family link for this customer'] }),
+      GetChildren: () =>
+        linked
+          ? [
+              {
+                familyLinkId: 9,
+                nickname: 'Kiddo',
+                childCustomerId: '0000009999',
+                status: 'Pending',
+              },
+            ]
+          : [],
+      LinkChild: () => {
+        linked = true
+        return { id: 9 }
+      },
+    })
+    await page.goto('/family')
+    const form = page.locator('.card', { has: page.getByRole('button', { name: 'Find' }) })
+    await field(form, 'Phone number').fill('91234567')
+    await form.getByRole('button', { name: 'Find' }).click()
+    await expect(page.getByText('New Kid')).toBeVisible()
+    await field(page, 'Nickname').fill('Kiddo')
+    await page.getByRole('button', { name: 'Send invite' }).click()
+    // The role is asked for again, and the parent's own screen now shows the child.
+    await expect(page.getByText('Kiddo', { exact: true })).toBeVisible()
+    await expect(page.getByText('Pending', { exact: true })).toBeVisible()
+    expect(calls.filter((c) => c.name === 'GetMyFamilyRole').length).toBeGreaterThan(1)
+  })
+
+  test('a child with a real invite does not see the parent form', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Pending' }),
+      GetMyLinkInvite: () => ({
+        FamilyLinkId: 3,
+        ParentCustomerId: '0000002169',
+        Nickname: 'Mum',
+        HasInvite: true,
+      }),
+    })
+    await page.goto('/family')
+    await expect(page.getByText('Family invite')).toBeVisible()
+    await expect(page.getByText('Are you a parent?')).toHaveCount(0)
   })
 })

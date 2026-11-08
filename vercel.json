@@ -1,0 +1,21 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/family/:path*",
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Family_Composite/rest/Family/:path*"
+    },
+    {
+      "source": "/api/fx/:path*",
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX/:path*"
+    },
+    {
+      "source": "/api/budget/:path*",
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Budget_Composite/rest/BudgetComposite/:path*"
+    },
+    {
+      "source": "/scantopay/:path*",
+      "destination": "https://personal-esnstley.outsystemscloud.com/ScanToPay/rest/ScanToPay/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
