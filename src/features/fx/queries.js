@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FxApi } from './api'
 import { useChildren } from '../family/queries'
-import { isLoggedIn } from '../family/session'
+import { isLoggedIn } from '../auth/session'
 
 export const fxKeys = {
   trips: ['fx', 'trips'],

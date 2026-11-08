@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FamilyApi } from './api'
-import { isLoggedIn } from './session'
+import { isLoggedIn } from '../auth/session'
 
 // Every read is a query, every write is a mutation that invalidates the keys
 // it can affect. `enabled: isLoggedIn()` replaces the old conditional effects.

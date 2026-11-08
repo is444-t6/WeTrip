@@ -17,25 +17,35 @@ async function signInAs(page, user) {
 }
 
 test.describe('auth', () => {
-  test('a signed-out visitor is redirected to the sign-in card', async ({ page }) => {
+  test('a signed-out visitor sees the sign-in card on the front page', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveURL(/\/family$/)
+    // It stays on / rather than being sent into one product.
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByRole('heading', { name: 'WeTrip', exact: true })).toBeVisible()
     await expect(page.getByText("You're not signed in yet.")).toBeVisible()
     await expect(page.getByRole('button', { name: 'Continue to sign in' })).toBeVisible()
   })
 
   test('the dev login form stores a session and opens the parent home', async ({ page }) => {
-    await page.goto('/family/dev-login')
+    await page.goto('/login')
 
+    // Only the customer id is asked for; the account is looked up from it.
     await page.getByPlaceholder('0000003018').fill(PARENT.id)
-    await page.getByPlaceholder('0000006385').fill(PARENT.account)
-    await page.getByPlaceholder('timothy.loo').fill(PARENT.name)
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    // This customer has several deposit accounts, so there is one more step,
+    // with the first (the one the demo data is built around) preselected.
+    await expect(page.getByLabel('Which account should WeTrip use?')).toHaveValue(PARENT.account, {
+      timeout: 15_000,
+    })
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // Signing in lands on the home page, not the Family screen.
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByText('Hi, Parent!')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByText('Available balance')).toBeVisible()
+    await expect(page.getByText('Available balance')).toBeVisible({ timeout: 15_000 })
+    expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(
+      `${PARENT.id}:${PARENT.account}:`,
+    )
   })
 })
 

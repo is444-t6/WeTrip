@@ -75,6 +75,9 @@ async function mockApi(page, over = {}) {
     }),
     GetTrips: (_b, q) => (q.familyLinkId === '3' ? [TRIP] : []),
     GetHistory: () => ({ Payments: PAYMENTS, BnplPlans: [] }),
+    GetMyAccounts: () => [
+      { AccountId: '0000004554', ProductName: 'CASA', Currency: 'SGD', Balance: 1000 },
+    ],
     ...over,
   }
   const serve = (route) => {
@@ -98,9 +101,55 @@ async function mockApi(page, over = {}) {
 }
 
 test.describe('signed out', () => {
-  test('a visitor without a session is sent to the sign-in card', async ({ page }) => {
+  test('a visitor without a session sees a WeTrip sign-in card, not the Family page', async ({
+    page,
+  }) => {
     await page.goto('/')
-    await expect(page).toHaveURL(/\/family$/)
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByRole('heading', { name: 'WeTrip', exact: true })).toBeVisible()
+    await expect(page.getByText("You're not signed in yet.")).toBeVisible()
+    await expect(page.getByText('WeTrip Family')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Continue to sign in' })).toHaveAttribute(
+      'href',
+      '/login',
+    )
+  })
+
+  test('the sign-in page is /login, and the old Family address still gets there', async ({
+    page,
+  }) => {
+    await page.goto('/login')
+    await expect(page.getByRole('heading', { name: 'Sign in to WeTrip' })).toBeVisible()
+    await expect(page).toHaveURL(/\/login$/)
+
+    await page.goto('/family/dev-login')
+    await expect(page).toHaveURL(/\/login$/)
+    await expect(page.getByRole('heading', { name: 'Sign in to WeTrip' })).toBeVisible()
+  })
+
+  test('signing in from /login lands on the home page', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/login')
+    await page.getByPlaceholder('0000003018').fill('0000002169')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByText('Hi, Parent!')).toBeVisible()
+  })
+
+  test('signing out returns to that same front page', async ({ page }) => {
+    // Seed the session once. The shared helper re-seeds on every page load,
+    // which would undo the reload that signing out triggers.
+    await page.addInitScript((token) => {
+      if (!sessionStorage.getItem('seeded')) {
+        sessionStorage.setItem('wetrip_session', token)
+        sessionStorage.setItem('seeded', '1')
+      }
+    }, PARENT)
+    await mockApi(page)
+    await page.goto('/')
+    await expect(page.getByText('Hi, Parent!')).toBeVisible()
+    await page.getByRole('button', { name: 'Sign out' }).click()
+    await expect(page).toHaveURL(/\/$/)
     await expect(page.getByText("You're not signed in yet.")).toBeVisible()
   })
 })

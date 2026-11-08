@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMe, usePendingRequests, useRole } from '../family/queries'
-import { clearSession } from '../family/session'
+import { clearSession } from '../auth/session'
 import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
 import { firstName, maskAccount } from './homeData'

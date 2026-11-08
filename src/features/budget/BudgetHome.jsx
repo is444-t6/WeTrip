@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { clearSession, isLoggedIn } from '../family/session'
+import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../family/components/AppShell'
 import SignedOutCard from '../family/components/SignedOutCard'
 

@@ -218,7 +218,7 @@ test.describe('trip pages, any width', () => {
     await expect(page.getByText("You're not signed in yet.")).toBeVisible()
     await expect(page.getByRole('link', { name: 'Continue to sign in' })).toHaveAttribute(
       'href',
-      '/family/dev-login',
+      '/login',
     )
     await ctx.close()
   })

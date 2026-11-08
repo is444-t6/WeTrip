@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { FxApi } from '../fx/api'
 import { fxKeys } from '../fx/queries'
-import { isLoggedIn } from './session'
+import { isLoggedIn } from '../auth/session'
 
 // One child's SmartFX trips. Sits under the same ['fx', 'trips'] prefix as the
 // SmartFX screens, so anything that invalidates their trip lists refreshes this

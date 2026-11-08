@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
-import { clearSession, getSessionAccountId, isLoggedIn } from '../family/session'
+import { clearSession, getSessionAccountId, isLoggedIn } from '../auth/session'
 import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
 import SignedOutCard from '../family/components/SignedOutCard'

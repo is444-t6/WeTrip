@@ -108,6 +108,10 @@ async function mockApi(page, over = {}) {
     GetRate: () => ({ spotRate: 123.548, forwardRate: 121.0494, period: '6M', currency: 'JPY' }),
     // The home page, where sign-in now lands, also lists recent Scan to Pay payments.
     GetHistory: () => ({ Payments: [], BnplPlans: [] }),
+    // The sign-in looks the deposit account up from the customer id.
+    GetMyAccounts: () => [
+      { AccountId: '0000004554', ProductName: 'CASA', Currency: 'SGD', Balance: 1000 },
+    ],
     ...over,
   }
   const serve = (route) => {
@@ -143,13 +147,14 @@ test.describe('signed out / login', () => {
   })
   test('dev login stores the session token', async ({ page }) => {
     await mockApi(page)
-    await page.goto('/family/dev-login')
+    await page.goto('/login')
     await page.getByPlaceholder('0000003018').fill('0000002169')
-    await page.getByPlaceholder('0000006385').fill('0000004554')
-    await page.getByPlaceholder('timothy.loo').fill('Parent Demo')
-    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/$/)
-    expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(PARENT)
+    // The name is no longer asked for, so the token ends after the account.
+    expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(
+      '0000002169:0000004554:',
+    )
     await expect(page.getByText('Hi, Parent!')).toBeVisible()
     await expect(page.getByText('Available balance')).toBeVisible()
   })
@@ -253,7 +258,12 @@ test.describe('roles', () => {
 
   test('a pending child can accept the invite', async ({ page }) => {
     await as(page, CHILD)
-    const calls = await mockApi(page, { GetMyFamilyRole: () => ({ role: 'Pending' }) })
+    const calls = await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Pending' }),
+      // The account list failing is what puts the typed field on screen (the
+      // dropdown and the fallback have tests of their own below).
+      GetMyAccounts: () => ({ __status: 500, body: { Errors: ['boom'] } }),
+    })
     await page.goto('/family')
     await expect(page.getByText('Mum')).toBeVisible()
     await page.getByPlaceholder('Your deposit AccountId').fill('0000006064')

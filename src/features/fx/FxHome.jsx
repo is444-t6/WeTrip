@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
-import { clearSession, isLoggedIn } from '../family/session'
+import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
 import NewTripForm from './components/NewTripForm'
@@ -17,7 +17,7 @@ export default function FxHome() {
         <div className="card center-card" style={{ textAlign: 'center' }}>
           <h2>WeTrip SmartFX</h2>
           <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login">
+          <Link to="/login">
             <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
           </Link>
         </div>

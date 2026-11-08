@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as BudgetIndexRouteImport } from './routes/budget.index'
 import { Route as BudgetTripIdRouteImport } from './routes/budget.$tripId'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
@@ -31,6 +32,11 @@ import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BudgetIndexRoute = BudgetIndexRouteImport.update({
@@ -121,6 +127,7 @@ const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -245,6 +257,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   BudgetTripIdRoute: typeof BudgetTripIdRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
   InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/budget/': {
@@ -397,6 +417,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   BudgetTripIdRoute: BudgetTripIdRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,
   InsuranceCheckoutRoute: InsuranceCheckoutRoute,

@@ -1,11 +1,6 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import Home from '../features/home/Home'
-import { isLoggedIn } from '../features/family/session'
+import { createFileRoute } from '@tanstack/react-router'
+import FrontDoor from '../features/home/FrontDoor'
 
-// The home page needs a signed-in customer; the sign-in card lives on /family.
 export const Route = createFileRoute('/')({
-  beforeLoad: () => {
-    if (!isLoggedIn()) throw redirect({ to: '/family' })
-  },
-  component: Home,
+  component: FrontDoor,
 })

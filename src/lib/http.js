@@ -1,4 +1,4 @@
-import { getSessionToken } from '../features/family/session'
+import { getSessionToken } from '../features/auth/session'
 
 // OutSystems serialises structure attributes with their declared names, which
 // in these modules is PascalCase. The components speak camelCase, so normalise
