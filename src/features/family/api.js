@@ -41,7 +41,28 @@ export const FamilyApi = {
 
   // Parent: approvals
   getPendingRequests: () => call('GET', 'GetPendingRequests'),
-  decideRequest: (requestId, approve) => call('POST', 'DecideRequest', { requestId, approve }),
+  // A request is either an old held payment or an "ask for more" (no payment
+  // attached).
+  // Approving an ask also raises the child's limit: `grantAmount` for `hours`.
+  decideRequest: (requestId, approve, { grantAmount, hours, note } = {}) =>
+    call('POST', 'DecideRequest', { requestId, approve, grantAmount, hours, note }),
+
+  // One-tap raise: lifts the child's limit by `amount` for `days`, no ask needed.
+  grantBudget: (familyLinkId, amount, days = 1, note = '') =>
+    call('POST', 'GrantBudget', { familyLinkId, amount, days, note }),
+  // Freeze, limit to some categories, and auto-approve small asks. Saving
+  // replaces the current rules; there is no call to read them back.
+  setSpendingRules: (familyLinkId, { isFrozen, allowedCategories, autoApproveUnder }) =>
+    call('POST', 'SetSpendingRules', {
+      familyLinkId,
+      isFrozen,
+      allowedCategories,
+      autoApproveUnder,
+    }),
+
+  // Child: ask the parent to raise the limit, and see how earlier asks went.
+  askForMore: (amount, reason) => call('POST', 'AskForMore', { amount, reason }),
+  getMyRequests: () => call('GET', 'GetMyRequests'),
 
   // Parent: expenses, balance trend
   getChildExpenses: (familyLinkId, startDate, endDate) =>

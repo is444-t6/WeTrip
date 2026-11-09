@@ -50,11 +50,11 @@ test.describe('alertMessage', () => {
     })
     expect(alertMessage({ ...base, who: 'parent', spent: 210 })).toEqual({
       kind: 'error',
-      text: 'Jamie is over their weekly budget by SGD 10.00. New payments need your approval.',
+      text: 'Jamie is over their weekly budget by SGD 10.00. New payments will be declined unless you raise their limit.',
     })
     expect(alertMessage({ ...base, who: 'parent', spent: 200 })).toEqual({
       kind: 'error',
-      text: 'Jamie has used all of their weekly budget. New payments need your approval.',
+      text: 'Jamie has used all of their weekly budget. New payments will be declined unless you raise their limit.',
     })
   })
 
@@ -65,7 +65,7 @@ test.describe('alertMessage', () => {
     })
     expect(alertMessage({ ...base, who: 'child', spent: 200 })).toEqual({
       kind: 'error',
-      text: "You've reached this week's budget. New payments need your parent's approval.",
+      text: "You've reached this week's budget. New payments will be declined unless your parent raises your limit.",
     })
   })
 
@@ -260,7 +260,7 @@ test.describe('payNotice', () => {
   test('warns when it is over the budget, and says by how much', () => {
     expect(payNotice({ ...base, amount: 200 })).toEqual({
       kind: 'warn',
-      text: 'That is SGD 50.00 over what is left in your budget, so it will go to your parent for approval.',
+      text: 'That is SGD 50.00 over what is left in your budget, so it will be declined unless your parent raises your limit.',
     })
   })
 

@@ -21,8 +21,9 @@
 //     never stack standing instructions.
 //   - Requests this run creates are decided (approved/rejected) or, failing
 //     that, rejected in cleanup; the child's original budget is restored.
-// The only lasting effect is the small amount (SPEND_TOTAL below) that ends
-// up with the merchant. If the demo child is already linked, LinkChild is
+// The only lasting effects are the small amount (SPEND_TOTAL below) that ends
+// up with the merchant, and the grant the run creates (an approved ask lifts
+// the limit for the hours given, 1 here). If the demo child is already linked, LinkChild is
 // skipped and the existing familyLinkId is reused.
 //
 // Uses field(json, 'camelName') everywhere a response field is read, which
@@ -34,6 +35,11 @@
 
 import { assert, env, field, http, step, summary } from './_lib.mjs'
 
+// The grant this run creates keeps the child's limit raised for GRANT_HOURS, and
+// the API cannot read or revoke it. A run inside that window finds the
+// over-budget payment going through; that is reported, not treated as a failure.
+const GRANT_HOURS = 1
+
 const BASE = env('COMPOSITE_BASE')
 const API_KEY = env('COMPOSITE_API_KEY')
 
@@ -42,17 +48,18 @@ const PARENT_ACCOUNT_ID = env('PARENT_ACCOUNT_ID')
 const CHILD_CUSTOMER_ID = env('CHILD_CUSTOMER_ID')
 const CHILD_ACCOUNT_ID = env('CHILD_ACCOUNT_ID')
 const CHILD_COUNTRY_CODE = env('CHILD_COUNTRY_CODE', '65')
-const CHILD_PHONE_NUMBER = env('CHILD_PHONE_NUMBER')
+const CHILD_PHONE_NUMBER = env('CHILD_PHONE_NUMBER', '') // optional: skips the phone lookup when blank
 const MERCHANT_ACCOUNT_ID = env('MERCHANT_ACCOUNT_ID')
 const WEEKLY_MONTHLY = env('WEEKLY_MONTHLY', 'Monthly') // guess — confirm against the Payments Swagger field description
 
-// Money plan for one run. Within-budget spends go straight to the merchant;
-// the approved over-budget request does too; the rejected one moves nothing.
+// Money plan for one run. Within-budget spends go straight to the merchant.
+// An over-budget payment is declined (nothing moves); once the parent grants an
+// ask for APPROVED_EXTRA the same payment goes through. A rejected ask moves nothing.
 const FOOD = 10
 const RENT = 20
 const APPROVED_EXTRA = 25
 const REJECTED_EXTRA = 25
-const HEADROOM = 50 // budget = already spent + HEADROOM, so FOOD + RENT fit and the extras don't
+const HEADROOM = 50 // limit = already spent + HEADROOM, so FOOD + RENT fit and the extra doesn't
 const SPEND_TOTAL = FOOD + RENT + APPROVED_EXTRA
 const CHILD_FLOAT = SPEND_TOTAL + 5 // the child needs at least this much to finish the run
 
@@ -70,6 +77,8 @@ const asChild = (method, path, body) =>
   http(BASE, method, path, { headers: headersFor(childToken), body })
 
 const money = (n) => Math.round(Number(n) * 100) / 100
+// ChildSpend answers Paid (older builds said Completed).
+const paid = (json) => ['Paid', 'Completed'].includes(field(json, 'status'))
 const near = (a, b) => Math.abs(Number(a) - Number(b)) < 0.005
 
 async function readChildLink(familyLinkId) {
@@ -96,6 +105,7 @@ let familyLinkId
 let original = { budget: 0, period: 'Monthly' }
 const createdRequestIds = []
 let allowanceTouched = false
+let rulesTouched = false
 
 try {
   await step('GetMyFamilyRole (parent) responds', async () => {
@@ -105,6 +115,10 @@ try {
   })
 
   await step('FindCustomerByPhone finds the child', async () => {
+    if (!CHILD_PHONE_NUMBER) {
+      console.log('      NOT EXERCISED: set CHILD_PHONE_NUMBER in .env.test to test this')
+      return
+    }
     const { status, json } = await asParent(
       'GET',
       `FindCustomerByPhone?countryCode=${encodeURIComponent(CHILD_COUNTRY_CODE)}&phoneNumber=${encodeURIComponent(CHILD_PHONE_NUMBER)}`,
@@ -122,6 +136,18 @@ try {
   })
 
   await step('LinkChild (or reuse an existing link)', async () => {
+    const existing = await asParent('GET', 'GetChildren')
+    const active = Array.isArray(existing.json)
+      ? existing.json.find(
+          (c) =>
+            field(c, 'childCustomerId') === CHILD_CUSTOMER_ID && field(c, 'status') === 'Active',
+        )
+      : undefined
+    if (active) {
+      familyLinkId = field(active, 'familyLinkId')
+      console.log(`      reusing active link ${familyLinkId}`)
+      return
+    }
     const { status, json } = await asParent('POST', 'LinkChild', {
       childCustomerId: CHILD_CUSTOMER_ID,
       nickname: 'Test harness child',
@@ -299,7 +325,7 @@ try {
       narrative: `${runTag} lunch`,
     })
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-    assert(field(json, 'status') === 'Completed', `expected Completed, got ${JSON.stringify(json)}`)
+    assert(paid(json), `expected Paid, got ${JSON.stringify(json)}`)
   })
 
   await step(`ChildSpend within budget completes immediately (${RENT}, Rent)`, async () => {
@@ -310,7 +336,7 @@ try {
       narrative: `${runTag} rent`,
     })
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-    assert(field(json, 'status') === 'Completed', `expected Completed, got ${JSON.stringify(json)}`)
+    assert(paid(json), `expected Paid, got ${JSON.stringify(json)}`)
   })
 
   await step('Dashboard spending rose by exactly what was spent', async () => {
@@ -321,89 +347,228 @@ try {
     )
   })
 
-  let approveId
+  let askId
   let rejectId
+  let pendingBefore = 0
 
-  await step(
-    `ChildSpend over budget creates a PendingApproval request (${APPROVED_EXTRA}, Study)`,
-    async () => {
-      const { status, json } = await asChild('POST', 'ChildSpend', {
-        merchantAccountId: MERCHANT_ACCOUNT_ID,
-        amount: APPROVED_EXTRA,
-        category: 'Study',
-        narrative: `${runTag} study`,
-      })
-      assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-      assert(
-        field(json, 'status') === 'PendingApproval',
-        `expected PendingApproval, got ${JSON.stringify(json)}`,
+  await step('ChildSpend over budget is declined: nothing moves, nothing is held', async () => {
+    const pending = await asParent('GET', 'GetPendingRequests')
+    pendingBefore = Array.isArray(pending.json) ? pending.json.length : 0
+    const childBefore = await readBalance('child')
+    const { status, json } = await asChild('POST', 'ChildSpend', {
+      merchantAccountId: MERCHANT_ACCOUNT_ID,
+      amount: APPROVED_EXTRA,
+      category: 'Study',
+      narrative: `${runTag} study`,
+    })
+    assert(status === 200, `a decline is a normal 200, got ${status}: ${JSON.stringify(json)}`)
+    if (paid(json)) {
+      // Not a backend fault: a grant from an earlier run is still lifting the limit.
+      console.log(
+        `      NOT EXERCISED: an earlier run's grant (up to ${GRANT_HOURS}h) is still active, so this payment was paid (SGD ${APPROVED_EXTRA} went to the merchant). Run again later to test the decline.`,
       )
-      approveId = field(json, 'requestId')
-      createdRequestIds.push(approveId)
-    },
-  )
+      return
+    }
+    assert(field(json, 'status') === 'Declined', `expected Declined, got ${JSON.stringify(json)}`)
+    assert(
+      Number(field(json, 'shortBy')) > 0,
+      `expected a positive shortBy, got ${JSON.stringify(json)}`,
+    )
+    assert(field(json, 'message'), `expected a message, got ${JSON.stringify(json)}`)
+    assert(near(await readBalance('child'), childBefore), 'a declined payment must not move money')
+    const after = await asParent('GET', 'GetPendingRequests')
+    assert(
+      Array.isArray(after.json) && after.json.length === pendingBefore,
+      `a decline must not create a pending request: ${JSON.stringify(after.json)}`,
+    )
+  })
 
-  await step(
-    `ChildSpend over budget creates a second request to reject (${REJECTED_EXTRA}, Other)`,
-    async () => {
-      const { status, json } = await asChild('POST', 'ChildSpend', {
-        merchantAccountId: MERCHANT_ACCOUNT_ID,
-        amount: REJECTED_EXTRA,
-        category: 'Other',
-        narrative: `${runTag} other`,
-      })
-      assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-      assert(
-        field(json, 'status') === 'PendingApproval',
-        `expected PendingApproval, got ${JSON.stringify(json)}`,
-      )
-      rejectId = field(json, 'requestId')
-      createdRequestIds.push(rejectId)
-    },
-  )
-
-  await step('GetPendingRequests (parent) lists both requests', async () => {
-    const { status, json } = await asParent('GET', 'GetPendingRequests')
+  await step(`AskForMore (child) asks the parent for ${APPROVED_EXTRA}`, async () => {
+    const { status, json } = await asChild('POST', 'AskForMore', {
+      amount: APPROVED_EXTRA,
+      reason: `${runTag} study`,
+    })
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-    for (const id of [approveId, rejectId]) {
-      assert(
-        json.some((r) => field(r, 'requestId') === id),
-        `requestId ${id} not found in pending list: ${JSON.stringify(json)}`,
+    askId = field(json, 'requestId')
+    assert(askId, `expected a requestId, got ${JSON.stringify(json)}`)
+    createdRequestIds.push(askId)
+  })
+
+  await step('AskForMore again is accepted (and tracked so cleanup rejects it)', async () => {
+    const { status, json } = await asChild('POST', 'AskForMore', {
+      amount: APPROVED_EXTRA,
+      reason: `${runTag} again`,
+    })
+    assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
+    const again = field(json, 'requestId')
+    assert(again, `expected a requestId, got ${JSON.stringify(json)}`)
+    if (again !== askId) {
+      createdRequestIds.push(again)
+      console.log(
+        `      NOTE: a second ask makes a second pending request (${again}); not de-duplicated`,
       )
     }
   })
 
-  await step('DecideRequest (parent) approves one and the money moves', async () => {
-    const childBefore = await readBalance('child')
-    const { status, json } = await asParent('POST', 'DecideRequest', {
-      requestId: approveId,
-      approve: true,
-    })
+  await step('GetPendingRequests (parent) lists the ask (no merchant)', async () => {
+    const { status, json } = await asParent('GET', 'GetPendingRequests')
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-    assert(field(json, 'status') === 'Approved', `expected Approved, got ${JSON.stringify(json)}`)
-    const childAfter = await readBalance('child')
-    // The bank charges the sender a small fee per transfer (0.05 observed), so
-    // the child pays the amount plus a few cents, not exactly the amount.
-    const paid = money(childBefore - childAfter)
+    const ask = json.find((r) => field(r, 'requestId') === askId)
+    assert(ask, `request ${askId} not found in pending list: ${JSON.stringify(json)}`)
+    assert(!field(ask, 'merchantAccountId'), `an ask has no merchant, got ${JSON.stringify(ask)}`)
     assert(
-      paid >= APPROVED_EXTRA && paid <= APPROVED_EXTRA + 1,
-      `expected the child to pay ${APPROVED_EXTRA} plus a small fee, but the balance went ${childBefore} -> ${childAfter}`,
+      near(field(ask, 'amount'), APPROVED_EXTRA),
+      `expected amount ${APPROVED_EXTRA}, got ${JSON.stringify(ask)}`,
     )
   })
 
-  await step('DecideRequest (parent) rejects the other and no money moves', async () => {
+  await step('DecideRequest (parent) grants the ask and no money moves yet', async () => {
     const childBefore = await readBalance('child')
+    const { status, json } = await asParent('POST', 'DecideRequest', {
+      requestId: askId,
+      approve: true,
+      grantAmount: APPROVED_EXTRA,
+      hours: GRANT_HOURS,
+      note: 'ok',
+    })
+    assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
+    assert(field(json, 'status') === 'Approved', `expected Approved, got ${JSON.stringify(json)}`)
+    assert(near(await readBalance('child'), childBefore), 'granting an ask must not move money')
+    assert(
+      near(field(json, 'grantedAmount'), APPROVED_EXTRA),
+      `expected grantedAmount ${APPROVED_EXTRA}, got ${JSON.stringify(json)}`,
+    )
+  })
+
+  await step(`The same ChildSpend now completes (${APPROVED_EXTRA}, Study)`, async () => {
+    const { status, json } = await asChild('POST', 'ChildSpend', {
+      merchantAccountId: MERCHANT_ACCOUNT_ID,
+      amount: APPROVED_EXTRA,
+      category: 'Study',
+      narrative: `${runTag} study`,
+    })
+    assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
+    assert(paid(json), `expected Paid, got ${JSON.stringify(json)}`)
+  })
+
+  await step('A parent can turn an ask down with a note', async () => {
+    const ask = await asChild('POST', 'AskForMore', {
+      amount: REJECTED_EXTRA,
+      reason: `${runTag} other`,
+    })
+    assert(ask.status === 200, `AskForMore failed: ${JSON.stringify(ask.json)}`)
+    rejectId = field(ask.json, 'requestId')
+    createdRequestIds.push(rejectId)
     const { status, json } = await asParent('POST', 'DecideRequest', {
       requestId: rejectId,
       approve: false,
+      note: 'next week',
     })
     assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
     assert(field(json, 'status') === 'Rejected', `expected Rejected, got ${JSON.stringify(json)}`)
-    const childAfter = await readBalance('child')
+  })
+
+  await step('GetMyRequests (child) shows the granted and the turned-down ask', async () => {
+    const { status, json } = await asChild('GET', 'GetMyRequests')
+    assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
+    assert(Array.isArray(json), `expected a list, got ${JSON.stringify(json)}`)
+    const granted = json.find((r) => field(r, 'requestId') === askId)
+    assert(granted, `ask ${askId} missing from GetMyRequests`)
     assert(
-      near(childAfter, childBefore),
-      `rejecting should not move money: child balance went ${childBefore} -> ${childAfter}`,
+      field(granted, 'status') === 'Approved',
+      `expected Approved, got ${JSON.stringify(granted)}`,
     )
+    assert(
+      near(field(granted, 'grantedAmount'), APPROVED_EXTRA),
+      `expected grantedAmount ${APPROVED_EXTRA}, got ${JSON.stringify(granted)}`,
+    )
+    const turnedDown = json.find((r) => field(r, 'requestId') === rejectId)
+    assert(turnedDown, `ask ${rejectId} missing from GetMyRequests`)
+    assert(
+      field(turnedDown, 'status') === 'Rejected',
+      `expected Rejected, got ${JSON.stringify(turnedDown)}`,
+    )
+    assert(
+      field(turnedDown, 'parentNote') === 'next week',
+      `expected the note, got ${JSON.stringify(turnedDown)}`,
+    )
+  })
+
+  await step('GrantBudget (parent) adds a small amount for a day', async () => {
+    const { status, json } = await asParent('POST', 'GrantBudget', {
+      familyLinkId,
+      amount: 0.01, // it lasts a day and cannot be revoked, so keep it negligible
+      days: 1,
+      note: runTag,
+    })
+    assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
+    assert(field(json, 'id'), `expected an id, got ${JSON.stringify(json)}`)
+  })
+
+  await step('GrantBudget rejects an amount of 0', async () => {
+    const { status, json } = await asParent('POST', 'GrantBudget', {
+      familyLinkId,
+      amount: 0,
+      days: 1,
+    })
+    assert(status !== 200, `expected a non-200 response, got ${JSON.stringify(json)}`)
+  })
+
+  await step('GrantBudget with a child token is forbidden', async () => {
+    const { status, json } = await asChild('POST', 'GrantBudget', {
+      familyLinkId,
+      amount: 5,
+      days: 1,
+    })
+    assert(status !== 200, `a child must not raise their own limit, got ${JSON.stringify(json)}`)
+  })
+
+  await step(
+    'SetSpendingRules freezes spending: the payment is declined, nothing moves',
+    async () => {
+      rulesTouched = true
+      const set = await asParent('POST', 'SetSpendingRules', {
+        familyLinkId,
+        isFrozen: true,
+        allowedCategories: '',
+        autoApproveUnder: 0,
+      })
+      assert(set.status === 200, `expected 200, got ${set.status}: ${JSON.stringify(set.json)}`)
+      const before = await readBalance('child')
+      const { status, json } = await asChild('POST', 'ChildSpend', {
+        merchantAccountId: MERCHANT_ACCOUNT_ID,
+        amount: 1,
+        category: 'Food',
+        narrative: `${runTag} frozen`,
+      })
+      assert(
+        status === 200,
+        `a frozen decline is a normal 200, got ${status}: ${JSON.stringify(json)}`,
+      )
+      assert(field(json, 'status') === 'Declined', `expected Declined, got ${JSON.stringify(json)}`)
+      assert(near(await readBalance('child'), before), 'a frozen payment must not move money')
+    },
+  )
+
+  await step('SetSpendingRules with a child token is forbidden', async () => {
+    const { status, json } = await asChild('POST', 'SetSpendingRules', {
+      familyLinkId,
+      isFrozen: false,
+      allowedCategories: '',
+      autoApproveUnder: 0,
+    })
+    assert(status !== 200, `a child must not edit the rules, got ${JSON.stringify(json)}`)
+  })
+
+  await step('SetSpendingRules unfreezes again', async () => {
+    const set = await asParent('POST', 'SetSpendingRules', {
+      familyLinkId,
+      isFrozen: false,
+      allowedCategories: '',
+      autoApproveUnder: 0,
+    })
+    assert(set.status === 200, `expected 200, got ${set.status}: ${JSON.stringify(set.json)}`)
+    rulesTouched = false
   })
 
   // --- Reads ---
@@ -467,7 +632,7 @@ try {
 
   await step('Child token on DecideRequest is forbidden', async () => {
     const { status, json } = await asChild('POST', 'DecideRequest', {
-      requestId: approveId,
+      requestId: askId,
       approve: true,
     })
     assert(status !== 200, 'expected a non-200 response')
@@ -500,6 +665,17 @@ try {
       assert(res.status === 200, `could not reject request ${field(r, 'requestId')}`)
     }
     if (leftovers.length) console.log(`      rejected ${leftovers.length} leftover request(s)`)
+  })
+
+  await step('Clear the spending rules if a step left them on', async () => {
+    if (!rulesTouched || !familyLinkId) return
+    const res = await asParent('POST', 'SetSpendingRules', {
+      familyLinkId,
+      isFrozen: false,
+      allowedCategories: '',
+      autoApproveUnder: 0,
+    })
+    assert(res.status === 200, `could not clear the rules: ${JSON.stringify(res.json)}`)
   })
 
   await step('Stop the allowance if one is still active', async () => {

@@ -4,8 +4,10 @@ import {
   useBalanceTrend,
   useChildExpenses,
   useChildren,
+  useGrantBudget,
   useMe,
   useSetBudget,
+  useSetSpendingRules,
   useSetupAllowance,
   useStopAllowance,
   useTopUp,
@@ -19,6 +21,7 @@ import SpendingInsights from './components/SpendingInsights'
 import Tabs from './components/Tabs'
 import TrendChart from './components/TrendChart'
 import TripsPanel from './components/TripsPanel'
+import { CATEGORIES } from './categories'
 import { monthLabel } from './chart'
 import { percentChange, ymd } from './insights'
 import { useChildSpending } from './useChildSpending'
@@ -83,7 +86,9 @@ export default function ChildDetail() {
             <div role="tabpanel" id="panel-manage" aria-labelledby="tab-manage">
               <h2 className="section-title">Budget</h2>
               <BudgetCard child={child} />
-              <h2 className="section-title">Allowance</h2>
+              <div className="section-title">Spending rules</div>
+              <RulesCard familyLinkId={familyLinkId} />
+              <div className="section-title">Allowance</div>
               <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
               <h2 className="section-title">Top up</h2>
               <TopUpCard child={child} />
@@ -110,6 +115,7 @@ function BudgetCard({ child }) {
   const [amount, setAmount] = useState(child.budget > 0 ? String(Number(child.budget)) : '')
   const [ok, setOk] = useState('')
   const setBudget = useSetBudget()
+  const grant = useGrantBudget()
   const { span, previous } = useChildSpending(child)
   // Last period's spending is a realistic starting point for the next budget.
   const lastSpend = Number(previous.data?.total ?? 0)
@@ -165,6 +171,108 @@ function BudgetCard({ child }) {
         )}
         <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>
           Save budget
+        </button>
+      </form>
+      <div className="field" style={{ marginTop: 14 }}>
+        <label>Let them spend more, just for the next day</label>
+        <Banner>{grant.error?.message}</Banner>
+        <div className="chips">
+          {[20, 50].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className="chip"
+              disabled={grant.isPending}
+              onClick={() =>
+                grant.mutate(
+                  { familyLinkId: Number(familyLinkId), amount: n, days: 1, note: '' },
+                  { onSuccess: () => setOk(`Added SGD ${n} for 1 day.`) },
+                )
+              }
+            >
+              + SGD {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Writes the whole rule set at once: the API has no way to read it back, so the
+// form starts blank and says so.
+function RulesCard({ familyLinkId }) {
+  const save = useSetSpendingRules()
+  const [frozen, setFrozen] = useState(false)
+  const [allowed, setAllowed] = useState([])
+  const [autoUnder, setAutoUnder] = useState('')
+  const [ok, setOk] = useState('')
+
+  const toggle = (name) =>
+    setAllowed((cur) => (cur.includes(name) ? cur.filter((c) => c !== name) : [...cur, name]))
+
+  function submit(e) {
+    e.preventDefault()
+    setOk('')
+    save.mutate(
+      {
+        familyLinkId: Number(familyLinkId),
+        isFrozen: frozen,
+        allowedCategories: allowed.join(','),
+        autoApproveUnder: Number(autoUnder || 0),
+      },
+      { onSuccess: () => setOk(frozen ? 'Saved. Spending is frozen.' : 'Saved.') },
+    )
+  }
+
+  return (
+    <div className="card">
+      <Banner>{save.error?.message}</Banner>
+      <Banner kind="ok">{ok}</Banner>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Saving replaces the current rules for this child.
+      </p>
+      <form onSubmit={submit}>
+        <div className="field">
+          <label>
+            <input
+              type="checkbox"
+              checked={frozen}
+              onChange={(e) => setFrozen(e.target.checked)}
+              style={{ width: 'auto', marginRight: 8 }}
+            />
+            Freeze all spending
+          </label>
+        </div>
+        <div className="field">
+          <label>Only allow these categories (none ticked means all)</label>
+          <div className="chips">
+            {CATEGORIES.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className={`chip ${allowed.includes(name) ? 'active' : ''}`}
+                aria-pressed={allowed.includes(name)}
+                onClick={() => toggle(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="auto-under">Approve asks under (SGD, 0 for never)</label>
+          <input
+            id="auto-under"
+            type="number"
+            step="0.01"
+            min="0"
+            value={autoUnder}
+            onChange={(e) => setAutoUnder(e.target.value)}
+          />
+        </div>
+        <button disabled={save.isPending} type="submit" style={{ width: '100%' }}>
+          Save rules
         </button>
       </form>
     </div>

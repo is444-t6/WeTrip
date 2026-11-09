@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { useChildDashboard, useChildSpend } from './queries'
+import { useAskForMore, useChildDashboard, useChildSpend, useMyRequests } from './queries'
+import { CATEGORIES } from './categories'
 import { payNotice, periodBounds, periodTiming, safeDailySpend } from './insights'
 import Banner from './components/Banner'
 import BudgetAlert from './components/BudgetAlert'
 import Money from './components/Money'
 import MyTripCard from './components/MyTripCard'
 import PaceBar from './components/PaceBar'
+import { declineMessage } from './approvals'
 import BalanceHero from './components/BalanceHero'
-
-const CATEGORIES = ['General', 'Food', 'Transport', 'Study', 'Fun']
 
 export default function ChildHome() {
   const { data: dash, error } = useChildDashboard()
@@ -19,10 +19,13 @@ export default function ChildHome() {
   const [category, setCategory] = useState('General')
   const [narrative, setNarrative] = useState('')
   const [message, setMessage] = useState('')
+  // Set when ChildSpend turns a payment down: { message, remaining, shortBy }.
+  const [declined, setDeclined] = useState(null)
 
   function pay(e) {
     e.preventDefault()
     setMessage('')
+    setDeclined(null)
     spend.mutate(
       {
         merchantAccountId: merchantAccountId.trim(),
@@ -32,11 +35,16 @@ export default function ChildHome() {
       },
       {
         onSuccess: (result) => {
-          setMessage(
-            result.status === 'Completed'
-              ? `Paid! Remaining this period: ${result.remaining}`
-              : 'Over budget — sent to your parent for approval.',
-          )
+          if (result.status === 'Declined') {
+            // Nothing was paid and nothing is waiting: the child can ask for more.
+            setDeclined({
+              message: result.message,
+              remaining: result.remaining,
+              shortBy: result.shortBy,
+            })
+            return
+          }
+          setMessage(`Paid! Remaining this period: ${result.remaining}`)
           setAmount('')
           setMerchantAccountId('')
           setNarrative('')
@@ -124,12 +132,24 @@ export default function ChildHome() {
         )}
       </div>
 
+      <MyRequests />
+
       <MyTripCard />
 
       <div className="card">
         <h3>Pay a merchant</h3>
         <Banner>{spend.error?.message}</Banner>
         <Banner kind="ok">{message}</Banner>
+        {declined && (
+          <AskForMore
+            declined={declined}
+            onDone={(note) => {
+              setDeclined(null)
+              if (typeof note === 'string') setMessage(note)
+            }}
+            defaultAmount={declined.shortBy}
+          />
+        )}
         <form onSubmit={pay}>
           <div className="field">
             <label htmlFor="child-pay-merchant">Merchant account id</label>
@@ -184,6 +204,98 @@ export default function ChildHome() {
           </button>
         </form>
       </div>
+    </div>
+  )
+}
+
+// Shown instead of the old "sent for approval": the payment did not happen, but
+// the child can ask for more and then pay again once the parent says yes.
+function AskForMore({ declined, defaultAmount, onDone }) {
+  const ask = useAskForMore()
+  const [amount, setAmount] = useState(defaultAmount > 0 ? String(defaultAmount) : '')
+  const [reason, setReason] = useState('')
+
+  function submit(e) {
+    e.preventDefault()
+    ask.mutate(
+      { amount: Number(amount), reason: reason.trim() },
+      {
+        onSuccess: (result) =>
+          onDone(
+            result?.status === 'Approved'
+              ? 'Approved straight away. You can pay again now.'
+              : 'Asked your parent. You can pay again once they say yes.',
+          ),
+      },
+    )
+  }
+
+  return (
+    <div className="banner warn" role="alert">
+      <strong>Payment not made</strong>
+      <p style={{ margin: '4px 0 8px' }}>{declineMessage(declined)}</p>
+      <form onSubmit={submit}>
+        <Banner>{ask.error?.message}</Banner>
+        <div className="field">
+          <label htmlFor="ask-amount">Ask your parent for</label>
+          <input
+            id="ask-amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="ask-reason">What is it for?</label>
+          <input
+            id="ask-reason"
+            value={reason}
+            maxLength={200}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="School trip"
+          />
+        </div>
+        <div className="row">
+          <button type="submit" disabled={ask.isPending}>
+            Ask for more
+          </button>
+          <button type="button" className="secondary" onClick={() => onDone()}>
+            Dismiss
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+const ASK_BADGE = {
+  Approved: ['active', 'Granted'],
+  Rejected: ['removed', 'Not now'],
+}
+
+function MyRequests() {
+  const { data } = useMyRequests()
+  const list = (Array.isArray(data) ? data : []).slice(0, 3)
+  if (list.length === 0) return null
+  return (
+    <div className="card">
+      <h3>Your asks</h3>
+      {list.map((r) => {
+        const [kind, label] = ASK_BADGE[r.status] ?? ['pending', 'Waiting']
+        return (
+          <div key={r.requestId} className="row-between" style={{ padding: '4px 0' }}>
+            <span>
+              <Money amount={r.grantedAmount > 0 ? r.grantedAmount : r.requestedAmount} />
+              {r.reason ? ` · ${r.reason}` : ''}
+              {r.parentNote && <span className="muted"> — “{r.parentNote}”</span>}
+            </span>
+            <span className={`badge ${kind}`}>{label}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }

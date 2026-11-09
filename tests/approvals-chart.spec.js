@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import {
   approvalsSummary,
+  declineMessage,
+  isPayment,
   exceedsBalance,
   shortfallMessage,
   shortfalls,
@@ -142,5 +144,34 @@ test.describe('barsLayout', () => {
     expect(barsLayout(days).limitY).toBeNull()
     expect(barsLayout([])).toBeNull()
     expect(barsLayout(undefined)).toBeNull()
+  })
+})
+
+test.describe('ask-for-more helpers', () => {
+  test('a request with a blank merchant is an ask; one with a merchant is a payment', () => {
+    expect(isPayment({ merchantAccountId: '0000006718' })).toBe(true)
+    expect(isPayment({ merchantAccountId: '', amount: 20 })).toBe(false)
+    expect(isPayment({ requestedAmount: 20 })).toBe(false)
+    expect(isPayment({ amount: 40 })).toBe(true)
+    expect(isPayment({ isPayment: false, merchantAccountId: 'x' })).toBe(false)
+  })
+
+  test('asks count by their amount and are never a shortfall', () => {
+    const list = [
+      { amount: 40, merchantAccountId: 'm' },
+      { amount: 25, merchantAccountId: '', familyLinkId: 3 },
+    ]
+    expect(approvalsSummary(list)).toEqual({ count: 2, total: 65 })
+    expect(shortfalls(list, [{ familyLinkId: 3, balance: 1, nickname: 'J' }])).toEqual([])
+  })
+
+  test('the decline message prefers the server wording, else says what is left', () => {
+    expect(declineMessage({ message: "Over this month's budget by SGD 5.00" })).toBe(
+      "Over this month's budget by SGD 5.00",
+    )
+    expect(declineMessage({ remaining: 150, shortBy: 350 })).toBe(
+      'You have SGD 150.00 left this period. This payment is SGD 350.00 over.',
+    )
+    expect(declineMessage({ remaining: 0 })).toBe('You have nothing left to spend this period.')
   })
 })

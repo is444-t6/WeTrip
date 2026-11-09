@@ -362,7 +362,7 @@ test.describe('child dashboard', () => {
     await expect(page.locator('.card', { hasText: 'Budget this' }).getByText('Food')).toBeVisible()
   })
 
-  test('paying within budget confirms; over budget says it needs approval', async ({ page }) => {
+  test('paying within budget confirms; over budget is declined, not held', async ({ page }) => {
     let status = 'Completed'
     const calls = await mockApi(page, {
       ...child,
@@ -378,11 +378,200 @@ test.describe('child dashboard', () => {
       amount: 10,
       category: 'General',
     })
-    status = 'PendingApproval'
+    status = 'Declined'
     await field(page, 'Merchant account id').fill('0000006718')
     await field(page, 'Amount').fill('500')
     await page.getByRole('button', { name: 'Pay', exact: true }).click()
-    await expect(page.getByText('Over budget — sent to your parent for approval.')).toBeVisible()
+    await expect(page.getByText('Payment not made')).toBeVisible()
+    await expect(page.getByText('Paid!')).toHaveCount(0)
+  })
+})
+
+test.describe('asking for more', () => {
+  const child = { GetChildDashboard: () => DASH, GetMyFamilyRole: () => ({ role: 'Child' }) }
+
+  test('a declined payment offers an ask, prefilled with how far over it is', async ({ page }) => {
+    await as(page, CHILD)
+    const calls = await mockApi(page, {
+      ...child,
+      ChildSpend: () => ({
+        Status: 'Declined',
+        shortBy: 350,
+        message: "Over this month's budget by SGD 350.00",
+      }),
+      AskForMore: () => ({ requestId: 21, status: 'PendingApproval' }),
+    })
+    await page.goto('/family')
+    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Amount').fill('500')
+    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+
+    await expect(page.getByText("Over this month's budget by SGD 350.00")).toBeVisible()
+    await expect(page.getByLabel('Ask your parent for')).toHaveValue('350')
+
+    await page.getByLabel('What is it for?').fill('School trip')
+    await page.getByRole('button', { name: 'Ask for more' }).click()
+    await expect
+      .poll(() => last(calls, 'AskForMore')?.body)
+      .toEqual({ amount: 350, reason: 'School trip' })
+    await expect(page.getByText('Payment not made')).toHaveCount(0)
+    await expect(page.getByText(/Asked your parent/)).toBeVisible()
+  })
+
+  test('a failed ask shows the error and keeps the form', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      ...child,
+      ChildSpend: () => ({ Status: 'Declined', shortBy: 10 }),
+    })
+    await page.goto('/family')
+    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Amount').fill('500')
+    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    // AskForMore is left unmocked, so the mock answers it with a 500.
+    await page.getByRole('button', { name: 'Ask for more' }).click()
+    await expect(page.locator('.banner.error', { hasText: 'unmocked AskForMore' })).toBeVisible()
+    await expect(page.getByLabel('Ask your parent for')).toBeVisible()
+  })
+
+  test('a parent grants an ask: the amount asked for, for 24 hours', async ({ page }) => {
+    await as(page, PARENT)
+    const calls = await mockApi(page, {
+      GetPendingRequests: () => [
+        {
+          RequestId: 22,
+          FamilyLinkId: 3,
+          Nickname: 'Jamie',
+          MerchantAccountId: '',
+          Amount: 35,
+          Narrative: 'School trip',
+        },
+      ],
+    })
+    await page.goto('/family')
+    await expect(page.getByText('School trip')).toBeVisible()
+    await expect(page.getByText('To account')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Give it' }).click()
+    await expect
+      .poll(() => last(calls, 'DecideRequest')?.body)
+      .toEqual({ requestId: 22, approve: true, grantAmount: 35, hours: 24 })
+  })
+
+  test('turning an ask down sends no grant', async ({ page }) => {
+    await as(page, PARENT)
+    const calls = await mockApi(page, {
+      GetPendingRequests: () => [
+        { RequestId: 23, FamilyLinkId: 3, Nickname: 'Jamie', MerchantAccountId: '', Amount: 35 },
+      ],
+    })
+    await page.goto('/family')
+    await page.getByRole('button', { name: 'Not now' }).click()
+    await expect
+      .poll(() => last(calls, 'DecideRequest')?.body)
+      .toEqual({ requestId: 23, approve: false })
+  })
+})
+
+test.describe('grants, history and spending rules', () => {
+  const child = { GetChildDashboard: () => DASH, GetMyFamilyRole: () => ({ role: 'Child' }) }
+
+  test('a parent can raise the limit in one tap, for a day', async ({ page }) => {
+    await as(page, PARENT)
+    const calls = await mockApi(page, { GrantBudget: () => ({ id: 5 }) })
+    await page.goto('/family/child/3')
+    await page.getByRole('tab', { name: 'Manage' }).click()
+    await page.getByRole('button', { name: '+ SGD 20' }).click()
+    await expect
+      .poll(() => last(calls, 'GrantBudget')?.body)
+      .toEqual({ familyLinkId: 3, amount: 20, days: 1, note: '' })
+    await expect(page.getByText('Added SGD 20 for 1 day.')).toBeVisible()
+  })
+
+  test('the child sees how earlier asks went', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      ...child,
+      GetMyRequests: () => [
+        {
+          requestId: 20,
+          requestedAmount: 30,
+          reason: 'Books',
+          status: 'Rejected',
+          parentNote: 'Next week',
+        },
+        {
+          requestId: 19,
+          requestedAmount: 20,
+          reason: 'Lunch',
+          status: 'Approved',
+          grantedAmount: 15,
+        },
+        { requestId: 18, requestedAmount: 10, reason: 'Bus', status: 'Pending' },
+      ],
+    })
+    await page.goto('/family')
+    const card = page.locator('.card', { hasText: 'Your asks' })
+    await expect(card.getByText('Not now')).toBeVisible()
+    await expect(card.getByText('“Next week”')).toBeVisible()
+    await expect(card.getByText('Granted')).toBeVisible()
+    await expect(card.getByText('SGD 15.00')).toBeVisible()
+    await expect(card.getByText('Waiting')).toBeVisible()
+  })
+
+  test('a missing GetMyRequests does not break the dashboard', async ({ page }) => {
+    await as(page, CHILD)
+    // GetMyRequests is left unmocked, so the mock answers it with a 500.
+    await mockApi(page, child)
+    await page.goto('/family')
+    await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
+    await expect(page.getByText('Your asks')).toHaveCount(0)
+  })
+
+  test('an ask that is approved straight away says so', async ({ page }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      ...child,
+      ChildSpend: () => ({ Status: 'Declined', shortBy: 5 }),
+      AskForMore: () => ({ requestId: 30, status: 'Approved' }),
+    })
+    await page.goto('/family')
+    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Amount').fill('500')
+    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Ask for more' }).click()
+    await expect(page.getByText('Approved straight away. You can pay again now.')).toBeVisible()
+  })
+
+  test('spending rules are saved as one set', async ({ page }) => {
+    await as(page, PARENT)
+    const calls = await mockApi(page, { SetSpendingRules: () => ({ status: 'Saved' }) })
+    await page.goto('/family/child/3')
+    await page.getByRole('tab', { name: 'Manage' }).click()
+    await page.getByLabel('Freeze all spending').check()
+    await page.getByRole('button', { name: 'Food', exact: true }).click()
+    await page.getByRole('button', { name: 'Study', exact: true }).click()
+    await page.getByLabel(/Approve asks under/).fill('15')
+    await page.getByRole('button', { name: 'Save rules' }).click()
+    await expect
+      .poll(() => last(calls, 'SetSpendingRules')?.body)
+      .toEqual({
+        familyLinkId: 3,
+        isFrozen: true,
+        allowedCategories: 'Food,Study',
+        autoApproveUnder: 15,
+      })
+    await expect(page.getByText('Saved. Spending is frozen.')).toBeVisible()
+  })
+
+  test('saving blank rules clears them', async ({ page }) => {
+    await as(page, PARENT)
+    const calls = await mockApi(page, { SetSpendingRules: () => ({ status: 'Saved' }) })
+    await page.goto('/family/child/3')
+    await page.getByRole('tab', { name: 'Manage' }).click()
+    await page.getByRole('button', { name: 'Save rules' }).click()
+    await expect
+      .poll(() => last(calls, 'SetSpendingRules')?.body)
+      .toEqual({ familyLinkId: 3, isFrozen: false, allowedCategories: '', autoApproveUnder: 0 })
   })
 })
 
@@ -416,7 +605,7 @@ test.describe('budget alerts', () => {
     await page.goto('/family')
     await expect(
       page.getByText(
-        'Jamie is over their weekly budget by SGD 30.00. New payments need your approval.',
+        'Jamie is over their weekly budget by SGD 30.00. New payments will be declined unless you raise their limit.',
       ),
     ).toBeVisible()
     await expect(page.getByText('over budget', { exact: true })).toBeVisible()
@@ -437,7 +626,7 @@ test.describe('budget alerts', () => {
     await page.reload()
     await expect(
       page.getByText(
-        "You've reached this week's budget. New payments need your parent's approval.",
+        "You've reached this week's budget. New payments will be declined unless your parent raises your limit.",
       ),
     ).toBeVisible()
   })
@@ -994,7 +1183,7 @@ test.describe('child pay flow', () => {
     await field(page, 'Amount').fill('200')
     await expect(
       page.getByText(
-        'That is SGD 50.00 over what is left in your budget, so it will go to your parent for approval.',
+        'That is SGD 50.00 over what is left in your budget, so it will be declined unless your parent raises your limit.',
       ),
     ).toBeVisible()
   })
