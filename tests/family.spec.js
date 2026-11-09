@@ -17,24 +17,35 @@ async function signInAs(page, user) {
 }
 
 test.describe('auth', () => {
-  test('a signed-out visitor is redirected to the sign-in card', async ({ page }) => {
+  test('a signed-out visitor sees the sign-in card on the front page', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveURL(/\/family$/)
+    // It stays on / rather than being sent into one product.
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByRole('heading', { name: 'WeTrip', exact: true })).toBeVisible()
     await expect(page.getByText("You're not signed in yet.")).toBeVisible()
     await expect(page.getByRole('button', { name: 'Continue to sign in' })).toBeVisible()
   })
 
   test('the dev login form stores a session and opens the parent home', async ({ page }) => {
-    await page.goto('/family/dev-login')
+    await page.goto('/login')
 
-    await page.getByPlaceholder('SMU_TUSER2').fill(PARENT.id)
-    await page.getByPlaceholder('0000006385').fill(PARENT.account)
-    await page.getByPlaceholder('timothy.loo').fill(PARENT.name)
+    // Only the customer id is asked for; the account is looked up from it.
+    await page.getByPlaceholder('0000003018').fill(PARENT.id)
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    // This customer has several deposit accounts, so there is one more step,
+    // with the first (the one the demo data is built around) preselected.
+    await expect(page.getByLabel('Which account should WeTrip use?')).toHaveValue(PARENT.account, {
+      timeout: 15_000,
+    })
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page).toHaveURL(/\/family$/)
-    await expect(page.getByText('Your WeTrip balance')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByText(PARENT.name)).toBeVisible()
+    // Signing in lands on the home page, not the Family screen.
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByText('Available balance')).toBeVisible({ timeout: 15_000 })
+    expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(
+      `${PARENT.id}:${PARENT.account}:`,
+    )
   })
 })
 
@@ -58,15 +69,26 @@ test.describe('parent view', () => {
     await expect(page.getByText(/children linked/)).toBeVisible()
   })
 
-  test('child detail exposes budget, allowance, top-up, expenses and trend', async ({ page }) => {
+  test('child detail has an overview, then budget/allowance/top-up and expenses/trend tabs', async ({
+    page,
+  }) => {
     await page.goto('/family/child/3')
 
-    await expect(page.getByRole('heading', { name: 'Jamie' })).toBeVisible({ timeout: 15_000 })
-    for (const section of ['Budget', 'Allowance', 'Top up', 'Expenses', 'Balance trend']) {
+    // Overview is the default: who the child is, then insights.
+    await expect(page.locator('.overview')).toContainText('Jamie', { timeout: 15_000 })
+    await expect(page.getByText('Spending insights')).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Manage' }).click()
+    for (const section of ['Budget', 'Allowance', 'Top up']) {
       await expect(page.getByText(section, { exact: true }).first()).toBeVisible()
     }
     await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Top up' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Top up', exact: true })).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Activity' }).click()
+    for (const section of ['Expenses', 'Balance trend']) {
+      await expect(page.getByText(section, { exact: true }).first()).toBeVisible()
+    }
   })
 
   test('SmartFX home lists trip goals for the parent', async ({ page }) => {
@@ -92,8 +114,10 @@ test.describe('child view', () => {
   test('dashboard shows the balance, budget progress and pay form', async ({ page }) => {
     await page.goto('/family')
 
-    // The live composite can take ~10s to answer a cold child dashboard.
-    await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 20_000 })
+    // The child dashboard waits on an exchange-rate lookup that can take ~10s
+    // when the rate source is slow, so the first assertion gets a long timeout.
+    // By then everything else on the page is there.
+    await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByRole('heading', { name: /Budget this/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()

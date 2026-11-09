@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FamilyApi } from './api'
-import { isLoggedIn } from './session'
+import { isLoggedIn } from '../auth/session'
 
 // Every read is a query, every write is a mutation that invalidates the keys
 // it can affect. `enabled: isLoggedIn()` replaces the old conditional effects.
@@ -28,10 +28,13 @@ export function useRole() {
   })
 }
 
-export function useRoleInfo() {
+// The caller's own FamilyLinkId, from the same GetMyFamilyRole response (so no
+// extra request). Only a linked child or parent has one.
+export function useFamilyLinkId() {
   return useQuery({
     queryKey: keys.role,
     queryFn: FamilyApi.getMyFamilyRole,
+    select: (r) => r.familyLinkId,
     ...authed(),
   })
 }
@@ -41,8 +44,14 @@ export const useMe = () => useQuery({ queryKey: keys.me, queryFn: FamilyApi.getM
 export const useChildren = () =>
   useQuery({ queryKey: keys.children, queryFn: FamilyApi.getChildren, ...authed() })
 
-export const usePendingRequests = () =>
-  useQuery({ queryKey: keys.requests, queryFn: FamilyApi.getPendingRequests, ...authed() })
+// `enabled` lets a screen shared by parents and children skip this parent-only
+// call for a child, whose token the backend would refuse.
+export const usePendingRequests = (enabled = true) =>
+  useQuery({
+    queryKey: keys.requests,
+    queryFn: FamilyApi.getPendingRequests,
+    enabled: isLoggedIn() && enabled,
+  })
 
 export const useMyInvite = () =>
   useQuery({
@@ -96,7 +105,8 @@ export function useLinkChild() {
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: FamilyApi.linkChild,
-    onSuccess: () => invalidate('children', 'requests', 'me'),
+    // 'role' too: the first invite is what turns a customer into a parent.
+    onSuccess: () => invalidate('children', 'requests', 'me', 'role'),
   })
 }
 

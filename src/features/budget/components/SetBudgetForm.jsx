@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Banner from '../../family/components/Banner'
-import { getSessionAccountId } from '../../family/session'
+import { getSessionAccountId } from '../../auth/session'
 import { CATEGORIES, DEFAULT_CURRENCY } from '../constants'
 import { useSetBudget } from '../queries'
 

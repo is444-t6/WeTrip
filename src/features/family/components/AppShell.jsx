@@ -19,7 +19,7 @@ function BrandMark() {
 
 export function Brand() {
   return (
-    <Link to="/family" className="brand" aria-label="WeTrip home">
+    <Link to="/" className="brand" aria-label="WeTrip">
       <BrandMark />
       <span className="brand-word">wetrip</span>
     </Link>
@@ -57,6 +57,14 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
         <div className="navbar-inner">
           <Brand />
           <nav className="nav-tabs" aria-label="WeTrip">
+            <Link
+              to="/"
+              className="nav-link"
+              activeOptions={{ exact: true }}
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
+              Home
+            </Link>
             <Link
               to="/family"
               className="nav-link"

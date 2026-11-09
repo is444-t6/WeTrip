@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { useAcceptLink, useAccounts, useMyInvite } from './queries'
 import Banner from './components/Banner'
-import { usePageTitle } from '../../lib/usePageTitle'
+import LinkChildForm from './components/LinkChildForm'
 
 // The backend answers "no link for this customer" as a not-found error on some
-// paths and as an empty / hasInvite:false body on others. Both mean "nothing to
-// accept", not a failure.
+// paths and as an empty / hasInvite:false body on others. Both mean the same
+// thing to the child, so neither should read as a failure.
 const isNoLink = (error) => /not found|no family link/i.test(error?.message ?? '')
 
 export default function ChildInvite() {
-  usePageTitle('Family invite')
   const { data: invite, error } = useMyInvite()
   const accounts = useAccounts()
   const accept = useAcceptLink()
@@ -19,7 +18,6 @@ export default function ChildInvite() {
   if (done) {
     return (
       <div className="card" style={{ textAlign: 'center' }}>
-        <h1 className="visually-hidden">Family invite</h1>
         <Banner kind="ok">Link accepted — you're all set.</Banner>
         <button style={{ width: '100%' }} onClick={() => window.location.reload()}>
           Go to your dashboard
@@ -31,19 +29,29 @@ export default function ChildInvite() {
   if (error && !isNoLink(error)) return <Banner>{error.message}</Banner>
   if (!invite && !error) return <p className="muted">Loading…</p>
 
+  // FamilyHome renders this for role "Pending" (a real invite exists) and
+  // "None" (nobody's linked this customer either way) alike, so this branch
+  // covers genuinely having nothing to accept. familyLinkId is what AcceptLink
+  // actually needs; hasInvite:false rules out an already-active link.
   const pending = invite?.familyLinkId && invite.hasInvite !== false
   if (!pending) {
     return (
-      <div className="card empty">
-        <h1 className="visually-hidden">Family invite</h1>
-        <p>You're not linked to a family yet.</p>
-        <p className="muted">
-          Ask a parent to link your phone number from their WeTrip Family screen.
-        </p>
-      </div>
+      <>
+        <div className="card empty">
+          <p>You're not linked to a family yet.</p>
+          <p className="muted">
+            Ask a parent to link your phone number from their WeTrip Family screen.
+          </p>
+        </div>
+        {/* A parent has no child yet, so nothing else on the screen can add one. */}
+        <h2 className="section-title">Are you a parent?</h2>
+        <LinkChildForm />
+      </>
     )
   }
 
+  // A dropdown of the child's own accounts when the lookup works; the plain
+  // text box when it doesn't, so a failing account list never blocks accepting.
   const choices = Array.isArray(accounts.data)
     ? accounts.data.filter((a) => a.accountId && a.currentStatus !== 'Closed')
     : []
@@ -52,8 +60,10 @@ export default function ChildInvite() {
     <div className="card">
       <h1>Family invite</h1>
       <p className="muted">
-        <strong>{invite.nickname || invite.parentCustomerId}</strong> wants to link you as their
-        child on WeTrip Family.
+        <strong style={{ color: 'var(--text)' }}>
+          {invite.nickname || invite.parentCustomerId}
+        </strong>{' '}
+        wants to link you as their child on WeTrip Family.
       </p>
       <Banner>{accept.error?.message}</Banner>
       <form

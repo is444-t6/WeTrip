@@ -663,7 +663,8 @@ textarea:focus-visible {
   outline: 2px solid var(--primary-deep);
   outline-offset: 2px;
 }
-label {
+label,
+.field-label {
   display: block;
   font-size: 13px;
   font-weight: 600;
@@ -793,6 +794,33 @@ button.danger:disabled:hover {
   background: var(--warn-soft);
   color: var(--warn);
 }
+.banner.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+/* --- spending insights --- */
+
+.insight-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.share-bar {
+  background: var(--card-border);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.share-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
 
 /* ------------------------------ progress ----------------------------- */
 
@@ -838,7 +866,8 @@ table {
   font-size: 14px;
   min-width: 520px;
 }
-.table-compact {
+.table-compact,
+.stack-table {
   min-width: 0;
 }
 th {
@@ -2226,5 +2255,463 @@ tr:last-child td {
     padding-top: 10px;
     border-top: 1px solid var(--card-border);
     border-left: 0;
+  }
+}
+
+/* --- new main: home, insights and phone layouts --- */
+/* --- home page --- */
+
+.hero-greeting {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.eye-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+}
+
+.eye-btn svg,
+.quick-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding: 16px 8px;
+}
+
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.quick-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.quick-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--card);
+}
+
+.home-row {
+  padding: 11px 0;
+  border-top: 1px solid var(--card-border);
+}
+
+.wallet-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.wallet-chip {
+  flex: 0 0 auto;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.wallet-chip .money {
+  font-size: 1.15rem;
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.explore-grid .card {
+  margin-bottom: 0;
+}
+
+.explore-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.explore-card .muted {
+  font-size: 0.84rem;
+}
+
+@media (max-width: 380px) {
+  .explore-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- child overview, tabs, charts --- */
+
+.pace {
+  position: relative;
+  margin: 12px 0 8px;
+}
+
+.pace .progress {
+  margin: 0;
+}
+
+.pace-tick {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text);
+  opacity: 0.55;
+}
+
+.overview-balance {
+  text-align: right;
+}
+
+.overview-balance .money {
+  font-size: 1.35rem;
+}
+
+.overview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 0.82rem;
+}
+
+.tile .money {
+  font-size: 0.98rem;
+  overflow-wrap: anywhere;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 18px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--card-border);
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 6px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 0.86rem;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--card-border);
+}
+
+.segmented button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button.active {
+  background: var(--card);
+  color: var(--text);
+}
+
+.chart {
+  margin: 14px 0 0;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart figcaption {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
+.chart-axis {
+  stroke: var(--card-border);
+  stroke-width: 1;
+}
+
+.chart-limit {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 9px;
+}
+
+.bar {
+  fill: var(--accent);
+}
+
+.bar-over {
+  fill: var(--danger);
+}
+
+.trend-area {
+  fill: var(--accent-soft);
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.trend-dot {
+  fill: var(--card);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.request {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--card-border);
+}
+
+.request-to {
+  font-size: 0.78rem;
+}
+
+.request-amount {
+  font-size: 1.1rem;
+}
+
+.request-side {
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.request-actions button {
+  flex: 1;
+}
+
+/* --- phone layout for the SmartFX pages --- */
+
+.hero-amount {
+  font-size: clamp(1.6rem, 8vw, 2.1rem);
+  overflow-wrap: anywhere;
+}
+
+.trip-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.trip-head .stack {
+  min-width: 0;
+}
+
+.trip-head .stack .muted {
+  white-space: nowrap;
+}
+
+.budget-line {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.budget-line .money {
+  white-space: nowrap;
+}
+
+.budget-line > .row {
+  margin-left: auto;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.actions-grid button {
+  width: 100%;
+  padding-inline: 10px;
+  white-space: normal;
+}
+
+.actions-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+/* A wide table becomes one labelled block per row on a phone. */
+@media (max-width: 520px) {
+  .stack-table thead {
+    display: none;
+  }
+
+  .stack-table,
+  .stack-table tbody,
+  .stack-table tr {
+    display: block;
+    min-width: 0;
+  }
+
+  .stack-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .stack-table tr:last-child {
+    border-bottom: none;
+  }
+
+  .stack-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .stack-table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--muted-2);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
   }
 }

@@ -1,15 +1,9 @@
 import { useNavigate } from '@tanstack/react-router'
+import { budgetStatus, periodBounds, periodTiming } from '../insights'
+import Avatar from './Avatar'
+import PaceBar from './PaceBar'
 import Money from './Money'
-
-function initials(name) {
-  if (!name) return '?'
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('')
-}
+import NextTripLine from './NextTripLine'
 
 function badgeClass(status) {
   if (status === 'Active') return 'active'
@@ -17,24 +11,20 @@ function badgeClass(status) {
   return 'removed'
 }
 
-function periodCopy(period) {
-  if (period === 'Weekly') return 'this week'
-  if (period === 'Monthly') return 'this month'
-  return 'this period'
-}
-
 export default function ChildCard({ child }) {
   const navigate = useNavigate()
-  const pct = child.budget ? Math.min(100, (child.spent / child.budget) * 100) : 0
+  const bounds = periodBounds(child.period === 'Weekly' ? 'Weekly' : 'Monthly')
+  const { daysLeft } = periodTiming(bounds)
   const label = child.nickname || child.childCustomerId
+  const { level } = budgetStatus(child.spent, child.budget)
 
   return (
-    <article className="card child-card">
+    <div className="card">
       <div className="row-between">
         <div className="row">
-          <div className="avatar">{initials(label)}</div>
+          <Avatar name={label} />
           <div className="stack">
-            <strong style={{ fontSize: 18 }}>{label}</strong>
+            <strong>{label}</strong>
             <span className="muted">{child.childCustomerId}</span>
           </div>
         </div>
@@ -43,37 +33,41 @@ export default function ChildCard({ child }) {
 
       {child.status === 'Active' && (
         <>
-          <div className="child-balance">
+          <div className="row-between" style={{ marginTop: 16 }}>
             <span className="muted">Balance</span>
-            <strong>
+            <span className="money">
               <Money amount={child.balance} />
-            </strong>
+            </span>
           </div>
 
           {child.budget > 0 ? (
             <>
-              <div className={`progress ${pct >= 100 ? 'over' : ''}`}>
-                <div style={{ width: `${pct}%` }} />
-              </div>
+              <PaceBar spent={child.spent} budget={child.budget} bounds={bounds} />
               <div className="row-between muted" style={{ fontSize: '0.82em' }}>
                 <span>
-                  <Money amount={child.spent} /> of <Money amount={child.budget} />{' '}
-                  {periodCopy(child.period)}
+                  <Money amount={child.spent} /> of <Money amount={child.budget} /> · {daysLeft}{' '}
+                  {daysLeft === 1 ? 'day' : 'days'} left
                 </span>
-                {child.hasAllowance && <span className="badge active">allowance</span>}
+                <span className="row">
+                  {level === 'near' && <span className="badge pending">80%+ used</span>}
+                  {level === 'over' && <span className="badge removed">over budget</span>}
+                  {child.hasAllowance && <span className="badge active">allowance</span>}
+                </span>
               </div>
             </>
           ) : (
-            <p className="muted" style={{ marginTop: 12 }}>
+            <p className="muted" style={{ marginTop: 10 }}>
               No budget set yet
             </p>
           )}
+          <NextTripLine familyLinkId={child.familyLinkId} />
         </>
       )}
 
       <button
+        type="button"
         className="secondary"
-        style={{ width: '100%', marginTop: 18 }}
+        style={{ width: '100%', marginTop: 14 }}
         onClick={() =>
           navigate({
             to: '/family/child/$familyLinkId',
@@ -83,6 +77,6 @@ export default function ChildCard({ child }) {
       >
         Manage
       </button>
-    </article>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FxApi } from './api'
-import { useChildren, useRoleInfo } from '../family/queries'
-import { isLoggedIn } from '../family/session'
+import { useChildren } from '../family/queries'
+import { isLoggedIn } from '../auth/session'
 
 export const fxKeys = {
   trips: ['fx', 'trips'],
@@ -13,11 +13,7 @@ const authed = () => ({ enabled: isLoggedIn() })
 
 export const useTrips = () => {
   const { data: children } = useChildren()
-  const { data: roleInfo } = useRoleInfo()
-  const childLinkId = roleInfo?.role === 'Child' ? roleInfo.familyLinkId : null
-  const linkIds = childLinkId
-    ? [childLinkId]
-    : (children || []).filter((c) => c.status === 'Active').map((c) => c.familyLinkId)
+  const linkIds = (children || []).filter((c) => c.status === 'Active').map((c) => c.familyLinkId)
 
   return useQuery({
     queryKey: [...fxKeys.trips, linkIds.join(',')],

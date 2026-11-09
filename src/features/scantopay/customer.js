@@ -1,4 +1,4 @@
-import { getSessionCustomerId } from '../family/session'
+import { getSessionCustomerId } from '../auth/session'
 
 // ===========================================================================
 // DEMO CUSTOMER: used when nobody is signed in. Change or remove it here once

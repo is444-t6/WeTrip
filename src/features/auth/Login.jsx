@@ -1,0 +1,157 @@
+import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import Banner from '../family/components/Banner'
+import { accountLabel, depositAccounts, fetchAccounts, lookupMessage } from './accounts'
+import { setDevSession, getSessionToken, clearSession } from './session'
+
+// Stands in for WeTrip's real login while ValidateSessionStub (Task 12.4
+// Option C) is wired up server-side. Asks for a customer id only, looks the
+// deposit account up, and writes customerId:accountId: into
+// sessionStorage['wetrip_session'] — exactly what GetSessionUser expects.
+export default function Login() {
+  const [customerId, setCustomerId] = useState('')
+  const [choices, setChoices] = useState(null) // set when there is more than one account
+  const [chosen, setChosen] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const navigate = useNavigate()
+  const current = getSessionToken()
+
+  function finish(id, accountId) {
+    setDevSession(id, accountId, '')
+    navigate({ to: '/' })
+  }
+
+  async function lookup(e) {
+    e.preventDefault()
+    const id = customerId.trim()
+    setError('')
+    setBusy(true)
+    try {
+      const accounts = depositAccounts(await fetchAccounts(id))
+      if (accounts.length === 0) {
+        setError('That customer has no SGD deposit account to sign in with.')
+      } else if (accounts.length === 1) {
+        finish(id, accounts[0].accountId)
+      } else {
+        setChoices(accounts)
+        setChosen(accounts[0].accountId)
+      }
+    } catch (err) {
+      setError(lookupMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function confirm(e) {
+    e.preventDefault()
+    finish(customerId.trim(), chosen)
+  }
+
+  return (
+    <div className="center-page">
+      <div className="center-card">
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <div
+            className="brand-mark"
+            style={{ margin: '0 auto 10px', width: 40, height: 40, borderRadius: 12 }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              width={22}
+              height={22}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9-9-4.03-9-9Z"
+                stroke="#fff"
+                strokeWidth="1.6"
+              />
+              <path
+                d="M7.5 12.5 10.5 15.5 16.5 9"
+                stroke="#fff"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h1>Sign in to WeTrip</h1>
+          <p className="muted">Dev stub — stands in for WeTrip login until it's wired up.</p>
+        </div>
+
+        <div className="card">
+          {current && (
+            <div
+              className="banner ok row-between"
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78em' }}
+            >
+              <span>{current}</span>
+              <button
+                className="secondary"
+                style={{ padding: '4px 10px' }}
+                onClick={() => {
+                  clearSession()
+                  window.location.reload()
+                }}
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+          <Banner>{error}</Banner>
+
+          {choices ? (
+            <form onSubmit={confirm}>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Customer <span className="money">{customerId.trim()}</span> has more than one
+                deposit account.
+              </p>
+              <div className="field">
+                <label htmlFor="account">Which account should WeTrip use?</label>
+                <select id="account" value={chosen} onChange={(e) => setChosen(e.target.value)}>
+                  {choices.map((a) => (
+                    <option key={a.accountId} value={a.accountId}>
+                      {accountLabel(a)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="row">
+                <button type="submit">Sign in</button>
+                <button type="button" className="secondary" onClick={() => setChoices(null)}>
+                  Back
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={lookup}>
+              <div className="field">
+                <label htmlFor="customerId">CustomerId (the number, not the username)</label>
+                <input
+                  id="customerId"
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  placeholder="0000003018"
+                  inputMode="numeric"
+                  pattern="\d+"
+                  title="Digits only, e.g. 0000003018. Not the SMU_TUSER2 username."
+                  required
+                />
+              </div>
+              <button type="submit" disabled={busy} style={{ width: '100%' }}>
+                {busy ? 'Looking up…' : 'Continue'}
+              </button>
+            </form>
+          )}
+        </div>
+        <p className="muted" style={{ textAlign: 'center' }}>
+          Task 12.4 Option C · ValidateSessionStub
+        </p>
+      </div>
+    </div>
+  )
+}

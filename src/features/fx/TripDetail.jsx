@@ -1,26 +1,22 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
-import { clearSession, getSessionAccountId, isLoggedIn } from '../family/session'
+import { clearSession, getSessionAccountId, isLoggedIn } from '../auth/session'
 import AppShell from '../family/components/AppShell'
-import AuthShell from '../family/components/AuthShell'
 import Banner from '../family/components/Banner'
+import SignedOutCard from '../family/components/SignedOutCard'
 import Money from '../family/components/Money'
-import { formatAmount } from '../../lib/money'
 import BalanceHero from '../family/components/BalanceHero'
 import RateGauge from './components/RateGauge'
-import { tripStatus } from './status'
 import { tenorFor } from './api'
 import { useCancelTrip, useCloseTrip, useLockNow, useRate, useTrip, useTripSpend } from './queries'
-import { usePageTitle } from '../../lib/usePageTitle'
 
 export default function TripDetail() {
   const { tripId } = useParams({ from: '/fx/trips/$tripId' })
-  const navigate = useNavigate()
   const { data, error, isLoading } = useTrip(tripId)
   const { data: role } = useRole()
+
   const trip = data?.trip
-  usePageTitle(trip?.destination ? `${trip.destination} — SmartFX` : 'Trip')
   const quote = useRate(trip?.currency, tenorFor(trip?.tripStartDate))
   const locks = data?.locks || []
   const spends = data?.spends || []
@@ -30,37 +26,13 @@ export default function TripDetail() {
     window.location.reload()
   }
 
-  if (!isLoggedIn()) {
-    return (
-      <AuthShell>
-        <span className="eyebrow">WeTrip SmartFX</span>
-        <h2>You're not signed in yet.</h2>
-        <p>Sign in to see this trip goal and its rate locks.</p>
-        <button
-          className="btn"
-          style={{ width: '100%' }}
-          onClick={() => navigate({ to: '/family/dev-login' })}
-        >
-          Continue to sign in
-        </button>
-      </AuthShell>
-    )
-  }
+  // Every state of the page sits inside the app shell, so the navbar and the
+  // side gutter are always there, including while loading or after an error.
+  const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
 
-  if (error) {
-    return (
-      <AppShell onSignOut={signOut}>
-        <Banner>{error.message}</Banner>
-      </AppShell>
-    )
-  }
-  if (isLoading || !trip) {
-    return (
-      <AppShell onSignOut={signOut}>
-        <p className="muted">Loading…</p>
-      </AppShell>
-    )
-  }
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip SmartFX" />
+  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (isLoading || !trip) return shell(<p className="muted">Loading…</p>)
 
   const spentForeign = spends.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
   const remainingForeign = Math.max(0, (Number(trip.lockedForeign) || 0) - spentForeign)
@@ -68,153 +40,139 @@ export default function TripDetail() {
     0,
     (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0),
   )
-  const status = tripStatus(trip.status)
+  return shell(
+    <>
+      <Link
+        to="/fx"
+        className="muted"
+        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
+      >
+        &larr; Back to trips
+      </Link>
 
-  return (
-    <AppShell onSignOut={signOut}>
-      <div>
-        <Link to="/fx" className="back-link">
-          &larr; Back to trips
-        </Link>
+      <h1>{trip.destination}</h1>
+      <p className="muted" style={{ marginTop: 0 }}>
+        {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
+        {trip.status}
+        {trip.childNickname ? ` · ${trip.childNickname}` : ''}
+      </p>
 
-        <div className="detail-head">
-          <div>
-            <span className={`badge ${status.tone}`} style={{ marginBottom: 10 }}>
-              {status.label}
+      <BalanceHero
+        label="Locked pot"
+        amount={remainingForeign}
+        currency={trip.currency}
+        sub={`${Number(trip.lockedSgd).toFixed(2)} SGD locked of ${Number(trip.targetBudgetSgd).toFixed(2)}`}
+        foot={
+          <>
+            <span>
+              {locks.length} lock{locks.length === 1 ? '' : 's'}
             </span>
-            <h1>{trip.destination}</h1>
-            <p className="muted" style={{ margin: 0 }}>
-              {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)}
-              {trip.childNickname ? ` · ${trip.childNickname}` : ''}
-            </p>
-          </div>
-        </div>
+            {trip.autoLockEnabled && <span>auto-lock on</span>}
+          </>
+        }
+      />
 
-        <BalanceHero
-          label="Locked pot"
-          amount={remainingForeign}
-          currency={trip.currency}
-          sub={`${formatAmount(trip.lockedSgd)} SGD locked of ${formatAmount(trip.targetBudgetSgd)}`}
-          foot={
-            <>
-              <span>
-                {locks.length} lock{locks.length === 1 ? '' : 's'}
-              </span>
-              {trip.autoLockEnabled && <span>auto-lock on</span>}
-            </>
-          }
+      <RateGauge
+        current={quote.data?.forwardRate}
+        target={trip.targetRate}
+        currency={trip.currency}
+      />
+
+      {role === 'Parent' && (
+        <ParentActions
+          trip={trip}
+          remainingSgd={remainingSgd}
+          currentRate={quote.data?.forwardRate}
+          onCheck={quote.refetch}
+          checking={quote.isFetching}
         />
+      )}
+      {role === 'Child' && <SpendCard trip={trip} remainingForeign={remainingForeign} />}
 
-        <div className="detail-grid">
-          <RateGauge
-            current={quote.data?.forwardRate}
-            target={trip.targetRate}
-            currency={trip.currency}
-          />
-
-          {role === 'Parent' && (
-            <ParentActions
-              trip={trip}
-              remainingSgd={remainingSgd}
-              currentRate={quote.data?.forwardRate}
-              onCheck={quote.refetch}
-              checking={quote.isFetching}
-            />
-          )}
-          {role === 'Child' && <SpendCard trip={trip} remainingForeign={remainingForeign} />}
-        </div>
-
-        <h2 className="section-title">Rate locks</h2>
-        <div className="card">
-          {locks.length === 0 && <p className="muted">Nothing locked yet.</p>}
-          {locks.length > 0 && (
-            <>
-              <p className="table-hint">Swipe to see all columns &rarr;</p>
-              <div className="table-scroll" tabIndex={0} role="region" aria-label="Rate locks">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Rate</th>
-                      <th style={{ textAlign: 'right' }}>SGD</th>
-                      <th style={{ textAlign: 'right' }}>{trip.currency}</th>
-                      <th>Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {locks.map((l) => (
-                      <tr key={l.lockId}>
-                        <td>{String(l.createdAt).slice(0, 10)}</td>
-                        <td>{Number(l.lockedRate).toFixed(4)}</td>
-                        <td style={{ textAlign: 'right' }}>
-                          <Money amount={l.sgdAmount} />
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {formatAmount(l.foreignAmount, trip.currency)}
-                        </td>
-                        <td className="muted">{l.source}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-
-        <h2 className="section-title">Spending</h2>
-        <div className="card">
-          {spends.length === 0 && <p className="muted">No spending recorded.</p>}
-          {spends.length > 0 && (
-            <>
-              <p className="table-hint">Swipe to see all columns &rarr;</p>
-              <div className="table-scroll" tabIndex={0} role="region" aria-label="Trip spending">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Category</th>
-                      <th>To</th>
-                      <th style={{ textAlign: 'right' }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spends.map((s) => (
-                      <tr key={s.spendId}>
-                        <td>{String(s.createdAt).slice(0, 10)}</td>
-                        <td>{s.category}</td>
-                        <td className="muted">{s.merchantAccountId}</td>
-                        <td style={{ textAlign: 'right' }}>
-                          {formatAmount(s.amount, trip.currency)} {trip.currency}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-
-        {trip.status === 'Completed' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>Converted back</h2>
-              <span className="badge active">closed</span>
-            </div>
-            <div className="row-between">
-              <span className="muted">
-                {formatAmount(trip.returnedForeign, trip.currency)} {trip.currency} at{' '}
-                {Number(trip.returnRate).toFixed(4)}
-              </span>
-              <span className="money">
-                <Money amount={trip.returnedSgd} />
-              </span>
-            </div>
-          </div>
+      <h2 className="section-title">Rate locks</h2>
+      <div className="card">
+        {locks.length === 0 && <p className="muted">Nothing locked yet.</p>}
+        {locks.length > 0 && (
+          <table className="stack-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Rate</th>
+                <th style={{ textAlign: 'right' }}>SGD</th>
+                <th style={{ textAlign: 'right' }}>{trip.currency}</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locks.map((l) => (
+                <tr key={l.lockId}>
+                  <td data-label="Date">{String(l.createdAt).slice(0, 10)}</td>
+                  <td data-label="Rate">{Number(l.lockedRate).toFixed(4)}</td>
+                  <td data-label="SGD" style={{ textAlign: 'right' }}>
+                    <Money amount={l.sgdAmount} />
+                  </td>
+                  <td data-label={trip.currency} style={{ textAlign: 'right' }}>
+                    {Number(l.foreignAmount).toFixed(2)}
+                  </td>
+                  <td data-label="Source" className="muted">
+                    {l.source}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
-    </AppShell>
+
+      <h2 className="section-title">Spending</h2>
+      <div className="card">
+        {spends.length === 0 && <p className="muted">No spending recorded.</p>}
+        {spends.length > 0 && (
+          <table className="stack-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>To</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {spends.map((s) => (
+                <tr key={s.spendId}>
+                  <td data-label="Date">{String(s.createdAt).slice(0, 10)}</td>
+                  <td data-label="Category">{s.category}</td>
+                  <td data-label="To" className="muted">
+                    {s.merchantAccountId}
+                  </td>
+                  <td data-label="Amount" style={{ textAlign: 'right' }}>
+                    {Number(s.amount).toFixed(2)} {trip.currency}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {trip.status === 'Completed' && (
+        <div className="card">
+          <div className="card-header">
+            <h3>Converted back</h3>
+            <span className="badge active">closed</span>
+          </div>
+          <div className="row-between">
+            <span className="muted">
+              {Number(trip.returnedForeign).toFixed(2)} {trip.currency} at{' '}
+              {Number(trip.returnRate).toFixed(4)}
+            </span>
+            <span className="money">
+              <Money amount={trip.returnedSgd} />
+            </span>
+          </div>
+        </div>
+      )}
+    </>,
   )
 }
 
@@ -232,8 +190,8 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
   return (
     <div className="card">
       <div className="card-header">
-        <h2>Controls</h2>
-        <span className="badge pending">{formatAmount(remainingSgd)} SGD unlocked</span>
+        <h3>Controls</h3>
+        <span className="badge pending">{remainingSgd.toFixed(2)} SGD unlocked</span>
       </div>
       <Banner>{error?.message}</Banner>
       <Banner kind="ok">
@@ -246,20 +204,20 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
 
       <div className="grid-2">
         <div className="field">
-          <label htmlFor="lock-amount">Lock now (SGD)</label>
+          <label htmlFor="trip-lock-amount">Lock now (SGD)</label>
           <input
-            id="lock-amount"
+            id="trip-lock-amount"
             type="number"
             step="0.01"
             min="1"
             value={amount}
-            placeholder={formatAmount(remainingSgd)}
+            placeholder={remainingSgd.toFixed(2)}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
         <div className="field">
-          <label htmlFor="lock-tenor">Tenor</label>
-          <select id="lock-tenor" value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <label htmlFor="trip-lock-tenor">Tenor</label>
+          <select id="trip-lock-tenor" value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option value="1M">1M</option>
             <option value="3M">3M</option>
             <option value="6M">6M</option>
@@ -272,9 +230,10 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         not at a rate you type.
       </p>
 
-      <div className="controls-row">
+      <div className="actions-grid">
         <button
           type="button"
+          className="span-2"
           disabled={lock.isPending || remainingSgd <= 0}
           onClick={() =>
             lock.mutate({
@@ -301,7 +260,7 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         </button>
         <button
           type="button"
-          className="danger"
+          className="danger span-2"
           disabled={cancel.isPending || trip.status === 'Completed'}
           onClick={() => cancel.mutate(trip.tripId)}
         >
@@ -334,7 +293,7 @@ function SpendCard({ trip, remainingForeign }) {
       {
         onSuccess: (r) => {
           setMessage(
-            `${formatAmount(amount, trip.currency)} ${trip.currency} paid · ${formatAmount(r.remainingForeign ?? remainingForeign - Number(amount), trip.currency)} ${trip.currency} left`,
+            `${Number(amount).toFixed(2)} ${trip.currency} paid · ${Number(r.remainingForeign ?? remainingForeign - Number(amount)).toFixed(2)} ${trip.currency} left`,
           )
           setAmount('')
           setMerchantAccountId('')
@@ -346,17 +305,14 @@ function SpendCard({ trip, remainingForeign }) {
 
   return (
     <div className="card">
-      <h2>Pay from the pot</h2>
-      <p className="muted" style={{ marginTop: 4 }}>
-        Spend directly from the locked currency pot.
-      </p>
+      <h3>Pay from the pot</h3>
       <Banner>{spend.error?.message}</Banner>
       <Banner kind="ok">{message}</Banner>
       <form onSubmit={submit}>
         <div className="field">
-          <label htmlFor="spend-merchant">Merchant account id</label>
+          <label htmlFor="trip-spend-merchant">Merchant account id</label>
           <input
-            id="spend-merchant"
+            id="trip-spend-merchant"
             value={merchantAccountId}
             onChange={(e) => setMerchantAccountId(e.target.value)}
             required
@@ -364,9 +320,9 @@ function SpendCard({ trip, remainingForeign }) {
         </div>
         <div className="grid-2">
           <div className="field">
-            <label htmlFor="spend-amount">Amount ({trip.currency})</label>
+            <label htmlFor="trip-spend-amount">Amount ({trip.currency})</label>
             <input
-              id="spend-amount"
+              id="trip-spend-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -376,17 +332,21 @@ function SpendCard({ trip, remainingForeign }) {
             />
           </div>
           <div className="field">
-            <label htmlFor="spend-category">Category</label>
+            <label htmlFor="trip-spend-category">Category</label>
             <input
-              id="spend-category"
+              id="trip-spend-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
           </div>
         </div>
         <div className="field">
-          <label htmlFor="spend-note">Note (optional)</label>
-          <input id="spend-note" value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+          <label htmlFor="trip-spend-note">Note (optional)</label>
+          <input
+            id="trip-spend-note"
+            value={narrative}
+            onChange={(e) => setNarrative(e.target.value)}
+          />
         </div>
         <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
           {spend.isPending ? 'Paying…' : 'Pay'}
