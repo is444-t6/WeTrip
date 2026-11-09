@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test'
 const BASE =
   process.env.SMARTFX_BASE ??
   'https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX'
-const API_KEY = process.env.SMARTFX_API_KEY ?? 'changeme'
+const API_KEY = process.env.SMARTFX_API_KEY ?? ''
 
 const PARENT = {
   id: process.env.PARENT_CUSTOMER_ID ?? '0000002169',
@@ -33,7 +33,7 @@ function withAuth(path) {
 
 const get = (request, path) => request.get(withAuth(path))
 const post = (request, path, data) =>
-  request.post(`${BASE}/${path}`, { data: { ...(data ?? {}), ...auth } })
+  request.post(withAuth(path), data === undefined ? {} : { data })
 
 const today = (offsetDays = 0) =>
   new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10)

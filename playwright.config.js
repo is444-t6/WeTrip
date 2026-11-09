@@ -1,4 +1,16 @@
 import { defineConfig, devices } from '@playwright/test'
+import fs from 'node:fs'
+
+// The API suite needs the SmartFX ApiKey site property. Prefer the env CI
+// provides, then fall back to .env.local so the secret is never committed.
+if (!process.env.SMARTFX_API_KEY) {
+  if (process.env.VITE_FX_API_KEY) {
+    process.env.SMARTFX_API_KEY = process.env.VITE_FX_API_KEY
+  } else if (fs.existsSync('.env.local')) {
+    const match = fs.readFileSync('.env.local', 'utf8').match(/^VITE_FX_API_KEY=(.+)$/m)
+    if (match) process.env.SMARTFX_API_KEY = match[1].trim()
+  }
+}
 
 // UI regression suite for the WeTrip frontend. It runs against the Vite dev
 // server, which proxies /api/family and /api/fx to the live sandbox — so the
