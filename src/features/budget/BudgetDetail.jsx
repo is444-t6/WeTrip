@@ -1,6 +1,9 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { useRole } from '../family/queries'
+import { clearSession, isLoggedIn } from '../auth/session'
+import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
+import SignedOutCard from '../family/components/SignedOutCard'
 import BalanceHero from '../family/components/BalanceHero'
 import { DEFAULT_CURRENCY } from './constants'
 import { useDashboard } from './queries'
@@ -8,34 +11,36 @@ import BudgetBars from './components/BudgetBars'
 import ExpenseList from './components/ExpenseList'
 import AddExpenseForm from './components/AddExpenseForm'
 import SetBudgetForm from './components/SetBudgetForm'
-import BudgetShell from './BudgetShell'
 
 export default function BudgetDetail() {
   const { tripId } = useParams({ from: '/budget/$tripId' })
   const { data, error, isLoading } = useDashboard(tripId)
   const { data: role } = useRole()
 
-  if (error)
-    return (
-      <BudgetShell>
-        <Banner>{error.message}</Banner>
-      </BudgetShell>
-    )
-  if (isLoading || !data)
-    return (
-      <BudgetShell>
-        <p className="muted">Loading…</p>
-      </BudgetShell>
-    )
+  function signOut() {
+    clearSession()
+    window.location.reload()
+  }
 
+  // Every state of the page sits inside the app shell, so the navbar and the
+  // side gutter are always there, including while loading or after an error.
+  const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
+
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip Budget" />
+  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (isLoading || !data) return shell(<p className="muted">Loading…</p>)
 
   const summary = data.summary || {}
   const lines = summary.lines || []
   const alerts = lines.filter((l) => l.alertLevel !== 'OK').length
 
-  return (
-    <BudgetShell>
-      <Link to="/budget" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
+  return shell(
+    <>
+      <Link
+        to="/budget"
+        className="muted"
+        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
+      >
         &larr; Back
       </Link>
       <h1 style={{ fontSize: '1.4rem', marginBottom: 4 }}>Trip {tripId} budget</h1>
@@ -60,6 +65,6 @@ export default function BudgetDetail() {
 
       <div className="section-title">Expenses</div>
       <ExpenseList expenses={data.expenses} />
-    </BudgetShell>
+    </>,
   )
 }

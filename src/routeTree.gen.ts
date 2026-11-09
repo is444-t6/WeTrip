@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as BudgetIndexRouteImport } from './routes/budget.index'
 import { Route as BudgetTripIdRouteImport } from './routes/budget.$tripId'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
@@ -24,12 +25,18 @@ import { Route as InsuranceTravellersRouteImport } from './routes/insurance.trav
 import { Route as PayIndexRouteImport } from './routes/pay.index'
 import { Route as PayHistoryRouteImport } from './routes/pay.history'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
+import { Route as FxTripsIndexRouteImport } from './routes/fx.trips.index'
 import { Route as FxTripsTripIdRouteImport } from './routes/fx.trips.$tripId'
 import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan.$planId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BudgetIndexRoute = BudgetIndexRouteImport.update({
@@ -102,6 +109,11 @@ const FamilyChildFamilyLinkIdRoute = FamilyChildFamilyLinkIdRouteImport.update({
   path: '/family/child/$familyLinkId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FxTripsIndexRoute = FxTripsIndexRouteImport.update({
+  id: '/fx/trips/',
+  path: '/fx/trips/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FxTripsTripIdRoute = FxTripsTripIdRouteImport.update({
   id: '/fx/trips/$tripId',
   path: '/fx/trips/$tripId',
@@ -115,6 +127,7 @@ const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -131,9 +144,11 @@ export interface FileRoutesByFullPath {
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
+  '/fx/trips/': typeof FxTripsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -150,10 +165,12 @@ export interface FileRoutesByTo {
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
+  '/fx/trips': typeof FxTripsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
   '/insurance/checkout': typeof InsuranceCheckoutRoute
@@ -170,11 +187,13 @@ export interface FileRoutesById {
   '/family/child/$familyLinkId': typeof FamilyChildFamilyLinkIdRoute
   '/fx/trips/$tripId': typeof FxTripsTripIdRoute
   '/insurance/plan/$planId': typeof InsurancePlanPlanIdRoute
+  '/fx/trips/': typeof FxTripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -191,9 +210,11 @@ export interface FileRouteTypes {
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
+    | '/fx/trips/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -210,9 +231,11 @@ export interface FileRouteTypes {
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
+    | '/fx/trips'
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
     | '/insurance/checkout'
@@ -229,10 +252,12 @@ export interface FileRouteTypes {
     | '/family/child/$familyLinkId'
     | '/fx/trips/$tripId'
     | '/insurance/plan/$planId'
+    | '/fx/trips/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   BudgetTripIdRoute: typeof BudgetTripIdRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
   InsuranceCheckoutRoute: typeof InsuranceCheckoutRoute
@@ -249,6 +274,7 @@ export interface RootRouteChildren {
   FamilyChildFamilyLinkIdRoute: typeof FamilyChildFamilyLinkIdRoute
   FxTripsTripIdRoute: typeof FxTripsTripIdRoute
   InsurancePlanPlanIdRoute: typeof InsurancePlanPlanIdRoute
+  FxTripsIndexRoute: typeof FxTripsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -258,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/budget/': {
@@ -358,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FamilyChildFamilyLinkIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fx/trips/': {
+      id: '/fx/trips/'
+      path: '/fx/trips'
+      fullPath: '/fx/trips/'
+      preLoaderRoute: typeof FxTripsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fx/trips/$tripId': {
       id: '/fx/trips/$tripId'
       path: '/fx/trips/$tripId'
@@ -377,6 +417,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   BudgetTripIdRoute: BudgetTripIdRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,
   InsuranceCheckoutRoute: InsuranceCheckoutRoute,
@@ -393,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   FamilyChildFamilyLinkIdRoute: FamilyChildFamilyLinkIdRoute,
   FxTripsTripIdRoute: FxTripsTripIdRoute,
   InsurancePlanPlanIdRoute: InsurancePlanPlanIdRoute,
+  FxTripsIndexRoute: FxTripsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

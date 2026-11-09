@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAcceptLink, useAccounts, useMyInvite } from './queries'
 import Banner from './components/Banner'
+import LinkChildForm from './components/LinkChildForm'
 
 // The backend answers "no link for this customer" as a not-found error on some
 // paths and as an empty / hasInvite:false body on others. Both mean the same
@@ -35,12 +36,17 @@ export default function ChildInvite() {
   const pending = invite?.familyLinkId && invite.hasInvite !== false
   if (!pending) {
     return (
-      <div className="card empty">
-        <p>You're not linked to a family yet.</p>
-        <p className="muted">
-          Ask a parent to link your phone number from their WeTrip Family screen.
-        </p>
-      </div>
+      <>
+        <div className="card empty">
+          <p>You're not linked to a family yet.</p>
+          <p className="muted">
+            Ask a parent to link your phone number from their WeTrip Family screen.
+          </p>
+        </div>
+        {/* A parent has no child yet, so nothing else on the screen can add one. */}
+        <div className="section-title">Are you a parent?</div>
+        <LinkChildForm />
+      </>
     )
   }
 

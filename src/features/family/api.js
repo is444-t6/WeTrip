@@ -1,7 +1,7 @@
 import { createClient } from '../../lib/http'
 
 const { call, qs } = createClient({
-  base: import.meta.env.VITE_FAMILY_API_BASE,
+  base: import.meta.env.VITE_FAMILY_API_BASE || '/api/family',
   apiKey: import.meta.env.VITE_FAMILY_API_KEY,
   normalize: true,
 })

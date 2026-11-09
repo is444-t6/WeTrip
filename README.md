@@ -20,7 +20,7 @@ Fill in `.env.local` first (see `.env.example`): `VITE_FAMILY_API_KEY` and
 modules. The dev server proxies `/api/family/*` and `/api/fx/*` (see
 `vite.config.js`), so CORS never comes up locally.
 
-Before any screen works, you need a session. Visit `/family/dev-login` and
+Before any screen works, you need a session. Visit `/login` and
 enter a demo customer's `CustomerId` + deposit `AccountId` — this writes a
 stub token into `sessionStorage` that `ValidateSessionStub` (Task 12.4 Option
 C) expects. Swap this for real WeTrip login later; nothing else in the feature
@@ -31,7 +31,7 @@ folders needs to change.
 | Route                         | What                                                          |
 | ----------------------------- | ------------------------------------------------------------- |
 | `/family`                     | role-aware family home                                        |
-| `/family/dev-login`           | dev session stub                                              |
+| `/login`                      | dev session stub (`/family/dev-login` redirects here)         |
 | `/family/child/:familyLinkId` | budget, allowance, top-up, expenses, trend                    |
 | `/fx`                         | trip goals (parent) / trips (child), live quote, check-now    |
 | `/fx/trips/:tripId`           | locked pot, rate watch, locks, spending, close & convert back |

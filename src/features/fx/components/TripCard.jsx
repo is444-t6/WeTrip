@@ -14,10 +14,11 @@ export default function TripCard({ trip }) {
   const target = Number(trip.targetBudgetSgd) || 0
   const locked = Number(trip.lockedSgd) || 0
   const pct = target ? Math.min(100, (locked / target) * 100) : 0
+  const rate = trip.currentRate || trip.lastCheckedRate
 
   return (
     <div className="card">
-      <div className="row-between">
+      <div className="row-between trip-head">
         <div className="stack">
           <strong>{trip.destination}</strong>
           <span className="muted">
@@ -43,7 +44,8 @@ export default function TripCard({ trip }) {
       <div className="row-between" style={{ marginTop: 12 }}>
         <span className="muted">Rate</span>
         <span className="money">
-          {trip.currentRate ? `${Number(trip.currentRate).toFixed(4)} ${trip.currency}` : '—'}
+          {/* GetTrips carries the watcher's last check, not a live quote. */}
+          {rate ? `${Number(rate).toFixed(4)} ${trip.currency}` : '—'}
           <span className="muted"> / target {Number(trip.targetRate).toFixed(4)}</span>
         </span>
       </div>

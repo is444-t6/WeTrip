@@ -19,7 +19,7 @@ export default function BudgetBars({ lines }) {
         const pct = Math.max(0, Math.min(Number(l.percentUsed) || 0, 100))
         return (
           <div key={l.categoryId} style={{ marginBottom: 14 }}>
-            <div className="row-between">
+            <div className="row-between budget-line">
               <strong>{l.categoryName}</strong>
               <span className="row">
                 {l.alertLevel !== 'OK' && (

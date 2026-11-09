@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useRole } from './queries'
-import { isLoggedIn, clearSession } from './session'
+import { isLoggedIn, clearSession } from '../auth/session'
 import ParentHome from './ParentHome'
 import ChildHome from './ChildHome'
 import ChildInvite from './ChildInvite'
@@ -38,7 +38,7 @@ export default function FamilyHome() {
           </div>
           <h2>WeTrip Family</h2>
           <p className="muted">You're not signed in yet.</p>
-          <Link to="/family/dev-login">
+          <Link to="/login">
             <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
           </Link>
         </div>
