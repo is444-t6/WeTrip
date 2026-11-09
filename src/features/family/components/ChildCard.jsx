@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { budgetStatus, periodBounds, periodTiming } from '../insights'
 import Avatar from './Avatar'
 import PaceBar from './PaceBar'
-import Money from './Money'
+import Money from '../../../components/Money'
 import NextTripLine from './NextTripLine'
 
 function badgeClass(status) {

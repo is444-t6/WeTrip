@@ -1,15 +1,6 @@
-import { createClient } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
-const { call } = createClient({
-  base:
-    import.meta.env.VITE_INSURANCE_API_BASE ||
-    'https://smuedu-dev.outsystemsenterprise.com/WeTrip_Insurance_Composite/rest/InsuranceAPI',
-
-  apiKey: import.meta.env.VITE_INSURANCE_API_KEY || import.meta.env.VITE_FAMILY_API_KEY,
-
-  auth: 'header',
-  normalize: true,
-})
+const { call } = serviceClient('insurance')
 
 function extractBenefits(response) {
   if (Array.isArray(response)) return response

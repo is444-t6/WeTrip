@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useChildDashboard, useChildren } from '../../family/queries'
 import { budgetStatus } from '../../family/insights'
-import Money from '../../family/components/Money'
+import Money from '../../../components/Money'
 import { totalChildBalance } from '../homeData'
 
 function ParentFamily({ pendingApprovals }) {

@@ -1,4 +1,4 @@
-import { createClient } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
 // The dev sign-in is given only a customer id, but a session needs an account
 // too. GetMyAccounts reads just the customer id from the session token, so a
@@ -6,12 +6,7 @@ import { createClient } from '../../lib/http'
 // customer has. The client is built per lookup with its own token, so nothing
 // is written to the stored session until the sign-in actually succeeds.
 export function fetchAccounts(customerId) {
-  const { call } = createClient({
-    base: import.meta.env.VITE_FAMILY_API_BASE || '/api/family',
-    apiKey: import.meta.env.VITE_FAMILY_API_KEY,
-    getToken: () => `${customerId}::`,
-    normalize: true,
-  })
+  const { call } = serviceClient('family', { getToken: () => `${customerId}::` })
   return call('GET', 'GetMyAccounts')
 }
 

@@ -13,10 +13,10 @@ import {
   useTopUp,
 } from './queries'
 import { clearSession, isLoggedIn } from '../auth/session'
-import AppShell from './components/AppShell'
-import Banner from './components/Banner'
+import AppShell from '../../components/AppShell'
+import Banner from '../../components/Banner'
 import ChildOverview from './components/ChildOverview'
-import Money from './components/Money'
+import Money from '../../components/Money'
 import SpendingInsights from './components/SpendingInsights'
 import Tabs from './components/Tabs'
 import TrendChart from './components/TrendChart'

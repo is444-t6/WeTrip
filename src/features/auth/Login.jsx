@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import Banner from '../family/components/Banner'
+import { BrandMark } from '../../components/AppShell'
+import Banner from '../../components/Banner'
 import { accountLabel, depositAccounts, fetchAccounts, lookupMessage } from './accounts'
 import { setDevSession, getSessionToken, clearSession } from './session'
 
@@ -53,31 +54,7 @@ export default function Login() {
     <div className="center-page">
       <div className="center-card">
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div
-            className="brand-mark"
-            style={{ margin: '0 auto 10px', width: 40, height: 40, borderRadius: 12 }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              width={22}
-              height={22}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9-9-4.03-9-9Z"
-                stroke="#fff"
-                strokeWidth="1.6"
-              />
-              <path
-                d="M7.5 12.5 10.5 15.5 16.5 9"
-                stroke="#fff"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
+          <BrandMark alt="WeTrip" size={64} style={{ margin: '0 auto 12px' }} />
           <h1>Sign in to WeTrip</h1>
           <p className="muted">Dev stub — stands in for WeTrip login until it's wired up.</p>
         </div>

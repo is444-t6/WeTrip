@@ -1,5 +1,5 @@
 import { alertMessage } from '../insights'
-import Banner from './Banner'
+import Banner from '../../../components/Banner'
 
 // Warns when a child is close to, or past, their budget. `who` picks the
 // wording: the parent hears about the child, the child hears about themselves.

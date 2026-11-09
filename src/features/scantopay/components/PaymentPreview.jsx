@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import Banner from '../../family/components/Banner'
-import Money from '../../family/components/Money'
+import Banner from '../../../components/Banner'
+import Money from '../../../components/Money'
 import DetailRow from './DetailRow'
 
 export default function PaymentPreview({

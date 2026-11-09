@@ -3,7 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { formatMoney, isValidTripDates, planLabel } from './data'
 import { useInsurancePlans } from './queries'
 import { getTrip } from './storage'
-import Banner from '../family/components/Banner'
+import Banner from '../../components/Banner'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
 

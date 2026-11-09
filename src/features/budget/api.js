@@ -1,10 +1,7 @@
-import { createClient } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
-const { call, qs } = createClient({
-  base: import.meta.env.VITE_BUDGET_API_BASE || '/api/budget',
-  apiKey: import.meta.env.VITE_BUDGET_API_KEY || import.meta.env.VITE_FAMILY_API_KEY,
-  normalize: true, // responses arrive camelCase; request bodies stay PascalCase
-})
+// Responses arrive camelCase; request bodies stay PascalCase (the structures use OutSystems' default JSON names).
+const { call, qs } = serviceClient('budget')
 
 // Request keys are the structure attribute names (PascalCase), because the
 // BudgetComposite structures use OutSystems' default JSON names.

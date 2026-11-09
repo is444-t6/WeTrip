@@ -1,10 +1,10 @@
 import { Link, useParams } from '@tanstack/react-router'
-import { useRole } from '../family/queries'
+import { useCurrentUser } from '../auth/useCurrentUser'
 import { clearSession, isLoggedIn } from '../auth/session'
-import AppShell from '../family/components/AppShell'
-import Banner from '../family/components/Banner'
-import SignedOutCard from '../family/components/SignedOutCard'
-import BalanceHero from '../family/components/BalanceHero'
+import AppShell from '../../components/AppShell'
+import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
+import BalanceHero from '../../components/BalanceHero'
 import { DEFAULT_CURRENCY } from './constants'
 import { useDashboard } from './queries'
 import BudgetBars from './components/BudgetBars'
@@ -15,7 +15,7 @@ import SetBudgetForm from './components/SetBudgetForm'
 export default function BudgetDetail() {
   const { tripId } = useParams({ from: '/budget/$tripId' })
   const { data, error, isLoading } = useDashboard(tripId)
-  const { data: role } = useRole()
+  const { role } = useCurrentUser()
 
   function signOut() {
     clearSession()

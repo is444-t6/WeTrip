@@ -52,7 +52,7 @@ folders needs to change.
 ## Test
 
 ```
-cp .env.test.example .env.test   # fill in real values
+# uses the same .env.local as the app (see .env.example); no separate test env file
 npm run test:atomic               # Family_Atomic only, writes test rows
 npm run test:composite            # Family_Composite + real SMUtBank calls
 npm run test:smartfx              # SmartFX E2E, defaults to the live sandbox

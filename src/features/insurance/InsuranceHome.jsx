@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { getTodayDateInputValue, isValidTripDates } from './data'
 import { getTrip, saveTrip } from './storage'
-import Banner from '../family/components/Banner'
+import Banner from '../../components/Banner'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
 

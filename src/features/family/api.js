@@ -1,10 +1,6 @@
-import { createClient } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
-const { call, qs } = createClient({
-  base: import.meta.env.VITE_FAMILY_API_BASE || '/api/family',
-  apiKey: import.meta.env.VITE_FAMILY_API_KEY,
-  normalize: true,
-})
+const { call, qs } = serviceClient('family')
 
 // Every key below is the exact "Name in JSON" from the build guide's Task 11.3
 // structure tables (all lowercase-first camelCase) — the guide's own sample

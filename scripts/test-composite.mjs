@@ -2,7 +2,7 @@
 // the build guide's Task 20.3 Postman table, run directly against OutSystems.
 //
 // Usage:
-//   node --env-file=.env.test scripts/test-composite.mjs
+//   node --env-file=.env.local scripts/test-composite.mjs
 //
 // WARNING: unlike test-atomic.mjs, this one calls real SMUtBank endpoints
 // through Family_Composite — TopUp, SetupAllowance and ChildSpend move real
@@ -24,7 +24,7 @@
 // The only lasting effects are the small amount (SPEND_TOTAL below) that ends
 // up with the merchant, and the grant the run creates (an approved ask lifts
 // the limit for the hours given, 1 here). The parent and child in
-// .env.test must already be linked; the script never calls LinkChild.
+// .env.local must already be linked; the script never calls LinkChild.
 //
 // Uses field(json, 'camelName') everywhere a response field is read, which
 // tolerates structures where the Name-in-JSON fix hasn't landed yet
@@ -41,7 +41,7 @@ import { assert, env, field, http, step, summary } from './_lib.mjs'
 const GRANT_HOURS = 1
 
 const BASE = env('COMPOSITE_BASE')
-const API_KEY = env('COMPOSITE_API_KEY')
+const API_KEY = env('VITE_FAMILY_API_KEY') // the same key the app uses
 
 const PARENT_CUSTOMER_ID = env('PARENT_CUSTOMER_ID')
 const PARENT_ACCOUNT_ID = env('PARENT_ACCOUNT_ID')
@@ -116,7 +116,7 @@ try {
 
   await step('FindCustomerByPhone finds the child', async () => {
     if (!CHILD_PHONE_NUMBER) {
-      console.log('      NOT EXERCISED: set CHILD_PHONE_NUMBER in .env.test to test this')
+      console.log('      NOT EXERCISED: set CHILD_PHONE_NUMBER in .env.local to test this')
       return
     }
     const { status, json } = await asParent(
@@ -137,7 +137,7 @@ try {
 
   // Never creates a link: a run once linked a "Test harness child" to a real
   // account, and it showed up on that parent's Family page. The pair in
-  // .env.test must already be linked and Active; otherwise the run stops here.
+  // .env.local must already be linked and Active; otherwise the run stops here.
   await step('Find the existing active link (this script never creates one)', async () => {
     const { status, json } = await asParent('GET', 'GetChildren')
     assert(status === 200, `GetChildren expected 200, got ${status}: ${JSON.stringify(json)}`)
@@ -257,7 +257,7 @@ try {
     })
     assert(
       status === 200,
-      `expected 200, got ${status}: ${JSON.stringify(json)} — try a different WEEKLY_MONTHLY value in .env.test`,
+      `expected 200, got ${status}: ${JSON.stringify(json)} — try a different WEEKLY_MONTHLY value in .env.local`,
     )
     assert(
       field(json, 'standingInstructionId'),

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useMe, usePendingRequests, useRole } from '../family/queries'
+import { usePendingRequests } from '../family/queries'
+import { useCurrentUser } from '../auth/useCurrentUser'
 import { clearSession } from '../auth/session'
-import AppShell from '../family/components/AppShell'
-import Banner from '../family/components/Banner'
+import AppShell from '../../components/AppShell'
+import Banner from '../../components/Banner'
 import { firstName, maskAccount } from './homeData'
 import ExploreProducts from './components/ExploreProducts'
 import FamilyOverview from './components/FamilyOverview'
@@ -31,8 +32,7 @@ function writeHidden(hidden) {
 }
 
 export default function Home() {
-  const me = useMe()
-  const role = useRole().data
+  const { profile: user, profileError, role } = useCurrentUser({ profile: true })
   const pending = usePendingRequests(role === 'Parent')
   const pendingApprovals = pending.data?.length ?? 0
   const [hidden, setHidden] = useState(readHidden)
@@ -49,11 +49,9 @@ export default function Home() {
     window.location.reload()
   }
 
-  const user = me.data
-
   return (
     <AppShell onSignOut={signOut}>
-      <Banner>{me.error?.message}</Banner>
+      <Banner>{profileError?.message}</Banner>
 
       <div className="hero">
         <div className="row-between">

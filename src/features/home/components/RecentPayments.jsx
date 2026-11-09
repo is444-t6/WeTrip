@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { getCustomerId } from '../../scantopay/customer'
 import { useHistory } from '../../scantopay/queries'
-import Money from '../../family/components/Money'
+import Money from '../../../components/Money'
 import { latestPayments } from '../homeData'
 
 const shortDate = (value) =>

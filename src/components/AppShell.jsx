@@ -1,19 +1,15 @@
 import { useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 
-function BrandMark() {
+// The WeTrip logo. Decorative beside the wordmark; give it an alt when it stands alone.
+export function BrandMark({ alt = '', size, style }) {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="m5 12.5 4.4 4.4L19 7.3"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
+    <img
+      className="brand-mark"
+      src="/wetrip_logo.svg"
+      alt={alt}
+      style={size ? { width: size, height: size, ...style } : style}
+    />
   )
 }
 

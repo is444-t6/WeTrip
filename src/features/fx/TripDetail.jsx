@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
-import { useRole } from '../family/queries'
+import { useCurrentUser } from '../auth/useCurrentUser'
 import { clearSession, getSessionAccountId, isLoggedIn } from '../auth/session'
-import AppShell from '../family/components/AppShell'
-import Banner from '../family/components/Banner'
-import SignedOutCard from '../family/components/SignedOutCard'
-import Money from '../family/components/Money'
-import BalanceHero from '../family/components/BalanceHero'
+import AppShell from '../../components/AppShell'
+import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
+import Money from '../../components/Money'
+import BalanceHero from '../../components/BalanceHero'
 import RateGauge from './components/RateGauge'
 import { tenorFor } from './api'
 import { useCancelTrip, useCloseTrip, useLockNow, useRate, useTrip, useTripSpend } from './queries'
@@ -14,7 +14,7 @@ import { useCancelTrip, useCloseTrip, useLockNow, useRate, useTrip, useTripSpend
 export default function TripDetail() {
   const { tripId } = useParams({ from: '/fx/trips/$tripId' })
   const { data, error, isLoading } = useTrip(tripId)
-  const { data: role } = useRole()
+  const { role } = useCurrentUser()
 
   const trip = data?.trip
   const quote = useRate(trip?.currency, tenorFor(trip?.tripStartDate))

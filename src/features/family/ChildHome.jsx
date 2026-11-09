@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useAskForMore, useChildDashboard, useChildSpend, useMyRequests } from './queries'
 import { CATEGORIES } from './categories'
 import { payNotice, periodBounds, periodTiming, safeDailySpend } from './insights'
-import Banner from './components/Banner'
+import Banner from '../../components/Banner'
 import BudgetAlert from './components/BudgetAlert'
-import Money from './components/Money'
+import Money from '../../components/Money'
 import MyTripCard from './components/MyTripCard'
 import PaceBar from './components/PaceBar'
 import { declineMessage } from './approvals'
-import BalanceHero from './components/BalanceHero'
+import BalanceHero from '../../components/BalanceHero'
 
 export default function ChildHome() {
   const { data: dash, error } = useChildDashboard()

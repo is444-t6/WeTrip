@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import Money from '../../family/components/Money'
+import Money from '../../../components/Money'
 
 const badge = {
   Watching: 'pending',
@@ -57,6 +57,14 @@ export default function TripCard({ trip }) {
         style={{ width: '100%', marginTop: 14 }}
       >
         Open trip
+      </Link>
+      <Link
+        to="/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="muted"
+        style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
+      >
+        See budget, cover and family for this trip
       </Link>
     </div>
   )

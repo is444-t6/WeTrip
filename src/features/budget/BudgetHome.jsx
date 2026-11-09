@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { clearSession, isLoggedIn } from '../auth/session'
-import AppShell from '../family/components/AppShell'
-import SignedOutCard from '../family/components/SignedOutCard'
+import AppShell from '../../components/AppShell'
+import SignedOutCard from '../../components/SignedOutCard'
 
 // TODO: replace the manual box with Charles's trip list (see fx/FxHome.jsx and fx/queries.js).
 export default function BudgetHome() {

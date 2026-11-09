@@ -3,9 +3,9 @@
 // not-found cases, and upsert/idempotency behavior for every method.
 //
 // Usage:
-//   node --env-file=.env.test scripts/test-atomic.mjs
+//   node --env-file=.env.local scripts/test-atomic.mjs
 //
-// Needs in .env.test: ATOMIC_BASE, ATOMIC_API_KEY, ATOMIC_TEST_PARENT_ID,
+// Needs in .env.local: ATOMIC_BASE, ATOMIC_API_KEY, ATOMIC_TEST_PARENT_ID,
 // ATOMIC_TEST_CHILD_ID, ATOMIC_TEST_MERCHANT_ID.
 //
 // Deliberately uses its own throwaway synthetic identities, NOT the real

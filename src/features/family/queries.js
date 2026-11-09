@@ -20,27 +20,8 @@ export const keys = {
 
 const authed = () => ({ enabled: isLoggedIn() })
 
-export function useRole() {
-  return useQuery({
-    queryKey: keys.role,
-    queryFn: FamilyApi.getMyFamilyRole,
-    select: (r) => r.role,
-    ...authed(),
-  })
-}
-
-// The caller's own FamilyLinkId, from the same GetMyFamilyRole response (so no
-// extra request). Only a linked child or parent has one.
-export function useFamilyLinkId() {
-  return useQuery({
-    queryKey: keys.role,
-    queryFn: FamilyApi.getMyFamilyRole,
-    select: (r) => r.familyLinkId,
-    ...authed(),
-  })
-}
-
-export const useMe = () => useQuery({ queryKey: keys.me, queryFn: FamilyApi.getMe, ...authed() })
+export const useMe = (enabled = true) =>
+  useQuery({ queryKey: keys.me, queryFn: FamilyApi.getMe, enabled: isLoggedIn() && enabled })
 
 export const useChildren = () =>
   useQuery({ queryKey: keys.children, queryFn: FamilyApi.getChildren, ...authed() })

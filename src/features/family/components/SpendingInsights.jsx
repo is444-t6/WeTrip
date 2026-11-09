@@ -7,9 +7,9 @@ import {
   safeDailySpend,
 } from '../insights'
 import { useChildSpending } from '../useChildSpending'
-import Banner from './Banner'
+import Banner from '../../../components/Banner'
 import DailySpendChart from './DailySpendChart'
-import Money from './Money'
+import Money from '../../../components/Money'
 
 const TOP_CATEGORIES = 4
 
