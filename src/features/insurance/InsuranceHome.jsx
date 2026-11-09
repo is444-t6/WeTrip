@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { getTodayDateInputValue, isValidTripDates } from './data'
 import { getTrip, saveTrip } from './storage'
+import Banner from '../family/components/Banner'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
 
@@ -45,14 +46,14 @@ export default function InsuranceHome() {
 
   return (
     <InsuranceLayout>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: 6 }}>Travel insurance</h1>
+      <h1 style={{ marginBottom: 6 }}>Travel insurance</h1>
       <p className="muted">
         First, tell us where and when you’re travelling. You’ll choose an insurance plan next.
       </p>
       <Notice />
-      <div className="section-title">Destination details</div>
+      <h2 className="section-title">Destination details</h2>
       <form onSubmit={continueToPlans} className="card">
-        {error && <div className="banner error">{error}</div>}
+        <Banner>{error}</Banner>
         <div className="field">
           <label htmlFor="destination">Destination</label>
           <input

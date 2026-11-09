@@ -36,15 +36,11 @@ export default function BudgetDetail() {
 
   return shell(
     <>
-      <Link
-        to="/budget"
-        className="muted"
-        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
-      >
+      <Link to="/budget" className="back-link">
         &larr; Back
       </Link>
 
-      <h1 style={{ fontSize: '1.4rem', marginBottom: 4 }}>Trip {tripId} budget</h1>
+      <h1>Trip {tripId} budget</h1>
 
       <BalanceHero
         label="Budget remaining"
@@ -59,13 +55,13 @@ export default function BudgetDetail() {
         }
       />
 
-      <div className="section-title">By category</div>
+      <h2 className="section-title">By category</h2>
       <BudgetBars lines={lines} />
 
       {role === 'Parent' && <SetBudgetForm tripId={tripId} />}
       <AddExpenseForm tripId={tripId} />
 
-      <div className="section-title">Expenses</div>
+      <h2 className="section-title">Expenses</h2>
       <ExpenseList expenses={data.expenses} />
     </>,
   )

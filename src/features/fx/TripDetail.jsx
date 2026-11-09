@@ -50,7 +50,7 @@ export default function TripDetail() {
         &larr; Back to trips
       </Link>
 
-      <h1 style={{ fontSize: '1.4rem', marginBottom: 4 }}>{trip.destination}</h1>
+      <h1>{trip.destination}</h1>
       <p className="muted" style={{ marginTop: 0 }}>
         {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
         {trip.status}
@@ -89,7 +89,7 @@ export default function TripDetail() {
       )}
       {role === 'Child' && <SpendCard trip={trip} remainingForeign={remainingForeign} />}
 
-      <div className="section-title">Rate locks</div>
+      <h2 className="section-title">Rate locks</h2>
       <div className="card">
         {locks.length === 0 && <p className="muted">Nothing locked yet.</p>}
         {locks.length > 0 && (
@@ -124,7 +124,7 @@ export default function TripDetail() {
         )}
       </div>
 
-      <div className="section-title">Spending</div>
+      <h2 className="section-title">Spending</h2>
       <div className="card">
         {spends.length === 0 && <p className="muted">No spending recorded.</p>}
         {spends.length > 0 && (
@@ -204,8 +204,9 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
 
       <div className="grid-2">
         <div className="field">
-          <label>Lock now (SGD)</label>
+          <label htmlFor="trip-lock-amount">Lock now (SGD)</label>
           <input
+            id="trip-lock-amount"
             type="number"
             step="0.01"
             min="1"
@@ -215,8 +216,8 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
           />
         </div>
         <div className="field">
-          <label>Tenor</label>
-          <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <label htmlFor="trip-lock-tenor">Tenor</label>
+          <select id="trip-lock-tenor" value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option value="1M">1M</option>
             <option value="3M">3M</option>
             <option value="6M">6M</option>
@@ -309,8 +310,9 @@ function SpendCard({ trip, remainingForeign }) {
       <Banner kind="ok">{message}</Banner>
       <form onSubmit={submit}>
         <div className="field">
-          <label>Merchant account id</label>
+          <label htmlFor="trip-spend-merchant">Merchant account id</label>
           <input
+            id="trip-spend-merchant"
             value={merchantAccountId}
             onChange={(e) => setMerchantAccountId(e.target.value)}
             required
@@ -318,8 +320,9 @@ function SpendCard({ trip, remainingForeign }) {
         </div>
         <div className="grid-2">
           <div className="field">
-            <label>Amount ({trip.currency})</label>
+            <label htmlFor="trip-spend-amount">Amount ({trip.currency})</label>
             <input
+              id="trip-spend-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -329,13 +332,21 @@ function SpendCard({ trip, remainingForeign }) {
             />
           </div>
           <div className="field">
-            <label>Category</label>
-            <input value={category} onChange={(e) => setCategory(e.target.value)} />
+            <label htmlFor="trip-spend-category">Category</label>
+            <input
+              id="trip-spend-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
           </div>
         </div>
         <div className="field">
-          <label>Note (optional)</label>
-          <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+          <label htmlFor="trip-spend-note">Note (optional)</label>
+          <input
+            id="trip-spend-note"
+            value={narrative}
+            onChange={(e) => setNarrative(e.target.value)}
+          />
         </div>
         <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
           {spend.isPending ? 'Paying…' : 'Pay'}

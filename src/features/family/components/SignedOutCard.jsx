@@ -5,7 +5,7 @@ export default function SignedOutCard({ title }) {
   return (
     <div className="center-page">
       <div className="card center-card" style={{ textAlign: 'center' }}>
-        <h2>{title}</h2>
+        <h1>{title}</h1>
         <p className="muted">You're not signed in yet.</p>
         <Link to="/login">
           <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>

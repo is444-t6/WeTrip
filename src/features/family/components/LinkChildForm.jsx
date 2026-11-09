@@ -43,16 +43,18 @@ export default function LinkChildForm() {
         <form onSubmit={lookup}>
           <div className="grid-2">
             <div className="field">
-              <label>Country code</label>
+              <label htmlFor="link-child-country">Country code</label>
               <input
+                id="link-child-country"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
                 required
               />
             </div>
             <div className="field">
-              <label>Phone number</label>
+              <label htmlFor="link-child-phone">Phone number</label>
               <input
+                id="link-child-phone"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 required
@@ -82,16 +84,21 @@ export default function LinkChildForm() {
           </div>
           <div className="grid-2">
             <div className="field">
-              <label>Nickname</label>
+              <label htmlFor="link-child-nickname">Nickname</label>
               <input
+                id="link-child-nickname"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="e.g. Jamie (Seoul)"
               />
             </div>
             <div className="field">
-              <label>Host currency</label>
-              <input value={hostCurrency} onChange={(e) => setHostCurrency(e.target.value)} />
+              <label htmlFor="link-child-currency">Host currency</label>
+              <input
+                id="link-child-currency"
+                value={hostCurrency}
+                onChange={(e) => setHostCurrency(e.target.value)}
+              />
             </div>
           </div>
           <div className="row">

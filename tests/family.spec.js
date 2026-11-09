@@ -58,8 +58,9 @@ test.describe('parent view', () => {
     await page.goto('/family')
 
     await expect(page.getByText('Your children')).toBeVisible()
-    await expect(page.getByText('Jamie')).toBeVisible()
-    await expect(page.getByText('Second kid')).toBeVisible()
+    // Exact: the budget-warning banner also contains the child's name.
+    await expect(page.getByText('Jamie', { exact: true })).toBeVisible()
+    await expect(page.getByText('Second kid', { exact: true })).toBeVisible()
 
     // Every active child renders a Manage button and an "Active" badge.
     await expect(page.getByRole('button', { name: 'Manage' }).first()).toBeVisible()

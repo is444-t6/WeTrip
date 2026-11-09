@@ -86,11 +86,11 @@ export default function Confirmation() {
         </div>
       </div>
       <div className="row">
-        <Link to="/insurance/policies">
-          <button>View My Insurance</button>
+        <Link to="/insurance/policies" className="btn">
+          View My Insurance
         </Link>
-        <Link to="/insurance">
-          <button className="secondary">Back to plans</button>
+        <Link to="/insurance" className="btn secondary">
+          Back to plans
         </Link>
       </div>
     </InsuranceLayout>

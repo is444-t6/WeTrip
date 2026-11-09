@@ -57,7 +57,7 @@ export default function Home() {
 
       <div className="hero">
         <div className="row-between">
-          <div className="hero-greeting">Hi, {firstName(user?.displayName)}!</div>
+          <h1 className="hero-greeting">Hi, {firstName(user?.displayName)}!</h1>
           <button
             type="button"
             className="eye-btn"
@@ -86,14 +86,14 @@ export default function Home() {
         </Banner>
       )}
 
-      <div className="section-title">Your accounts</div>
+      <h2 className="section-title">Your accounts</h2>
       <FamilyOverview role={role} pendingApprovals={pendingApprovals} />
       <TripWallets role={role} />
 
-      <div className="section-title">Recent activity</div>
+      <h2 className="section-title">Recent activity</h2>
       <RecentPayments />
 
-      <div className="section-title">Explore WeTrip</div>
+      <h2 className="section-title">Explore WeTrip</h2>
       <ExploreProducts />
     </AppShell>
   )

@@ -78,7 +78,7 @@ export default function Login() {
               />
             </svg>
           </div>
-          <h2>Sign in to WeTrip</h2>
+          <h1>Sign in to WeTrip</h1>
           <p className="muted">Dev stub — stands in for WeTrip login until it's wired up.</p>
         </div>
 

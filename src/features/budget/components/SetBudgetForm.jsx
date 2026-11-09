@@ -38,8 +38,12 @@ export default function SetBudgetForm({ tripId }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Category</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <label htmlFor="budget-set-category">Category</label>
+            <select
+              id="budget-set-category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
@@ -48,8 +52,9 @@ export default function SetBudgetForm({ tripId }) {
             </select>
           </div>
           <div className="field">
-            <label>Limit ({DEFAULT_CURRENCY})</label>
+            <label htmlFor="budget-set-limit">Limit ({DEFAULT_CURRENCY})</label>
             <input
+              id="budget-set-limit"
               type="number"
               step="0.01"
               min="0"

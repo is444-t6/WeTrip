@@ -17,7 +17,7 @@ const DASH = {
     TotalRemaining: 194.5,
     Lines: [
       {
-        CategoryId: 1,
+        CategoryId: 6,
         CategoryName: 'Food',
         LimitAmount: 300,
         SpentAmount: 120.4,
@@ -33,7 +33,7 @@ const DASH = {
         AlertLevel: 'WARNING',
       },
       {
-        CategoryId: 5,
+        CategoryId: 1,
         CategoryName: 'Activities',
         LimitAmount: 200,
         SpentAmount: 255.1,
@@ -47,7 +47,7 @@ const DASH = {
       Id: 1,
       ExpenseDate: '2026-11-02T10:00:00',
       MerchantName: 'Ichiran Ramen Shinjuku Chuo-ku Honten Annex Building Branch',
-      CategoryId: 1,
+      CategoryId: 6,
       Amount: 38.5,
       Currency: 'SGD',
     },

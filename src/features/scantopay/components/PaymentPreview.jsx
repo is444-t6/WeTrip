@@ -61,7 +61,7 @@ export default function PaymentPreview({
 
       {plans.length > 0 && (
         <>
-          <div className="section-title">Or split it</div>
+          <h2 className="section-title">Or split it</h2>
           <div className="card">
             <div className="scantopay-plans">
               {plans.map((plan) => (

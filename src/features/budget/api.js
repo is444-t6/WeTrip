@@ -1,8 +1,8 @@
 import { createClient } from '../../lib/http'
 
 const { call, qs } = createClient({
-  base: import.meta.env.VITE_BUDGET_API_BASE,
-  apiKey: import.meta.env.VITE_BUDGET_API_KEY,
+  base: import.meta.env.VITE_BUDGET_API_BASE || '/api/budget',
+  apiKey: import.meta.env.VITE_BUDGET_API_KEY || import.meta.env.VITE_FAMILY_API_KEY,
   normalize: true, // responses arrive camelCase; request bodies stay PascalCase
 })
 
