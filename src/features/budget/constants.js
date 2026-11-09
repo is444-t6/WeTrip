@@ -1,11 +1,10 @@
-// Copy the real Ids from the atomic's static entities (Data tab > Category / ExpenseSource > records).
 export const CATEGORIES = [
-  { id: 1, label: 'Food' },
+  { id: 6, label: 'Food' },
   { id: 2, label: 'Transport' },
-  { id: 3, label: 'Shopping' },
-  { id: 4, label: 'Accommodation' },
-  { id: 5, label: 'Activities' },
-  { id: 6, label: 'Others' },
+  { id: 5, label: 'Shopping' },
+  { id: 3, label: 'Accommodation' },
+  { id: 1, label: 'Activities' },
+  { id: 4, label: 'Others' },
 ]
 
 export const SOURCE = { MANUAL: 1, QR: 2, RECEIPT: 3, BANK: 4 }
