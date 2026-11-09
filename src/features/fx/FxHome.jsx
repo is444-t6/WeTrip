@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { useRole } from '../family/queries'
+import { useChildren, useFamilyLinkId, useRole } from '../family/queries'
+import { useChildTrips } from '../family/tripQueries'
 import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../family/components/AppShell'
 import Banner from '../family/components/Banner'
@@ -9,7 +10,15 @@ import { useTrips } from './queries'
 
 export default function FxHome() {
   const { data: role } = useRole()
-  const { data: trips, error, isLoading } = useTrips()
+  const { data: ownLinkId } = useFamilyLinkId()
+  const { data: children } = useChildren()
+  const parentTrips = useTrips()
+  // A child's trips hang off their own link; useTrips only knows a parent's children.
+  const childTrips = useChildTrips(role === 'Child' ? ownLinkId : undefined)
+  const { data: trips, error, isLoading } = role === 'Child' ? childTrips : parentTrips
+  const hasChildren = (children ?? []).some((c) => c.status === 'Active')
+  // Trips are per linked child, so a customer with nobody linked has none to show.
+  const nothingLinked = role === 'None' || (role === 'Parent' && children && !hasChildren)
 
   if (!isLoggedIn()) {
     return (
@@ -44,12 +53,22 @@ export default function FxHome() {
 
       <h2 className="section-title">{role === 'Child' ? 'Your trips' : 'Trip goals'}</h2>
       {isLoading && <p className="muted">Loading…</p>}
-      {trips?.length === 0 && <div className="card empty">No trip goals yet.</div>}
+      {nothingLinked && (
+        <div className="card empty">
+          <p style={{ margin: '0 0 8px' }}>
+            Trip goals are set up for a child, and no child is linked to your account yet.
+          </p>
+          <Link to="/family">Link a child in Family</Link>
+        </div>
+      )}
+      {!nothingLinked && trips?.length === 0 && (
+        <div className="card empty">No trip goals yet.</div>
+      )}
       {trips?.map((t) => (
         <TripCard key={t.tripId} trip={t} />
       ))}
 
-      {role === 'Parent' && (
+      {role === 'Parent' && hasChildren && (
         <>
           <h2 className="section-title">Start a trip</h2>
           <NewTripForm />

@@ -23,8 +23,8 @@
 //     that, rejected in cleanup; the child's original budget is restored.
 // The only lasting effects are the small amount (SPEND_TOTAL below) that ends
 // up with the merchant, and the grant the run creates (an approved ask lifts
-// the limit for the hours given, 1 here). If the demo child is already linked, LinkChild is
-// skipped and the existing familyLinkId is reused.
+// the limit for the hours given, 1 here). The parent and child in
+// .env.test must already be linked; the script never calls LinkChild.
 //
 // Uses field(json, 'camelName') everywhere a response field is read, which
 // tolerates structures where the Name-in-JSON fix hasn't landed yet
@@ -135,46 +135,21 @@ try {
     )
   })
 
-  await step('LinkChild (or reuse an existing link)', async () => {
-    const existing = await asParent('GET', 'GetChildren')
-    const active = Array.isArray(existing.json)
-      ? existing.json.find(
-          (c) =>
-            field(c, 'childCustomerId') === CHILD_CUSTOMER_ID && field(c, 'status') === 'Active',
-        )
-      : undefined
-    if (active) {
-      familyLinkId = field(active, 'familyLinkId')
-      console.log(`      reusing active link ${familyLinkId}`)
-      return
-    }
-    const { status, json } = await asParent('POST', 'LinkChild', {
-      childCustomerId: CHILD_CUSTOMER_ID,
-      nickname: 'Test harness child',
-      hostCurrency: 'KRW',
-    })
-    if (status === 200) {
-      familyLinkId = field(json, 'id')
-      return
-    }
-    // Already linked — fall through to GetChildren below to find it.
-    console.log(
-      `      LinkChild responded ${status} (${json?.Errors?.[0] ?? 'likely already linked'}), reusing existing link`,
+  // Never creates a link: a run once linked a "Test harness child" to a real
+  // account, and it showed up on that parent's Family page. The pair in
+  // .env.test must already be linked and Active; otherwise the run stops here.
+  await step('Find the existing active link (this script never creates one)', async () => {
+    const { status, json } = await asParent('GET', 'GetChildren')
+    assert(status === 200, `GetChildren expected 200, got ${status}: ${JSON.stringify(json)}`)
+    const active = json.find(
+      (c) => field(c, 'childCustomerId') === CHILD_CUSTOMER_ID && field(c, 'status') === 'Active',
     )
+    assert(
+      active,
+      `parent ${PARENT_CUSTOMER_ID} has no active link to child ${CHILD_CUSTOMER_ID} — link them in the app first; this script will not create one`,
+    )
+    familyLinkId = field(active, 'familyLinkId')
   })
-
-  if (!familyLinkId) {
-    await step('Resolve familyLinkId via GetChildren', async () => {
-      const { status, json } = await asParent('GET', 'GetChildren')
-      assert(status === 200, `expected 200, got ${status}: ${JSON.stringify(json)}`)
-      const match = json.find((c) => field(c, 'childCustomerId') === CHILD_CUSTOMER_ID)
-      assert(
-        match,
-        `no existing link found for child ${CHILD_CUSTOMER_ID} — check LinkChild error above`,
-      )
-      familyLinkId = field(match, 'familyLinkId')
-    })
-  }
 
   await step('GetMyLinkInvite (child) + AcceptLink if still pending', async () => {
     const { status, json } = await asChild('GET', 'GetMyLinkInvite')
