@@ -1275,3 +1275,47 @@ test.describe('a parent with no children yet', () => {
     await expect(page.getByText('Are you a parent?')).toHaveCount(0)
   })
 })
+
+test.describe('the SmartFX page with nothing linked', () => {
+  test('a customer with no children is told why there are no trips', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetMyFamilyRole: () => ({ role: 'None' }), GetChildren: () => [] })
+    await page.goto('/fx')
+    await expect(page.getByText('no child is linked to your account yet')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Link a child in Family' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Start a trip' })).toHaveCount(0)
+  })
+
+  test('a parent whose children are all pending sees the same explanation', async ({ page }) => {
+    await as(page, PARENT)
+    await mockApi(page, { GetChildren: () => [{ ...CHILDREN[0], status: 'Pending' }] })
+    await page.goto('/fx')
+    await expect(page.getByText('no child is linked to your account yet')).toBeVisible()
+  })
+
+  test('a child sees their own trips', async ({ page }) => {
+    await as(page, CHILD)
+    const calls = await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
+      GetTrips: (_b, q) =>
+        q.familyLinkId === '3'
+          ? [
+              {
+                Id: 12,
+                FamilyLinkId: 3,
+                Destination: 'Kyoto',
+                Currency: 'JPY',
+                TripStartDate: '2027-04-01',
+                TripEndDate: '2027-04-14',
+                TargetBudgetSgd: 800,
+                Status: 'Watching',
+              },
+            ]
+          : [],
+    })
+    await page.goto('/fx')
+    await expect(page.getByRole('heading', { name: 'Your trips' })).toBeVisible()
+    await expect(page.getByText('Kyoto')).toBeVisible()
+    expect(calls.some((c) => c.name === 'GetTrips' && c.query.familyLinkId === '3')).toBe(true)
+  })
+})
