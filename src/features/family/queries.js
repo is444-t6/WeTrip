@@ -13,6 +13,7 @@ export const keys = {
   invite: ['family', 'invite'],
   accounts: ['family', 'accounts'],
   dash: ['family', 'dash'],
+  myRequests: ['family', 'myRequests'],
   expenses: (id, from, to) => ['family', 'expenses', id, from, to],
   trend: (id, months) => ['family', 'trend', id, months],
 }
@@ -74,6 +75,15 @@ export const useAccounts = () =>
 export const useChildDashboard = () =>
   useQuery({ queryKey: keys.dash, queryFn: FamilyApi.getChildDashboard, ...authed() })
 
+// The child's own asks, newest first. Optional: the dashboard works without it.
+export const useMyRequests = () =>
+  useQuery({
+    queryKey: keys.myRequests,
+    queryFn: FamilyApi.getMyRequests,
+    retry: false,
+    ...authed(),
+  })
+
 export const useChildExpenses = (familyLinkId, startDate, endDate) =>
   useQuery({
     queryKey: keys.expenses(familyLinkId, startDate, endDate),
@@ -121,8 +131,32 @@ export function useAcceptLink() {
 export function useDecideRequest() {
   const invalidate = useInvalidate()
   return useMutation({
-    mutationFn: ({ requestId, approve }) => FamilyApi.decideRequest(requestId, approve),
-    onSuccess: () => invalidate('requests', 'children', 'me'),
+    mutationFn: ({ requestId, approve, ...grant }) =>
+      FamilyApi.decideRequest(requestId, approve, grant),
+    onSuccess: () => invalidate('requests', 'children', 'me', 'myRequests'),
+  })
+}
+
+export function useGrantBudget() {
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: ({ familyLinkId, amount, days, note }) =>
+      FamilyApi.grantBudget(familyLinkId, amount, days, note),
+    onSuccess: () => invalidate('children', 'requests'),
+  })
+}
+
+export function useSetSpendingRules() {
+  return useMutation({
+    mutationFn: ({ familyLinkId, ...rules }) => FamilyApi.setSpendingRules(familyLinkId, rules),
+  })
+}
+
+export function useAskForMore() {
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: ({ amount, reason }) => FamilyApi.askForMore(amount, reason),
+    onSuccess: () => invalidate('requests', 'myRequests', 'dash'),
   })
 }
 
@@ -166,6 +200,6 @@ export function useChildSpend() {
   return useMutation({
     mutationFn: ({ merchantAccountId, amount, category, narrative }) =>
       FamilyApi.childSpend(merchantAccountId, amount, category, narrative),
-    onSuccess: () => invalidate('dash'),
+    onSuccess: () => invalidate('dash', 'myRequests'),
   })
 }

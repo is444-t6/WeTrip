@@ -34,7 +34,7 @@ export function budgetStatus(spent, budget) {
 
 // What to tell the parent or the child about their budget, or null when there
 // is nothing to say. "over" covers spending exactly the whole budget too, since
-// any further payment then goes to the parent for approval.
+// any further payment is declined until the parent raises the limit.
 export function alertMessage({ who, name, spent, budget, period }) {
   const st = budgetStatus(spent, budget)
   if (st.level !== 'over' && st.level !== 'near') return null
@@ -51,7 +51,7 @@ export function alertMessage({ who, name, spent, budget, period }) {
     }
     return {
       kind: 'error',
-      text: `You've reached ${thisSpan} budget. New payments need your parent's approval.`,
+      text: `You've reached ${thisSpan} budget. New payments will be declined unless your parent raises your limit.`,
     }
   }
 
@@ -65,8 +65,8 @@ export function alertMessage({ who, name, spent, budget, period }) {
   return {
     kind: 'error',
     text: over
-      ? `${name} is over their ${span} budget by ${money(st.spent - st.budget)}. New payments need your approval.`
-      : `${name} has used all of their ${span} budget. New payments need your approval.`,
+      ? `${name} is over their ${span} budget by ${money(st.spent - st.budget)}. New payments will be declined unless you raise their limit.`
+      : `${name} has used all of their ${span} budget. New payments will be declined unless you raise their limit.`,
   }
 }
 
@@ -196,7 +196,7 @@ export function payNotice({ amount, balance, remaining, hasBudget }) {
   if (hasBudget && a > Number(remaining ?? 0)) {
     return {
       kind: 'warn',
-      text: `That is ${money(a - Number(remaining ?? 0))} over what is left in your budget, so it will go to your parent for approval.`,
+      text: `That is ${money(a - Number(remaining ?? 0))} over what is left in your budget, so it will be declined unless your parent raises your limit.`,
     }
   }
   return null

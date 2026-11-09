@@ -6,7 +6,14 @@ import ChildCard from './components/ChildCard'
 import LinkChildForm from './components/LinkChildForm'
 import Money from './components/Money'
 import BalanceHero from './components/BalanceHero'
-import { approvalsSummary, exceedsBalance, shortfallMessage, shortfalls } from './approvals'
+import {
+  approvalsSummary,
+  exceedsBalance,
+  isPayment,
+  requestAmount,
+  shortfallMessage,
+  shortfalls,
+} from './approvals'
 
 export default function ParentHome() {
   const me = useMe()
@@ -111,16 +118,21 @@ function PendingRequests({ requests, linkedChildren }) {
             <div className="stack">
               <strong>{r.nickname}</strong>
               <span className="muted">
-                {r.category}
-                {r.narrative ? ` · ${r.narrative}` : ''}
+                {isPayment(r)
+                  ? `${r.category}${r.narrative ? ` · ${r.narrative}` : ''}`
+                  : r.reason || r.narrative || 'No reason given'}
               </span>
-              <span className="muted request-to">To account {r.merchantAccountId}</span>
+              {isPayment(r) ? (
+                <span className="muted request-to">To account {r.merchantAccountId}</span>
+              ) : (
+                <span className="muted request-to">Asks to raise the limit for 24 hours</span>
+              )}
             </div>
             <div className="stack request-side">
               <span className="money request-amount">
-                <Money amount={r.amount} />
+                <Money amount={requestAmount(r)} />
               </span>
-              {exceedsBalance(r, byLink.get(r.familyLinkId)) && (
+              {isPayment(r) && exceedsBalance(r, byLink.get(r.familyLinkId)) && (
                 <span className="badge removed">Over balance</span>
               )}
             </div>
@@ -128,16 +140,22 @@ function PendingRequests({ requests, linkedChildren }) {
           <div className="row request-actions">
             <button
               disabled={busyId === r.requestId}
-              onClick={() => decide.mutate({ requestId: r.requestId, approve: true })}
+              onClick={() =>
+                decide.mutate({
+                  requestId: r.requestId,
+                  approve: true,
+                  ...(isPayment(r) ? {} : { grantAmount: requestAmount(r), hours: 24 }),
+                })
+              }
             >
-              Approve
+              {isPayment(r) ? 'Approve' : 'Give it'}
             </button>
             <button
               disabled={busyId === r.requestId}
               className="danger"
               onClick={() => decide.mutate({ requestId: r.requestId, approve: false })}
             >
-              Reject
+              {isPayment(r) ? 'Reject' : 'Not now'}
             </button>
           </div>
         </div>
