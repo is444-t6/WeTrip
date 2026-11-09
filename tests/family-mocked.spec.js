@@ -430,7 +430,7 @@ test.describe('asking for more', () => {
     await page.getByRole('button', { name: 'Pay', exact: true }).click()
     // AskForMore is left unmocked, so the mock answers it with a 500.
     await page.getByRole('button', { name: 'Ask for more' }).click()
-    await expect(page.locator('.banner.error')).toBeVisible()
+    await expect(page.locator('.banner.error', { hasText: 'unmocked AskForMore' })).toBeVisible()
     await expect(page.getByLabel('Ask your parent for')).toBeVisible()
   })
 
