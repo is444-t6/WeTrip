@@ -63,6 +63,7 @@ export default function ChildHome() {
 
   return (
     <div>
+      <h1 className="visually-hidden">Child wallet</h1>
       <BalanceHero
         label={dash.nickname ? `${dash.nickname}'s balance` : 'Your balance'}
         amount={dash.balance}
@@ -108,7 +109,7 @@ export default function ChildHome() {
           <p className="muted">Your parent hasn't set a budget yet.</p>
         )}
         {dash.byCategory?.length > 0 && (
-          <table style={{ marginTop: 8 }}>
+          <table className="table-compact" style={{ marginTop: 8 }}>
             <tbody>
               {dash.byCategory.map((c) => (
                 <tr key={c.category}>
@@ -131,16 +132,18 @@ export default function ChildHome() {
         <Banner kind="ok">{message}</Banner>
         <form onSubmit={pay}>
           <div className="field">
-            <label>Merchant account id</label>
+            <label htmlFor="child-pay-merchant">Merchant account id</label>
             <input
+              id="child-pay-merchant"
               value={merchantAccountId}
               onChange={(e) => setMerchantAccountId(e.target.value)}
               required
             />
           </div>
           <div className="field">
-            <label>Amount</label>
+            <label htmlFor="child-pay-amount">Amount</label>
             <input
+              id="child-pay-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -149,8 +152,10 @@ export default function ChildHome() {
               required
             />
           </div>
-          <div className="field">
-            <label>Category</label>
+          <div className="field" role="group" aria-labelledby="child-pay-category">
+            <span id="child-pay-category" className="field-label">
+              Category
+            </span>
             <div className="chips">
               {CATEGORIES.map((name) => (
                 <button
@@ -166,8 +171,12 @@ export default function ChildHome() {
             </div>
           </div>
           <div className="field">
-            <label>Note (optional)</label>
-            <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+            <label htmlFor="child-pay-note">Note (optional)</label>
+            <input
+              id="child-pay-note"
+              value={narrative}
+              onChange={(e) => setNarrative(e.target.value)}
+            />
           </div>
           {notice && <div className={`banner ${notice.kind}`}>{notice.text}</div>}
           <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>

@@ -81,13 +81,13 @@ export default function MyPayments() {
 
       {data && (
         <>
-          <div className="section-title">Pay-later plans</div>
+          <h2 className="section-title">Pay-later plans</h2>
           {plans.length === 0 && <div className="card empty">No pay-later plans yet.</div>}
           {plans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
 
-          <div className="section-title">Payments</div>
+          <h2 className="section-title">Payments</h2>
           {payments.length === 0 && (
             <div className="card empty">
               No payments yet. <Link to="/pay">Scan to pay</Link>

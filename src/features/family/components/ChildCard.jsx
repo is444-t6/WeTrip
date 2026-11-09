@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { budgetStatus, periodBounds, periodTiming } from '../insights'
 import Avatar from './Avatar'
 import PaceBar from './PaceBar'
@@ -12,6 +12,7 @@ function badgeClass(status) {
 }
 
 export default function ChildCard({ child }) {
+  const navigate = useNavigate()
   const bounds = periodBounds(child.period === 'Weekly' ? 'Weekly' : 'Monthly')
   const { daysLeft } = periodTiming(bounds)
   const label = child.nickname || child.childCustomerId
@@ -63,11 +64,19 @@ export default function ChildCard({ child }) {
         </>
       )}
 
-      <Link to="/family/child/$familyLinkId" params={{ familyLinkId: String(child.familyLinkId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
-          Manage
-        </button>
-      </Link>
+      <button
+        type="button"
+        className="secondary"
+        style={{ width: '100%', marginTop: 14 }}
+        onClick={() =>
+          navigate({
+            to: '/family/child/$familyLinkId',
+            params: { familyLinkId: String(child.familyLinkId) },
+          })
+        }
+      >
+        Manage
+      </button>
     </div>
   )
 }

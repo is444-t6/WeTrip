@@ -71,7 +71,11 @@ export default function QrScanner({ onScan }) {
 
   return (
     <>
-      {cameraError && <p className="muted">{cameraError}</p>}
+      {cameraError && (
+        <p className="muted" role="alert">
+          {cameraError}
+        </p>
+      )}
       <div id={REGION_ID} className="scantopay-reader" hidden={Boolean(cameraError)} />
     </>
   )

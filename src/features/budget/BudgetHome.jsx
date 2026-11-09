@@ -18,12 +18,17 @@ export default function BudgetHome() {
 
   return (
     <AppShell onSignOut={signOut}>
-      <h1 style={{ fontSize: '1.4rem' }}>Budget</h1>
+      <h1>Budget</h1>
       <p className="muted">Open a trip to see spending against its category budgets.</p>
       <div className="card">
         <div className="field">
-          <label htmlFor="tripId">Trip Id</label>
-          <input id="tripId" type="number" value={tripId} onChange={(e) => setTripId(e.target.value)} />
+          <label htmlFor="budget-trip-id">Trip Id</label>
+          <input
+            id="budget-trip-id"
+            type="number"
+            value={tripId}
+            onChange={(e) => setTripId(e.target.value)}
+          />
         </div>
         <button
           type="button"

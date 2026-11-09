@@ -44,7 +44,7 @@ export default function ChildInvite() {
           </p>
         </div>
         {/* A parent has no child yet, so nothing else on the screen can add one. */}
-        <div className="section-title">Are you a parent?</div>
+        <h2 className="section-title">Are you a parent?</h2>
         <LinkChildForm />
       </>
     )
@@ -58,7 +58,7 @@ export default function ChildInvite() {
 
   return (
     <div className="card">
-      <h2>Family invite</h2>
+      <h1>Family invite</h1>
       <p className="muted">
         <strong style={{ color: 'var(--text)' }}>
           {invite.nickname || invite.parentCustomerId}
@@ -76,11 +76,16 @@ export default function ChildInvite() {
         }}
       >
         <div className="field">
-          <label>Which of your accounts should they manage?</label>
+          <label htmlFor="invite-account">Which of your accounts should they manage?</label>
           {accounts.isLoading ? (
             <p className="muted">Loading your accounts…</p>
           ) : choices.length > 0 ? (
-            <select value={accountId} onChange={(e) => setAccountId(e.target.value)} required>
+            <select
+              id="invite-account"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              required
+            >
               <option value="">Choose an account</option>
               {choices.map((a) => (
                 <option key={a.accountId} value={a.accountId}>
@@ -92,6 +97,7 @@ export default function ChildInvite() {
             </select>
           ) : (
             <input
+              id="invite-account"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               placeholder="Your deposit AccountId"

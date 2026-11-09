@@ -57,13 +57,12 @@ export default function ChildDetail() {
 
   return (
     <AppShell onSignOut={signOut}>
-      <Link
-        to="/family"
-        className="muted"
-        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
-      >
+      <Link to="/family" className="back-link">
         &larr; Back to children
       </Link>
+      <h1 className="visually-hidden">
+        {child ? child.nickname || child.childCustomerId : 'Child'}
+      </h1>
       <Banner>{error?.message || notFound}</Banner>
       {!child && !error && !notFound && <p className="muted">Loading…</p>}
       {child && (
@@ -73,29 +72,29 @@ export default function ChildDetail() {
 
           {tab === 'overview' && (
             <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
-              <div className="section-title">Spending insights</div>
+              <h2 className="section-title">Spending insights</h2>
               <SpendingInsights child={child} />
-              <div className="section-title">Trips</div>
+              <h2 className="section-title">Trips</h2>
               <TripsPanel familyLinkId={familyLinkId} />
             </div>
           )}
 
           {tab === 'manage' && (
             <div role="tabpanel" id="panel-manage" aria-labelledby="tab-manage">
-              <div className="section-title">Budget</div>
+              <h2 className="section-title">Budget</h2>
               <BudgetCard child={child} />
-              <div className="section-title">Allowance</div>
+              <h2 className="section-title">Allowance</h2>
               <AllowanceCard familyLinkId={familyLinkId} hasAllowance={child.hasAllowance} />
-              <div className="section-title">Top up</div>
+              <h2 className="section-title">Top up</h2>
               <TopUpCard child={child} />
             </div>
           )}
 
           {tab === 'activity' && (
             <div role="tabpanel" id="panel-activity" aria-labelledby="tab-activity">
-              <div className="section-title">Expenses</div>
+              <h2 className="section-title">Expenses</h2>
               <ExpensesCard familyLinkId={familyLinkId} />
-              <div className="section-title">Balance trend</div>
+              <h2 className="section-title">Balance trend</h2>
               <BalanceTrendCard familyLinkId={familyLinkId} />
             </div>
           )}
@@ -131,15 +130,20 @@ function BudgetCard({ child }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Period</label>
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+            <label htmlFor="child-budget-period">Period</label>
+            <select
+              id="child-budget-period"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+            >
               <option value="Weekly">Weekly</option>
               <option value="Monthly">Monthly</option>
             </select>
           </div>
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="child-budget-amount">Amount (SGD)</label>
             <input
+              id="child-budget-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -203,8 +207,9 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="child-allowance-amount">Amount (SGD)</label>
             <input
+              id="child-allowance-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -214,16 +219,25 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
             />
           </div>
           <div className="field">
-            <label>Frequency</label>
-            <select value={weeklyMonthly} onChange={(e) => setWeeklyMonthly(e.target.value)}>
+            <label htmlFor="child-allowance-frequency">Frequency</label>
+            <select
+              id="child-allowance-frequency"
+              value={weeklyMonthly}
+              onChange={(e) => setWeeklyMonthly(e.target.value)}
+            >
               <option value="Weekly">Weekly</option>
               <option value="Monthly">Monthly</option>
             </select>
           </div>
         </div>
         <div className="field">
-          <label>Start date (optional, defaults to tomorrow)</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <label htmlFor="child-allowance-start">Start date (optional, defaults to tomorrow)</label>
+          <input
+            id="child-allowance-start"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
         </div>
         <div className="row">
           <button disabled={busy} type="submit">
@@ -320,8 +334,9 @@ function TopUpCard({ child }) {
         </div>
         <div className="grid-2">
           <div className="field">
-            <label>Amount (SGD)</label>
+            <label htmlFor="child-topup-amount">Amount (SGD)</label>
             <input
+              id="child-topup-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -331,8 +346,12 @@ function TopUpCard({ child }) {
             />
           </div>
           <div className="field">
-            <label>Note (optional)</label>
-            <input value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+            <label htmlFor="child-topup-note">Note (optional)</label>
+            <input
+              id="child-topup-note"
+              value={narrative}
+              onChange={(e) => setNarrative(e.target.value)}
+            />
           </div>
         </div>
         {value > 0 && mine !== null && (
@@ -379,12 +398,22 @@ function ExpensesCard({ familyLinkId }) {
         className="row"
       >
         <div className="field" style={{ flex: 1 }}>
-          <label>From</label>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <label htmlFor="child-expenses-from">From</label>
+          <input
+            id="child-expenses-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
         </div>
         <div className="field" style={{ flex: 1 }}>
-          <label>To</label>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <label htmlFor="child-expenses-to">To</label>
+          <input
+            id="child-expenses-to"
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          />
         </div>
         <button type="submit">Refresh</button>
       </form>
@@ -401,7 +430,7 @@ function ExpensesCard({ familyLinkId }) {
               <Money amount={result.total ?? 0} />
             </span>
           </div>
-          <table>
+          <table className="stack-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -414,13 +443,15 @@ function ExpensesCard({ familyLinkId }) {
             <tbody>
               {(result.expenses ?? []).map((x) => (
                 <tr key={x.transactionId}>
-                  <td>{String(x.date).slice(0, 10)}</td>
-                  <td>{x.accountTo}</td>
-                  <td>{x.category}</td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td data-label="Date">{String(x.date).slice(0, 10)}</td>
+                  <td data-label="To">{x.accountTo}</td>
+                  <td data-label="Category">{x.category}</td>
+                  <td data-label="Amount" style={{ textAlign: 'right' }}>
                     <Money amount={x.amount} currency={x.currency} />
                   </td>
-                  <td className="muted">{x.source}</td>
+                  <td data-label="Source" className="muted">
+                    {x.source}
+                  </td>
                 </tr>
               ))}
               {(result.expenses ?? []).length === 0 && (

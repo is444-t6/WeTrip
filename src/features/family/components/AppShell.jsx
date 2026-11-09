@@ -1,66 +1,118 @@
+import { useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 
+function BrandMark() {
+  return (
+    <span className="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="m5 12.5 4.4 4.4L19 7.3"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  )
+}
+
+export function Brand() {
+  return (
+    <Link to="/" className="brand" aria-label="WeTrip">
+      <BrandMark />
+      <span className="brand-word">wetrip</span>
+    </Link>
+  )
+}
+
+function InsuranceMenu({ secondaryNav }) {
+  return (
+    <div className="nav-insurance-menu">
+      <Link
+        to="/insurance"
+        className="nav-link"
+        activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+      >
+        Insurance
+      </Link>
+      {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
+    </div>
+  )
+}
+
 export default function AppShell({ onSignOut, secondaryNav, children }) {
+  // Each page mounts its own shell, so this focuses the new page's main
+  // landmark after a route change (and after signing in or out).
+  useEffect(() => {
+    document.getElementById('wetrip-main')?.focus()
+  }, [])
+
   return (
     <>
-      <div className="navbar">
+      <a className="skip-link" href="#wetrip-main">
+        Skip to content
+      </a>
+      <header className="navbar">
         <div className="navbar-inner">
-          <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
-            <span className="brand-mark">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9-9-4.03-9-9Z"
-                  stroke="#fff"
-                  strokeWidth="1.6"
-                />
-                <path
-                  d="M7.5 12.5 10.5 15.5 16.5 9"
-                  stroke="#fff"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            WeTrip
-          </Link>
-          <div className="row">
-            <Link to="/" className="nav-link" activeOptions={{ exact: true }}>
+          <Brand />
+          <nav className="nav-tabs" aria-label="WeTrip">
+            <Link
+              to="/"
+              className="nav-link"
+              activeOptions={{ exact: true }}
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
               Home
             </Link>
-            <Link to="/family" className="nav-link">
+            <Link
+              to="/family"
+              className="nav-link"
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
               Family
             </Link>
-            <Link to="/fx" className="nav-link">
+            <Link
+              to="/fx"
+              className="nav-link"
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
               SmartFX
             </Link>
-            <div className="nav-insurance-menu">
-              <Link to="/insurance" className="nav-link">
-                Insurance
-              </Link>
-              {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
-            </div>
-            <div className="nav-budget-menu">
-              <Link to="/budget" className="nav-link">
-                Budget
-              </Link>
-              {secondaryNav && <div className="navbar-subnav">{secondaryNav}</div>}
-            </div>
-            <Link to="/pay" className="nav-link" activeOptions={{ exact: true }}>
+            <Link
+              to="/budget"
+              className="nav-link"
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
+              Budget
+            </Link>
+            <InsuranceMenu secondaryNav={secondaryNav} />
+            <Link
+              to="/pay"
+              className="nav-link"
+              activeOptions={{ exact: true }}
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
               Scan to Pay
             </Link>
-            <Link to="/pay/history" className="nav-link">
+            <Link
+              to="/pay/history"
+              className="nav-link"
+              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+            >
               My Payments
             </Link>
-            {onSignOut && (
-              <button className="ghost" onClick={onSignOut}>
-                Sign out
-              </button>
-            )}
-          </div>
+          </nav>
+          {onSignOut && (
+            <button className="ghost" onClick={onSignOut}>
+              Sign out
+            </button>
+          )}
         </div>
-      </div>
-      <div className="page">{children}</div>
+      </header>
+      <main className="page" id="wetrip-main" tabIndex={-1}>
+        {children}
+      </main>
     </>
   )
 }

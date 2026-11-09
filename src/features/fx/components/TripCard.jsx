@@ -50,10 +50,13 @@ export default function TripCard({ trip }) {
         </span>
       </div>
 
-      <Link to="/fx/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
-          Open trip
-        </button>
+      <Link
+        to="/fx/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="btn secondary"
+        style={{ width: '100%', marginTop: 14 }}
+      >
+        Open trip
       </Link>
     </div>
   )

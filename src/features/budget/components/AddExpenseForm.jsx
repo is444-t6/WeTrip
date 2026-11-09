@@ -46,8 +46,9 @@ export default function AddExpenseForm({ tripId }) {
       <form onSubmit={submit}>
         <div className="grid-2">
           <div className="field">
-            <label>Amount ({DEFAULT_CURRENCY})</label>
+            <label htmlFor="budget-expense-amount">Amount ({DEFAULT_CURRENCY})</label>
             <input
+              id="budget-expense-amount"
               type="number"
               step="0.01"
               min="0.01"
@@ -57,8 +58,12 @@ export default function AddExpenseForm({ tripId }) {
             />
           </div>
           <div className="field">
-            <label>Category</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <label htmlFor="budget-expense-category">Category</label>
+            <select
+              id="budget-expense-category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
@@ -68,8 +73,12 @@ export default function AddExpenseForm({ tripId }) {
           </div>
         </div>
         <div className="field">
-          <label>Merchant (optional)</label>
-          <input value={merchant} onChange={(e) => setMerchant(e.target.value)} />
+          <label htmlFor="budget-expense-merchant">Merchant (optional)</label>
+          <input
+            id="budget-expense-merchant"
+            value={merchant}
+            onChange={(e) => setMerchant(e.target.value)}
+          />
         </div>
         <button disabled={record.isPending} type="submit" style={{ width: '100%' }}>
           {record.isPending ? 'Saving…' : 'Add expense'}

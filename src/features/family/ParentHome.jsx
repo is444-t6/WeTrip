@@ -19,6 +19,7 @@ export default function ParentHome() {
 
   return (
     <div>
+      <h1 className="visually-hidden">Family wallet</h1>
       <Banner>{error?.message}</Banner>
 
       {me.data && (
@@ -54,7 +55,7 @@ export default function ParentHome() {
         <PendingRequests requests={requests.data} linkedChildren={children.data} />
       )}
 
-      <div className="section-title">Your children</div>
+      <h2 className="section-title">Your children</h2>
       {children.isLoading && <p className="muted">Loading…</p>}
       {children.data?.length === 0 && (
         <div className="card empty">No children linked yet — add one below.</div>
@@ -63,7 +64,7 @@ export default function ParentHome() {
         <ChildCard key={c.familyLinkId} child={c} />
       ))}
 
-      <div className="section-title">Add a child</div>
+      <h2 className="section-title">Add a child</h2>
       {adding || children.data?.length === 0 ? (
         <LinkChildForm />
       ) : (
