@@ -8,31 +8,37 @@ import BudgetBars from './components/BudgetBars'
 import ExpenseList from './components/ExpenseList'
 import AddExpenseForm from './components/AddExpenseForm'
 import SetBudgetForm from './components/SetBudgetForm'
+import BudgetShell from './BudgetShell'
 
 export default function BudgetDetail() {
   const { tripId } = useParams({ from: '/budget/$tripId' })
   const { data, error, isLoading } = useDashboard(tripId)
   const { data: role } = useRole()
 
-  if (error) return <Banner>{error.message}</Banner>
-  if (isLoading || !data) return <p className="muted">Loading…</p>
+  if (error)
+    return (
+      <BudgetShell>
+        <Banner>{error.message}</Banner>
+      </BudgetShell>
+    )
+  if (isLoading || !data)
+    return (
+      <BudgetShell>
+        <p className="muted">Loading…</p>
+      </BudgetShell>
+    )
+
 
   const summary = data.summary || {}
   const lines = summary.lines || []
   const alerts = lines.filter((l) => l.alertLevel !== 'OK').length
 
   return (
-    <div>
-      <Link
-        to="/budget"
-        className="muted"
-        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
-      >
+    <BudgetShell>
+      <Link to="/budget" className="muted" style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}>
         &larr; Back
       </Link>
-
       <h1 style={{ fontSize: '1.4rem', marginBottom: 4 }}>Trip {tripId} budget</h1>
-
       <BalanceHero
         label="Budget remaining"
         amount={Number(summary.totalRemaining) || 0}
@@ -54,6 +60,6 @@ export default function BudgetDetail() {
 
       <div className="section-title">Expenses</div>
       <ExpenseList expenses={data.expenses} />
-    </div>
+    </BudgetShell>
   )
 }
