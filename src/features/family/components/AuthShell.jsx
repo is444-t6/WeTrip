@@ -1,8 +1,14 @@
+import { useEffect } from 'react'
 import { Brand } from './AppShell'
 
 export default function AuthShell({ children }) {
+  // Signing out swaps an AppShell page for this one without a full reload.
+  useEffect(() => {
+    document.getElementById('wetrip-main')?.focus()
+  }, [])
+
   return (
-    <main className="auth-page">
+    <main className="auth-page" id="wetrip-main" tabIndex={-1}>
       <div className="auth-shell">
         <div className="auth-brand">
           <Brand />

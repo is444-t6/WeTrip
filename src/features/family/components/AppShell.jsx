@@ -1,11 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 
-// Pages mount their own AppShell, so this flag lives outside the component and
-// survives route changes. The first mount is the page load; every later mount
-// is a navigation and should put focus back at the top of the new page.
-let hasMounted = false
-
 function BrandMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
@@ -47,11 +42,9 @@ function InsuranceMenu({ secondaryNav }) {
 }
 
 export default function AppShell({ onSignOut, secondaryNav, children }) {
+  // Each page mounts its own shell, so this focuses the new page's main
+  // landmark after a route change (and after signing in or out).
   useEffect(() => {
-    if (!hasMounted) {
-      hasMounted = true
-      return
-    }
     document.getElementById('wetrip-main')?.focus()
   }, [])
 
