@@ -24,6 +24,7 @@ import { Route as InsurancePoliciesRouteImport } from './routes/insurance.polici
 import { Route as InsuranceTravellersRouteImport } from './routes/insurance.travellers'
 import { Route as PayIndexRouteImport } from './routes/pay.index'
 import { Route as PayHistoryRouteImport } from './routes/pay.history'
+import { Route as TripsTripIdRouteImport } from './routes/trips.$tripId'
 import { Route as FamilyChildFamilyLinkIdRouteImport } from './routes/family.child.$familyLinkId'
 import { Route as FxTripsIndexRouteImport } from './routes/fx.trips.index'
 import { Route as FxTripsTripIdRouteImport } from './routes/fx.trips.$tripId'
@@ -104,6 +105,11 @@ const PayHistoryRoute = PayHistoryRouteImport.update({
   path: '/pay/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TripsTripIdRoute = TripsTripIdRouteImport.update({
+  id: '/trips/$tripId',
+  path: '/trips/$tripId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FamilyChildFamilyLinkIdRoute = FamilyChildFamilyLinkIdRouteImport.update({
   id: '/family/child/$familyLinkId',
   path: '/family/child/$familyLinkId',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/pay/history': typeof PayHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/pay/history': typeof PayHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/budget': typeof BudgetIndexRoute
   '/family': typeof FamilyIndexRoute
   '/fx': typeof FxIndexRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/insurance/policies': typeof InsurancePoliciesRoute
   '/insurance/travellers': typeof InsuranceTravellersRoute
   '/pay/history': typeof PayHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/budget/': typeof BudgetIndexRoute
   '/family/': typeof FamilyIndexRoute
   '/fx/': typeof FxIndexRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/pay/history'
+    | '/trips/$tripId'
     | '/budget/'
     | '/family/'
     | '/fx/'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/pay/history'
+    | '/trips/$tripId'
     | '/budget'
     | '/family'
     | '/fx'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/insurance/policies'
     | '/insurance/travellers'
     | '/pay/history'
+    | '/trips/$tripId'
     | '/budget/'
     | '/family/'
     | '/fx/'
@@ -266,6 +278,7 @@ export interface RootRouteChildren {
   InsurancePoliciesRoute: typeof InsurancePoliciesRoute
   InsuranceTravellersRoute: typeof InsuranceTravellersRoute
   PayHistoryRoute: typeof PayHistoryRoute
+  TripsTripIdRoute: typeof TripsTripIdRoute
   BudgetIndexRoute: typeof BudgetIndexRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
   FxIndexRoute: typeof FxIndexRoute
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trips/$tripId': {
+      id: '/trips/$tripId'
+      path: '/trips/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof TripsTripIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/family/child/$familyLinkId': {
       id: '/family/child/$familyLinkId'
       path: '/family/child/$familyLinkId'
@@ -426,6 +446,7 @@ const rootRouteChildren: RootRouteChildren = {
   InsurancePoliciesRoute: InsurancePoliciesRoute,
   InsuranceTravellersRoute: InsuranceTravellersRoute,
   PayHistoryRoute: PayHistoryRoute,
+  TripsTripIdRoute: TripsTripIdRoute,
   BudgetIndexRoute: BudgetIndexRoute,
   FamilyIndexRoute: FamilyIndexRoute,
   FxIndexRoute: FxIndexRoute,

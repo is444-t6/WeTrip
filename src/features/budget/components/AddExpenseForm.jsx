@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Banner from '../../family/components/Banner'
+import Banner from '../../../components/Banner'
 import { getSessionAccountId } from '../../auth/session'
 import { CATEGORIES, DEFAULT_CURRENCY, SOURCE } from '../constants'
 import { useRecordSpending } from '../queries'

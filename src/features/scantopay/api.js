@@ -1,12 +1,8 @@
-import { createClient } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
-const { call, qs } = createClient({
-  base: import.meta.env.VITE_SCANTOPAY_API_BASE || '/scantopay',
-  apiKey: import.meta.env.VITE_SCANTOPAY_KEY,
-  // GetHistory's list items arrive PascalCase. Note that normalising turns
-  // BNPLPlanId into bNPLPlanId.
-  normalize: true,
-})
+// GetHistory's list items arrive PascalCase. Note that normalising turns
+// BNPLPlanId into bNPLPlanId.
+const { call, qs } = serviceClient('scantopay')
 
 const withCustomer = (method, customerId) => `${method}${qs({ CustomerId: customerId })}`
 

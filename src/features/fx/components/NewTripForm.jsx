@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useChildren } from '../../family/queries'
 import { getSessionCustomerId } from '../../auth/session'
-import Banner from '../../family/components/Banner'
+import Banner from '../../../components/Banner'
 import { CURRENCIES, tenorFor } from '../api'
 import { useCreateTrip, useRate } from '../queries'
 

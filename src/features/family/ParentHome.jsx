@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useChildren, useDecideRequest, useMe, usePendingRequests } from './queries'
-import Banner from './components/Banner'
+import Banner from '../../components/Banner'
 import BudgetAlert from './components/BudgetAlert'
 import ChildCard from './components/ChildCard'
 import LinkChildForm from './components/LinkChildForm'
-import Money from './components/Money'
-import BalanceHero from './components/BalanceHero'
+import Money from '../../components/Money'
+import BalanceHero from '../../components/BalanceHero'
 import {
   approvalsSummary,
   exceedsBalance,

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import Banner from '../family/components/Banner'
+import Banner from '../../components/Banner'
 import PayLayout from './components/PayLayout'
 import PaymentPreview from './components/PaymentPreview'
 import PaymentResult from './components/PaymentResult'

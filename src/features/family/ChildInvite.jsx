@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAcceptLink, useAccounts, useMyInvite } from './queries'
-import Banner from './components/Banner'
+import Banner from '../../components/Banner'
 import LinkChildForm from './components/LinkChildForm'
 
 // The backend answers "no link for this customer" as a not-found error on some

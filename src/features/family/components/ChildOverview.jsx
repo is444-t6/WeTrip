@@ -1,7 +1,7 @@
 import { budgetHealth, percentChange, periodTiming, safeDailySpend } from '../insights'
 import { useChildSpending } from '../useChildSpending'
 import Avatar from './Avatar'
-import Money from './Money'
+import Money from '../../../components/Money'
 import PaceBar from './PaceBar'
 
 const HEALTH_BADGE = { ok: 'active', watch: 'pending', over: 'removed', none: 'pending' }

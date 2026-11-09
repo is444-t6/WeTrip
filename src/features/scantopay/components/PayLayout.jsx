@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import AppShell from '../../family/components/AppShell'
+import AppShell from '../../../components/AppShell'
 import { clearSession, isLoggedIn } from '../../auth/session'
 import { DEMO_CUSTOMER_ID, getCustomerId } from '../customer'
 import '../scantopay.css'

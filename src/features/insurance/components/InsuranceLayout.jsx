@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import AppShell from '../../family/components/AppShell'
+import AppShell from '../../../components/AppShell'
 import { clearSession } from '../../auth/session'
 
 export default function InsuranceLayout({ children }) {

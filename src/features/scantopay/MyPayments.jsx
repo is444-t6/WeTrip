@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import Banner from '../family/components/Banner'
-import Money from '../family/components/Money'
+import Banner from '../../components/Banner'
+import Money from '../../components/Money'
 import DetailRow from './components/DetailRow'
 import PayLayout from './components/PayLayout'
 import { getCustomerId } from './customer'

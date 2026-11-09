@@ -1,14 +1,14 @@
 import { useTrip } from '../../fx/queries'
-import { useFamilyLinkId } from '../queries'
+import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useChildTrips } from '../tripQueries'
 import { foreignLeft, nextTrip, tripTiming } from '../trips'
-import Money from './Money'
+import Money from '../../../components/Money'
 
 // The child's own view of their next trip: how much foreign money is left to
 // spend. Renders nothing until there is a trip, so a child without one sees
 // the page exactly as before.
 export default function MyTripCard() {
-  const familyLinkId = useFamilyLinkId().data
+  const { familyLinkId } = useCurrentUser()
   const { data: trips } = useChildTrips(familyLinkId)
   const trip = nextTrip(trips)
   const detail = useTrip(trip?.tripId)

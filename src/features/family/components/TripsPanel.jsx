@@ -3,8 +3,8 @@ import { tenorFor } from '../../fx/api'
 import { useRate } from '../../fx/queries'
 import { useChildTrips } from '../tripQueries'
 import { lockMessage, lockSummary, statusBadge, tripTiming } from '../trips'
-import Banner from './Banner'
-import Money from './Money'
+import Banner from '../../../components/Banner'
+import Money from '../../../components/Money'
 
 const day = (value) => String(value).slice(0, 10)
 

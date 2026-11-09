@@ -1,10 +1,7 @@
-import { createClient, decap } from '../../lib/http'
+import { decap } from '../../lib/http'
+import { serviceClient } from '../../lib/services'
 
-const { call, qs } = createClient({
-  base: import.meta.env.VITE_FX_API_BASE || '/api/fx',
-  apiKey: import.meta.env.VITE_FX_API_KEY || import.meta.env.VITE_FAMILY_API_KEY,
-  auth: 'params',
-})
+const { call, qs } = serviceClient('fx')
 
 export const CURRENCIES = [
   { code: 'JPY', name: 'Japanese Yen' },

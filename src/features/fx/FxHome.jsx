@@ -1,16 +1,16 @@
 import { Link } from '@tanstack/react-router'
-import { useChildren, useFamilyLinkId, useRole } from '../family/queries'
+import { useChildren } from '../family/queries'
+import { useCurrentUser } from '../auth/useCurrentUser'
 import { useChildTrips } from '../family/tripQueries'
 import { clearSession, isLoggedIn } from '../auth/session'
-import AppShell from '../family/components/AppShell'
-import Banner from '../family/components/Banner'
+import AppShell from '../../components/AppShell'
+import Banner from '../../components/Banner'
 import NewTripForm from './components/NewTripForm'
 import TripCard from './components/TripCard'
 import { useTrips } from './queries'
 
 export default function FxHome() {
-  const { data: role } = useRole()
-  const { data: ownLinkId } = useFamilyLinkId()
+  const { role, familyLinkId: ownLinkId } = useCurrentUser()
   const { data: children } = useChildren()
   const parentTrips = useTrips()
   // A child's trips hang off their own link; useTrips only knows a parent's children.

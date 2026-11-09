@@ -38,7 +38,7 @@ async function seedValidCheckout(page) {
 test('destination details lead to a separate insurance plan selection step', async ({ page }) => {
   let planRequests = 0
   let benefitsRequests = 0
-  await page.route('**/InsuranceAPI/Plans', async (route) => {
+  await page.route('**/api/insurance/Plans', async (route) => {
     planRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -66,7 +66,7 @@ test('destination details lead to a separate insurance plan selection step', asy
       ]),
     })
   })
-  await page.route('**/InsuranceAPI/Benefits*', async (route) => {
+  await page.route('**/api/insurance/Benefits*', async (route) => {
     benefitsRequests += 1
     expect(new URL(route.request().url()).searchParams.get('InsurancePlanId')).toBe('1')
     await route.fulfill({
@@ -262,7 +262,7 @@ test('date of birth must be before today and within a reasonable range', async (
       }),
     )
   })
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{ Id: 1, Name: 'Individual', MaxTravellers: 1, IsActive: true }]),
@@ -321,13 +321,13 @@ test('checkout rejects a saved trip with past travel dates', async ({ page }) =>
       }),
     )
   })
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
     }),
   )
-  await page.route('**/InsuranceAPI/Purchase', async (route) => {
+  await page.route('**/api/insurance/Purchase', async (route) => {
     purchaseRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -374,7 +374,7 @@ test('checkout presents the API quote as the final price for covered days', asyn
       }),
     )
   })
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{ Id: 1, Name: 'Test plan', IsActive: true }]),
@@ -417,13 +417,13 @@ test('successful insurance payment confirms purchase and refreshes the Family wa
   await page.route('**/GetPendingRequests*', (route) =>
     route.fulfill({ contentType: 'application/json', body: '[]' }),
   )
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
     }),
   )
-  await page.route('**/InsuranceAPI/Purchase', (route) =>
+  await page.route('**/api/insurance/Purchase', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
@@ -467,13 +467,13 @@ test('unsuccessful insurance payment stays at checkout and displays the bank err
 }) => {
   let purchaseRequests = 0
   await seedValidCheckout(page)
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
     }),
   )
-  await page.route('**/InsuranceAPI/Purchase', async (route) => {
+  await page.route('**/api/insurance/Purchase', async (route) => {
     purchaseRequests += 1
     await route.fulfill({
       contentType: 'application/json',
@@ -500,13 +500,13 @@ test('unsuccessful insurance payment stays at checkout and displays the bank err
 })
 
 test('expired insurance policies use the red status badge', async ({ page }) => {
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([]),
     }),
   )
-  await page.route('**/InsuranceAPI/MyInsurance', (route) =>
+  await page.route('**/api/insurance/MyInsurance', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([
@@ -568,7 +568,7 @@ test('family bundle reveals linked children for multi-select', async ({ page }) 
       }),
     )
   })
-  await page.route('**/InsuranceAPI/Plans', (route) =>
+  await page.route('**/api/insurance/Plans', (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([

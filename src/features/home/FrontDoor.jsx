@@ -1,5 +1,5 @@
 import { isLoggedIn } from '../auth/session'
-import SignedOutCard from '../family/components/SignedOutCard'
+import SignedOutCard from '../../components/SignedOutCard'
 import Home from './Home'
 
 // The front door at "/". Signed in, it is the home page; signed out, it is a

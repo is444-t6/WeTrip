@@ -8,9 +8,7 @@ const failures = []
 export function env(name, fallback) {
   const v = process.env[name] ?? fallback
   if (v === undefined) {
-    throw new Error(
-      `Missing required env var ${name}. Fill it in .env.test (see .env.test.example).`,
-    )
+    throw new Error(`Missing required env var ${name}. Fill it in .env.local (see .env.example).`)
   }
   return v
 }

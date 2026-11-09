@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useFindCustomer, useLinkChild } from '../queries'
-import Banner from './Banner'
+import Banner from '../../../components/Banner'
 
 // Look a child up by phone number, then send them a family invite. Used on the
 // parent home and on the screen a parent sees before they have any child.
