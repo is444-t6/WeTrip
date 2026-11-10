@@ -18,7 +18,7 @@
     },
     {
       "source": "/scantopay/:path*",
-      "destination": "https://personal-esnstley.outsystemscloud.com/ScanToPay/rest/ScanToPay/:path*"
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_ScanToPay_Composite/rest/ScanToPay/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
