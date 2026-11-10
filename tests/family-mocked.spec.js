@@ -376,7 +376,7 @@ test.describe('child dashboard', () => {
     expect(last(calls, 'ChildSpend').body).toMatchObject({
       merchantAccountId: '0000006718',
       amount: 10,
-      category: 'General',
+      category: 'Others',
     })
     status = 'Declined'
     await field(page, 'Merchant account id').fill('0000006718')
@@ -549,7 +549,7 @@ test.describe('grants, history and spending rules', () => {
     await page.getByRole('tab', { name: 'Manage' }).click()
     await page.getByLabel('Freeze all spending').check()
     await page.getByRole('button', { name: 'Food', exact: true }).click()
-    await page.getByRole('button', { name: 'Study', exact: true }).click()
+    await page.getByRole('button', { name: 'Transport', exact: true }).click()
     await page.getByLabel(/Approve asks under/).fill('15')
     await page.getByRole('button', { name: 'Save rules' }).click()
     await expect
@@ -557,7 +557,7 @@ test.describe('grants, history and spending rules', () => {
       .toEqual({
         familyLinkId: 3,
         isFrozen: true,
-        allowedCategories: 'Food,Study',
+        allowedCategories: 'Food,Transport',
         autoApproveUnder: 15,
       })
     await expect(page.getByText('Saved. Spending is frozen.')).toBeVisible()
@@ -651,17 +651,34 @@ test.describe('SmartFX trips in the family screens', () => {
     GetTrips: (_b, q) => (q.familyLinkId === '3' ? [trip] : []),
     GetTrip: () => ({ Trip: trip, Locks: [], Spends: [{ Id: 1, TripId: 12, Amount: 20000 }] }),
   })
+  // Family_Composite names the next trip itself (camelCase, read from SmartFX).
+  const NEXT = {
+    tripId: 12,
+    destination: 'Kyoto',
+    currency: 'JPY',
+    tripStartDate: '2027-04-01',
+    tripEndDate: '2027-04-14',
+    status: 'PartiallyLocked',
+    lockedSgd: 800,
+    targetBudgetSgd: 800,
+  }
+  const withNext = (next = NEXT) => ({
+    GetChildren: () => [{ ...CHILDREN[0], nextTrip: next }, CHILDREN[1]],
+    GetChildDashboard: () => ({ ...DASH, nextTrip: next }),
+  })
   const FIXED_NOW = new Date('2026-11-08T12:00:00')
 
   test('the child card names the next trip and how soon it is', async ({ page }) => {
     await as(page, PARENT)
     await page.clock.setFixedTime(FIXED_NOW)
-    await mockApi(page, fx())
+    const calls = await mockApi(page, { ...fx(), ...withNext() })
     await page.goto('/family')
     const jamie = page.locator('.card', { hasText: 'Jamie' }).filter({ hasText: 'Manage' }).first()
     await expect(jamie).toContainText('Next trip: Kyoto')
     await expect(jamie).toContainText('in 144 days')
     await expect(page.getByText('Next trip:')).toHaveCount(1)
+    // GetChildren carries it, so the cards make no SmartFX call per child.
+    expect(calls.some((c) => c.name === 'GetTrips')).toBe(false)
   })
 
   test('child detail shows the trip, its funding, and locked rate against today', async ({
@@ -698,6 +715,7 @@ test.describe('SmartFX trips in the family screens', () => {
 
   test('a SmartFX outage leaves the parent home working', async ({ page }) => {
     await as(page, PARENT)
+    // When SmartFX is down, GetChildren still answers, just without nextTrip.
     await mockApi(page, { GetTrips: () => ({ __status: 500, body: { Errors: ['boom'] } }) })
     await page.goto('/family')
     await expect(page.getByText('Second kid')).toBeVisible()
@@ -708,12 +726,34 @@ test.describe('SmartFX trips in the family screens', () => {
 
   test('the child sees how much trip money is left', async ({ page }) => {
     await as(page, CHILD)
-    await mockApi(page, { GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }), ...fx() })
+    await page.clock.setFixedTime(FIXED_NOW)
+    const calls = await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
+      ...fx(),
+      ...withNext(),
+    })
     await page.goto('/family')
     const card = page.locator('.card', { hasText: 'My trip to Kyoto' })
+    await expect(card).toContainText('in 144 days')
     await expect(card).toContainText('JPY 76675.38')
     await expect(card).toContainText('left to spend')
     await expect(card).toContainText('JPY 20000.00 spent of JPY 96675.38')
+    expect(last(calls, 'GetTrip').query).toMatchObject({ tripId: '12' })
+  })
+
+  test('if SmartFX cannot be reached, the child still sees what was set aside', async ({
+    page,
+  }) => {
+    await as(page, CHILD)
+    await mockApi(page, {
+      GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
+      GetTrip: () => ({ __status: 500, body: { Errors: ['boom'] } }),
+      ...withNext(),
+    })
+    await page.goto('/family')
+    const card = page.locator('.card', { hasText: 'My trip to Kyoto' })
+    await expect(card).toContainText('SGD 800.00 set aside for this trip.')
+    await expect(page.locator('.banner.error')).toHaveCount(0)
   })
 
   test('a trip with nothing locked yet says the parent is still saving', async ({ page }) => {
@@ -721,6 +761,7 @@ test.describe('SmartFX trips in the family screens', () => {
     await mockApi(page, {
       GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
       ...fx({ ...TRIP, LockedSgd: 0, LockedForeign: 0 }),
+      ...withNext({ ...NEXT, lockedSgd: 0 }),
     })
     await page.goto('/family')
     await expect(
@@ -1157,10 +1198,18 @@ test.describe('child pay flow', () => {
     await expect(budget.locator('.pace-tick')).toHaveCount(1)
   })
 
-  test('category is picked from chips, General by default', async ({ page }) => {
+  test("category is picked from Budget's six chips, Others by default", async ({ page }) => {
     const calls = await mockApi(page, child)
     await page.goto('/family')
-    await expect(page.getByRole('button', { name: 'General' })).toHaveAttribute(
+    await expect(page.locator('.chips .chip')).toHaveText([
+      'Food',
+      'Transport',
+      'Shopping',
+      'Accommodation',
+      'Activities',
+      'Others',
+    ])
+    await expect(page.getByRole('button', { name: 'Others' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )

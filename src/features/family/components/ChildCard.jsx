@@ -60,7 +60,7 @@ export default function ChildCard({ child }) {
               No budget set yet
             </p>
           )}
-          <NextTripLine familyLinkId={child.familyLinkId} />
+          <NextTripLine trip={child.nextTrip} />
         </>
       )}
 

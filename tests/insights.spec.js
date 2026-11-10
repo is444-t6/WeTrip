@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { CATEGORIES, mergeByCategory, toCategory } from '../src/features/family/categories.js'
 import {
   alertMessage,
   budgetHealth,
@@ -158,16 +159,17 @@ test.describe('forecast', () => {
 })
 
 test.describe('categories and change', () => {
-  test('groups, sorts and shares by category; blank becomes Other', () => {
+  test('groups, sorts and shares by Budget category; old and blank names fold in', () => {
     const rows = categoryTotals([
       { category: 'Food', amount: 30 },
       { category: 'Food', amount: 10 },
       { category: ' ', amount: 10 },
       { category: 'Study', amount: 50 },
     ])
-    expect(rows.map((r) => r.category)).toEqual(['Study', 'Food', 'Other'])
-    expect(rows.map((r) => r.total)).toEqual([50, 40, 10])
-    expect(rows.map((r) => r.share)).toEqual([0.5, 0.4, 0.1])
+    // Study (old name) and blank both land in Others.
+    expect(rows.map((r) => r.category)).toEqual(['Others', 'Food'])
+    expect(rows.map((r) => r.total)).toEqual([60, 40])
+    expect(rows.map((r) => r.share)).toEqual([0.6, 0.4])
     expect(categoryTotals(undefined)).toEqual([])
   })
 
@@ -276,5 +278,43 @@ test.describe('payNotice', () => {
     expect(payNotice({ balance: 20, remaining: 0, hasBudget: false, amount: 25 }).kind).toBe(
       'error',
     )
+  })
+})
+
+test.describe('Budget categories', () => {
+  test("Family offers Budget's six labels in Budget's order", () => {
+    expect(CATEGORIES).toEqual([
+      'Food',
+      'Transport',
+      'Shopping',
+      'Accommodation',
+      'Activities',
+      'Others',
+    ])
+  })
+
+  test('old Family names map to the Budget category they belong to', () => {
+    expect(toCategory('Fun')).toBe('Activities')
+    expect(toCategory('General')).toBe('Others')
+    expect(toCategory('Study')).toBe('Others')
+    expect(toCategory('Rent')).toBe('Accommodation')
+    expect(toCategory('food')).toBe('Food')
+    expect(toCategory('Something new')).toBe('Others')
+    expect(toCategory(undefined)).toBe('Others')
+  })
+
+  test('dashboard totals merge once old names are mapped', () => {
+    expect(
+      mergeByCategory([
+        { category: 'Study', total: 226 },
+        { category: 'Rent', total: 180 },
+        { category: 'Food', total: 91 },
+        { category: 'General', total: 4 },
+      ]),
+    ).toEqual([
+      { category: 'Others', total: 230 },
+      { category: 'Accommodation', total: 180 },
+      { category: 'Food', total: 91 },
+    ])
   })
 })

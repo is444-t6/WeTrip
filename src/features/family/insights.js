@@ -1,5 +1,6 @@
 // Pure helpers behind the budget alerts and spending insights. No React, no
 // fetching, so the date and threshold maths can be tested on their own.
+import { toCategory } from './categories'
 
 // A budget counts as "nearly used" from this share of it onwards.
 export const NEAR_LIMIT = 0.8
@@ -125,7 +126,7 @@ export function forecast({ spent, budget, bounds, now = new Date() }) {
 export function categoryTotals(expenses) {
   const totals = new Map()
   for (const x of expenses ?? []) {
-    const key = x.category?.trim() || 'Other'
+    const key = toCategory(x.category)
     totals.set(key, (totals.get(key) ?? 0) + Number(x.amount ?? 0))
   }
   const sum = [...totals.values()].reduce((a, b) => a + b, 0)

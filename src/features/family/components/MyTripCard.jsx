@@ -1,21 +1,23 @@
 import { useTrip } from '../../fx/queries'
-import { useCurrentUser } from '../../auth/useCurrentUser'
-import { useChildTrips } from '../tripQueries'
-import { foreignLeft, nextTrip, tripTiming } from '../trips'
+import { useChildDashboard } from '../queries'
+import { foreignLeft, tripTiming } from '../trips'
 import Money from '../../../components/Money'
 
 // The child's own view of their next trip: how much foreign money is left to
-// spend. Renders nothing until there is a trip, so a child without one sees
-// the page exactly as before.
+// spend. GetChildDashboard names the trip (Family_Composite reads it from
+// SmartFX); the SmartFX trip itself adds the foreign amount and the spends.
+// Renders nothing until there is a trip, so a child without one sees the page
+// exactly as before.
 export default function MyTripCard() {
-  const { familyLinkId } = useCurrentUser()
-  const { data: trips } = useChildTrips(familyLinkId)
-  const trip = nextTrip(trips)
-  const detail = useTrip(trip?.tripId)
-  if (!trip) return null
+  const { data: dash } = useChildDashboard()
+  const next = dash?.nextTrip?.tripId ? dash.nextTrip : null
+  const detail = useTrip(next?.tripId)
+  if (!next) return null
 
+  const trip = { ...next, ...detail.data?.trip }
   const { left, spent, pct } = foreignLeft(trip, detail.data?.spends)
   const funded = Number(trip.lockedForeign) > 0
+  const setAside = Number(trip.lockedSgd) > 0
 
   return (
     <div className="card">
@@ -39,6 +41,14 @@ export default function MyTripCard() {
             <Money amount={trip.lockedForeign} currency={trip.currency} />
           </p>
         </>
+      ) : detail.isLoading ? (
+        <p className="muted">Loading…</p>
+      ) : setAside ? (
+        // SmartFX could not be reached for the foreign amount; the dashboard
+        // still knows how much was set aside.
+        <p className="muted">
+          <Money amount={trip.lockedSgd} /> set aside for this trip.
+        </p>
       ) : (
         <p className="muted">Your parent is still setting aside money for this trip.</p>
       )}
