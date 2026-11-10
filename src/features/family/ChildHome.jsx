@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAskForMore, useChildDashboard, useChildSpend, useMyRequests } from './queries'
-import { CATEGORIES } from './categories'
+import { CATEGORIES, DEFAULT_CATEGORY, mergeByCategory } from './categories'
 import { payNotice, periodBounds, periodTiming, safeDailySpend } from './insights'
 import Banner from '../../components/Banner'
 import BudgetAlert from './components/BudgetAlert'
@@ -16,7 +16,7 @@ export default function ChildHome() {
 
   const [amount, setAmount] = useState('')
   const [merchantAccountId, setMerchantAccountId] = useState('')
-  const [category, setCategory] = useState('General')
+  const [category, setCategory] = useState(DEFAULT_CATEGORY)
   const [narrative, setNarrative] = useState('')
   const [message, setMessage] = useState('')
   // Set when ChildSpend turns a payment down: { message, remaining, shortBy }.
@@ -119,7 +119,7 @@ export default function ChildHome() {
         {dash.byCategory?.length > 0 && (
           <table className="table-compact" style={{ marginTop: 8 }}>
             <tbody>
-              {dash.byCategory.map((c) => (
+              {mergeByCategory(dash.byCategory).map((c) => (
                 <tr key={c.category}>
                   <td>{c.category}</td>
                   <td style={{ textAlign: 'right' }}>
