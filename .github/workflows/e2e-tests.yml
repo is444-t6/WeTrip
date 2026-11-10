@@ -27,8 +27,6 @@ jobs:
       VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}
       VITE_FX_API_BASE: /api/fx
       VITE_FX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}
-      # SmartFX now checks ApiKey; the SmartFX API suite reads it from here.
-      SMARTFX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
