@@ -53,12 +53,11 @@ export function createClient({
     let payload = body
 
     if (auth === 'params') {
-      if (method === 'GET') {
-        const q = new URLSearchParams({ apiKey, sessionToken: token })
-        url += (path.includes('?') ? '&' : '?') + q.toString()
-      } else {
-        payload = { ...body, apiKey, sessionToken: token }
-      }
+      // Every SmartFX REST method declares apiKey as a URL parameter — GET and
+      // POST alike — so it always rides in the query string. sessionToken has
+      // no server-side counterpart yet and is ignored.
+      const q = new URLSearchParams({ apiKey, sessionToken: token })
+      url += (path.includes('?') ? '&' : '?') + q.toString()
     }
 
     const res = await fetch(url, {
