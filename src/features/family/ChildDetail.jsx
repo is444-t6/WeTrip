@@ -21,7 +21,7 @@ import SpendingInsights from './components/SpendingInsights'
 import Tabs from './components/Tabs'
 import TrendChart from './components/TrendChart'
 import TripsPanel from './components/TripsPanel'
-import { CATEGORIES } from './categories'
+import { CATEGORIES, toCategory } from './categories'
 import { monthLabel } from './chart'
 import { percentChange, ymd } from './insights'
 import { useChildSpending } from './useChildSpending'
@@ -553,7 +553,7 @@ function ExpensesCard({ familyLinkId }) {
                 <tr key={x.transactionId}>
                   <td data-label="Date">{String(x.date).slice(0, 10)}</td>
                   <td data-label="To">{x.accountTo}</td>
-                  <td data-label="Category">{x.category}</td>
+                  <td data-label="Category">{toCategory(x.category)}</td>
                   <td data-label="Amount" style={{ textAlign: 'right' }}>
                     <Money amount={x.amount} currency={x.currency} />
                   </td>
