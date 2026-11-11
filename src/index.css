@@ -2471,6 +2471,10 @@ tr:last-child td {
   cursor: pointer;
 }
 
+.tabs a.tab {
+  text-align: center;
+}
+
 .tab.active {
   background: var(--card);
   color: var(--text);

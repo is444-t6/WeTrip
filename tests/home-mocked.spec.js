@@ -204,7 +204,23 @@ test.describe('parent home page', () => {
     await expect(chip).toContainText('JPY')
     await expect(chip).toContainText('96675.38')
     await expect(chip).toContainText('Kyoto')
-    await expect(chip).toHaveAttribute('href', '/fx/trips/12')
+    // Every trip tile opens the trip hub, which links on to FX, budget and cover.
+    await expect(chip).toHaveAttribute('href', '/trips/12')
+  })
+
+  test('the top nav is Home, Trips, Family and Pay only', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/')
+    const nav = page.getByRole('navigation', { name: 'WeTrip', exact: true })
+    await expect(nav.getByRole('link')).toHaveText(['Home', 'Trips', 'Family', 'Pay'])
+    await expect(nav.getByRole('link', { name: 'Trips', exact: true })).toHaveAttribute(
+      'href',
+      '/fx',
+    )
+    await expect(nav.getByRole('link', { name: 'Pay', exact: true })).toHaveAttribute(
+      'href',
+      '/pay',
+    )
   })
 
   test('recent payments: the newest three, with pay-later marked', async ({ page }) => {
@@ -306,6 +322,7 @@ test.describe('child home page', () => {
     await expect(budget).toContainText('left this week')
     await expect(budget).toContainText('SGD 50.00 of SGD 200.00 spent')
     await expect(page.locator('.wallet-chip')).toContainText('Kyoto')
+    await expect(page.locator('.wallet-chip')).toHaveAttribute('href', '/trips/12')
     expect(calls.filter((c) => c.name === 'GetPendingRequests')).toHaveLength(0)
     await expect(page.locator('.banner.warn')).toHaveCount(0)
   })

@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import AppShell from '../../../components/AppShell'
 import { clearSession, isLoggedIn } from '../../auth/session'
 import { getCustomerId } from '../customer'
@@ -19,6 +19,19 @@ export default function PayLayout({ title, children }) {
       <p className="muted" style={{ marginTop: 4 }}>
         Customer <span className="money">{customerId}</span>
       </p>
+      <nav className="tabs" aria-label="Payments" style={{ marginTop: 16 }}>
+        <Link
+          to="/pay"
+          className="tab"
+          activeOptions={{ exact: true }}
+          activeProps={{ className: 'tab active' }}
+        >
+          Scan to Pay
+        </Link>
+        <Link to="/pay/history" className="tab" activeProps={{ className: 'tab active' }}>
+          My Payments
+        </Link>
+      </nav>
       {children}
     </AppShell>
   )

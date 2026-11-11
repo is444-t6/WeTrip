@@ -60,12 +60,45 @@ const DASH = {
 // served from. Family's own calls are under /api/family and are matched first.
 const BUDGET_ENDPOINT = /\/(GetDashboard|RecordSpending|SetBudget|ImportBank)$/
 
-async function mockApi(page, dashboard = () => reply(DASH)) {
+const TRIP = {
+  Id: 12,
+  FamilyLinkId: 3,
+  Destination: 'Kyoto',
+  Currency: 'JPY',
+  TripStartDate: '2027-04-01',
+  TripEndDate: '2027-04-14',
+  TargetBudgetSgd: 800,
+  Status: 'Locked',
+}
+
+// SmartFX names the trips; `fxDown` makes it fail so Budget has to stand alone.
+async function mockApi(
+  page,
+  dashboard = () => reply(DASH),
+  { trips = [TRIP], fxDown = false } = {},
+) {
   const calls = []
   await page.route('**/api/family/**', (route) => {
     const name = new URL(route.request().url()).pathname.split('/').pop()
+    const body =
+      name === 'GetMyFamilyRole'
+        ? { role: 'Parent', FamilyLinkId: 3 }
+        : name === 'GetChildren'
+          ? [{ familyLinkId: 3, nickname: 'Jamie', status: 'Active' }]
+          : {}
+    return route.fulfill(reply(body))
+  })
+  await page.route('**/api/fx/**', (route) => {
+    const name = new URL(route.request().url()).pathname.split('/').pop()
+    if (fxDown) return route.fulfill(reply({ Errors: ['SmartFX is down'] }, 500))
     return route.fulfill(
-      reply(name === 'GetMyFamilyRole' ? { role: 'Parent', FamilyLinkId: 3 } : {}),
+      reply(
+        name === 'GetTrips'
+          ? trips
+          : name === 'GetTrip'
+            ? { Trip: TRIP, Locks: [], Spends: [] }
+            : {},
+      ),
     )
   })
   await page.route(
@@ -90,7 +123,7 @@ test.describe('on a phone', () => {
     await mockApi(page)
     for (const [path, heading] of [
       ['/budget', 'Budget'],
-      ['/budget/12', 'Trip 12 budget'],
+      ['/budget/12', 'Kyoto budget'],
     ]) {
       await page.goto(path)
       const h1 = page.getByRole('heading', { name: heading })
@@ -149,13 +182,29 @@ test.describe('on a phone', () => {
     expect(display).toBe('flex')
   })
 
-  test('the Trip Id box opens that trip’s budget', async ({ page }) => {
+  test('the budget page lists the trips and opens the one you pick', async ({ page }) => {
     await mockApi(page)
     await page.goto('/budget')
-    await expect(page.getByRole('button', { name: 'Open budget' })).toBeDisabled()
-    await page.locator('input[type="number"]').fill('12')
-    await page.getByRole('button', { name: 'Open budget' }).click()
+    await expect(page.getByLabel('Trip Id')).toHaveCount(0)
+    const trip = page.getByRole('link', { name: /Kyoto/ })
+    await expect(trip).toContainText('2027-04-01 → 2027-04-14')
+    await trip.click()
     await expect(page).toHaveURL(/\/budget\/12$/)
+    await expect(page.getByRole('heading', { name: 'Kyoto budget' })).toBeVisible()
+    await expect(page.getByText('By category')).toBeVisible()
+  })
+
+  test('with no trips the budget page says so instead of asking for an id', async ({ page }) => {
+    await mockApi(page, undefined, { trips: [] })
+    await page.goto('/budget')
+    await expect(page.getByText('No trips yet')).toBeVisible()
+    await expect(page.locator('input')).toHaveCount(0)
+  })
+
+  test('the budget still opens, titled by trip number, when SmartFX is down', async ({ page }) => {
+    await mockApi(page, undefined, { fxDown: true })
+    await page.goto('/budget/12')
+    await expect(page.getByRole('heading', { name: 'Trip 12 budget' })).toBeVisible()
     await expect(page.getByText('By category')).toBeVisible()
   })
 

@@ -690,7 +690,8 @@ test.describe('SmartFX trips in the family screens', () => {
     await page.goto('/family/child/3')
     const trip = page.locator('.card', { hasText: 'Kyoto' })
     await expect(trip).toContainText('2027-04-01 → 2027-04-14 · in 144 days')
-    await expect(trip).toContainText('PartiallyLocked')
+    await expect(trip).toContainText('Partly locked')
+    await expect(trip).not.toContainText('PartiallyLocked')
     await expect(trip).toContainText('SGD 800.00 locked')
     await expect(trip).toContainText('120.8236 JPY')
     await expect(trip).toContainText("Today's 6M forward")
@@ -699,7 +700,8 @@ test.describe('SmartFX trips in the family screens', () => {
       "Locked JPY 96675.38 for SGD 800.00 (average rate 120.8442). At today's 6M forward of 121.0494 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
     )
     expect(last(calls, 'GetRate').query).toMatchObject({ currency: 'JPY', period: '6M' })
-    await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute(
+    await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute('href', '/trips/12')
+    await expect(trip.getByRole('link', { name: 'Manage FX & locks' })).toHaveAttribute(
       'href',
       '/fx/trips/12',
     )

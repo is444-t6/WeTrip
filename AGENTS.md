@@ -90,7 +90,7 @@ To add or change a screen:
 
 - **SmartFX:** base is SGD, quote is the trip currency, and every rate is foreign units per 1 SGD. Higher is better; auto-lock fires at `forwardRate >= targetRate`. Supported currencies: USD, EUR, JPY, GBP, CHF. Tenors: 1M, 3M, 6M, 1Y. Only an Active family link can own a trip; the parent funds locks, the child spends from the pot, and closing converts unused foreign balance back.
 - **Family:** roles are `Parent`, `Child`, `Pending` or `None`; only `Active` links count. Parent sets budgets/allowance, tops up, approves or rejects asks, grants extra budget, and can freeze spending or restrict categories.
-- **Budget:** categories and sources live in `src/features/budget/constants.js`. Budgets are keyed by the SmartFX `tripId`. Responses are camelCase but request bodies and query parameters are PascalCase. `DEFAULT_CURRENCY` is a placeholder until trip currency is wired in.
+- **Budget:** categories and sources live in `src/features/budget/constants.js`. Budgets are keyed by the SmartFX `tripId`. Responses are camelCase but request bodies and query parameters are PascalCase. Budget amounts are SGD by design (`DEFAULT_CURRENCY`); a trip's foreign money lives in SmartFX.
 - **Insurance:** plans → travellers → checkout → policies. Insurance has no foreign key to a SmartFX trip, so `/trips/$tripId` matches policies by date overlap.
 - **Scan-to-Pay:** preview first, then PayNow or PayLater (BNPL). History is per customer. Payment mutations refresh history even on failure, because the bank may have completed after the request died.
 - **Trip hub:** `/trips/$tripId` is a read-only aggregation. The SmartFX trip id is the shared key across Budget and the trip hub.

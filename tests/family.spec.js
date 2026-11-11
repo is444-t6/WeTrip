@@ -137,7 +137,7 @@ test.describe('navigation', () => {
     await signInAs(page, PARENT)
     await page.goto('/family')
 
-    await page.getByRole('link', { name: 'SmartFX' }).click()
+    await page.getByRole('link', { name: 'Trips', exact: true }).click()
     await expect(page).toHaveURL(/\/fx$/)
 
     await page.getByRole('link', { name: 'Family' }).click()

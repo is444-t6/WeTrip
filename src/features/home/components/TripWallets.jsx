@@ -30,7 +30,7 @@ export default function TripWallets({ role }) {
           {wallets.map((w) => (
             <Link
               key={w.tripId}
-              to="/fx/trips/$tripId"
+              to="/trips/$tripId"
               params={{ tripId: String(w.tripId) }}
               className="wallet-chip"
             >
