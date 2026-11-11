@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import AppShell from '../../../components/AppShell'
 import { clearSession, isLoggedIn } from '../../auth/session'
-import { DEMO_CUSTOMER_ID, getCustomerId } from '../customer'
+import { getCustomerId } from '../customer'
 import '../scantopay.css'
 
 export default function PayLayout({ title, children }) {
@@ -18,7 +18,6 @@ export default function PayLayout({ title, children }) {
       <h1 style={{ margin: 0 }}>{title}</h1>
       <p className="muted" style={{ marginTop: 4 }}>
         Customer <span className="money">{customerId}</span>
-        {customerId === DEMO_CUSTOMER_ID && ' (demo)'}
       </p>
       {children}
     </AppShell>

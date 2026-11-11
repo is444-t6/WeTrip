@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 // Scan to Pay. PayNow and PayLater move real sandbox money, so everything here is
 // mocked: mockApi answers every /scantopay/ request in the browser and none of
 // them reach the bank. Keep it that way.
-const DEMO_CUSTOMER = '0000002996'
+const CUSTOMER = '0000002996'
 const RAMEN_QR = '{"merchantCode":"M001","amount":1200,"currency":"JPY"}'
 const USJ_QR = '{"merchantCode":"M003","amount":4500,"currency":"JPY"}'
 const OPEN_QR = '{"merchantCode":"M002","amount":0,"currency":"JPY"}'
@@ -76,6 +76,14 @@ const planned = {
   firstRepaymentDate: '2026-12-07',
 }
 
+// Scan to Pay needs a signed-in customer; a test that wants none removes it again.
+test.beforeEach(({ page }) =>
+  page.addInitScript(
+    (c) => sessionStorage.setItem('wetrip_session', c),
+    `${CUSTOMER}:0000006816:Test`,
+  ),
+)
+
 const json = (body) => (route) => route.fulfill({ json: body })
 const apiError = (message) => (route) =>
   route.fulfill({ status: 500, json: { Errors: [message], StatusCode: 500 } })
@@ -124,7 +132,7 @@ test('pasted QR previews and pays now', async ({ page }) => {
 
   expect(namesOf(calls)).toEqual(['PreviewPayment', 'PayNow'])
   expect(calls[1]).toMatchObject({
-    customerId: DEMO_CUSTOMER,
+    customerId: CUSTOMER,
     body: { qrText: RAMEN_QR, amount: 0, numberOfMonths: 0 },
   })
 
@@ -246,7 +254,41 @@ test('warns and does not retry when a payment response is lost', async ({ page }
   expect(namesOf(calls).filter((name) => name === 'PayNow')).toHaveLength(1)
 })
 
-test('uses the signed-in customer instead of the demo one', async ({ page }) => {
+test('signed out, both screens ask to sign in and call nothing', async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.removeItem('wetrip_session'))
+  const calls = await mockApi(page, {})
+
+  for (const path of ['/pay', '/pay/history']) {
+    await page.goto(path)
+    await expect(page.getByText("You're not signed in yet.")).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Continue to sign in' })).toBeVisible()
+  }
+  expect(calls).toEqual([])
+})
+
+test('a gateway error or a reply with no receipt warns instead of showing success', async ({
+  page,
+}) => {
+  let reply = (route) => route.fulfill({ status: 503, body: '<html>Service Unavailable</html>' })
+  const calls = await mockApi(page, {
+    PreviewPayment: json(ramenPreview),
+    PayNow: (route) => reply(route),
+    GetHistory: json({ payments: [], bnplPlans: [] }),
+  })
+
+  await pasteQr(page, RAMEN_QR)
+  await page.getByRole('button', { name: 'Pay now' }).click()
+  await expect(page.getByText('may still have gone through')).toBeVisible()
+
+  // A 2xx whose body is not JSON becomes {} in the client: not a receipt either.
+  reply = (route) => route.fulfill({ status: 200, body: 'OK' })
+  await page.getByRole('button', { name: 'Pay now' }).click()
+  await expect.poll(() => namesOf(calls).filter((name) => name === 'PayNow').length).toBe(2)
+  await expect(page.getByText('may still have gone through')).toBeVisible()
+  await expect(page.getByText('Payment successful')).toHaveCount(0)
+})
+
+test('uses the signed-in customer', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('wetrip_session', '0000001111:0000002222:Test')
   })
@@ -255,7 +297,6 @@ test('uses the signed-in customer instead of the demo one', async ({ page }) => 
   await page.goto('/pay/history')
   await expect(page.getByText('No payments yet.')).toBeVisible()
   await expect(page.getByText('0000001111')).toBeVisible()
-  await expect(page.getByText('(demo)')).toHaveCount(0)
   expect(calls[0].customerId).toBe('0000001111')
 })
 

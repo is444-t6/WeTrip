@@ -7,6 +7,8 @@ export const TRIP_STATUS = {
   Cancelled: { label: 'Cancelled', tone: 'removed' },
 }
 
+export const isEnded = (status) => status === 'Completed' || status === 'Cancelled'
+
 export function tripStatus(status) {
   return TRIP_STATUS[status] || { label: status, tone: 'pending' }
 }
