@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { BrandMark } from '../../components/AppShell'
 import Banner from '../../components/Banner'
-import { accountLabel, depositAccounts, fetchAccounts, lookupMessage } from './accounts'
+import {
+  accountLabel,
+  depositAccounts,
+  fetchAccounts,
+  fetchDisplayName,
+  lookupMessage,
+} from './accounts'
 import { setDevSession, getSessionToken, clearSession } from './session'
 
-// Stands in for WeTrip's real login while ValidateSessionStub (Task 12.4
-// Option C) is wired up server-side. Asks for a customer id only, looks the
-// deposit account up, and writes customerId:accountId: into
-// sessionStorage['wetrip_session'] — exactly what GetSessionUser expects.
+// Asks for a customer id only, looks the deposit account up, and writes
+// customerId:accountId:displayName into sessionStorage['wetrip_session'].
 export default function Login() {
   const [customerId, setCustomerId] = useState('')
   const [choices, setChoices] = useState(null) // set when there is more than one account
@@ -16,10 +21,13 @@ export default function Login() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const current = getSessionToken()
 
-  function finish(id, accountId) {
-    setDevSession(id, accountId, '')
+  async function finish(id, accountId) {
+    setDevSession(id, accountId, await fetchDisplayName(id, accountId))
+    // Nothing cached belongs to whoever signs in next.
+    queryClient.clear()
     navigate({ to: '/' })
   }
 
@@ -33,7 +41,7 @@ export default function Login() {
       if (accounts.length === 0) {
         setError('That customer has no SGD deposit account to sign in with.')
       } else if (accounts.length === 1) {
-        finish(id, accounts[0].accountId)
+        await finish(id, accounts[0].accountId)
       } else {
         setChoices(accounts)
         setChosen(accounts[0].accountId)
@@ -45,9 +53,11 @@ export default function Login() {
     }
   }
 
-  function confirm(e) {
+  async function confirm(e) {
     e.preventDefault()
-    finish(customerId.trim(), chosen)
+    setBusy(true)
+    await finish(customerId.trim(), chosen)
+    setBusy(false)
   }
 
   return (
@@ -56,7 +66,7 @@ export default function Login() {
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
           <BrandMark alt="WeTrip" size={64} style={{ margin: '0 auto 12px' }} />
           <h1>Sign in to WeTrip</h1>
-          <p className="muted">Dev stub — stands in for WeTrip login until it's wired up.</p>
+          <p className="muted">Sign in with your WeTrip customer ID.</p>
         </div>
 
         <div className="card">
@@ -98,7 +108,9 @@ export default function Login() {
                 </select>
               </div>
               <div className="row">
-                <button type="submit">Sign in</button>
+                <button type="submit" disabled={busy}>
+                  Sign in
+                </button>
                 <button type="button" className="secondary" onClick={() => setChoices(null)}>
                   Back
                 </button>
@@ -115,7 +127,7 @@ export default function Login() {
                   placeholder="0000003018"
                   inputMode="numeric"
                   pattern="\d+"
-                  title="Digits only, e.g. 0000003018. Not the SMU_TUSER2 username."
+                  title="Digits only, e.g. 0000003018."
                   required
                 />
               </div>
@@ -125,9 +137,6 @@ export default function Login() {
             </form>
           )}
         </div>
-        <p className="muted" style={{ textAlign: 'center' }}>
-          Task 12.4 Option C · ValidateSessionStub
-        </p>
       </div>
     </div>
   )

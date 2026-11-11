@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
 import PayLayout from './components/PayLayout'
 import PaymentPreview from './components/PaymentPreview'
 import PaymentResult from './components/PaymentResult'
@@ -15,10 +16,17 @@ function parseQr(text) {
   }
 }
 
-// API rejections carry Errors[0]. Anything else means the response was lost, so
-// the money may have moved anyway.
+// API rejections are 4xx/500 with Errors[0]. A network failure (fetch throws a
+// TypeError) or a gateway error means the response was lost, so the money may
+// have moved anyway.
 const responseWasLost = (error) =>
-  Boolean(error) && (error instanceof TypeError || error.message.startsWith('Request failed'))
+  error instanceof TypeError || [502, 503, 504].includes(error?.status)
+
+// A real payment names a transaction, a payment record or a pay-later plan. A 2xx
+// without any of them (the client turns a non-JSON body into {}) is not a receipt.
+// Normalising turns BNPLPlanId into bNPLPlanId.
+const isReceipt = (r) =>
+  Boolean(r?.transactionId || r?.paymentRecordId || r?.bnplPlanId || r?.bNPLPlanId)
 
 export default function ScanToPay() {
   const customerId = getCustomerId()
@@ -69,14 +77,13 @@ export default function ScanToPay() {
     setPasted('')
   }
 
-  if (payNow.data || payLater.data) {
+  if (!customerId) return <SignedOutCard title="Scan to Pay" />
+
+  const paid = payNow.data ?? payLater.data
+  if (isReceipt(paid)) {
     return (
       <PayLayout title="Scan to Pay">
-        <PaymentResult
-          type={payNow.data ? 'now' : 'later'}
-          result={payNow.data ?? payLater.data}
-          onDone={reset}
-        />
+        <PaymentResult type={payNow.data ? 'now' : 'later'} result={paid} onDone={reset} />
       </PayLayout>
     )
   }
@@ -89,7 +96,7 @@ export default function ScanToPay() {
           preview={preview.data}
           paying={payNow.isPending ? 'now' : payLater.isPending ? 'later' : null}
           error={payError}
-          mayHaveGoneThrough={responseWasLost(payError)}
+          mayHaveGoneThrough={responseWasLost(payError) || Boolean(paid)}
           onPayNow={() => pay(payNow)}
           onPayLater={(months) => pay(payLater, months)}
           onCancel={reset}

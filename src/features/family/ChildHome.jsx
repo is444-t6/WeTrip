@@ -35,7 +35,9 @@ export default function ChildHome() {
       },
       {
         onSuccess: (result) => {
-          if (result.status === 'Declined') {
+          // Only the contract's own success statuses count as paid; a decline, or a
+          // reply with no status at all, never reads "Paid!".
+          if (!['Paid', 'Completed'].includes(result.status)) {
             // Nothing was paid and nothing is waiting: the child can ask for more.
             setDeclined({
               message: result.message,
@@ -44,7 +46,17 @@ export default function ChildHome() {
             })
             return
           }
-          setMessage(`Paid! Remaining this period: ${result.remaining}`)
+          setMessage(
+            <>
+              Paid!
+              {result.remaining != null && (
+                <>
+                  {' '}
+                  Remaining this period: <Money amount={result.remaining} />
+                </>
+              )}
+            </>,
+          )
           setAmount('')
           setMerchantAccountId('')
           setNarrative('')

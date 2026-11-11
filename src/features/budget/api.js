@@ -9,5 +9,4 @@ export const BudgetApi = {
   getDashboard: (tripId) => call('GET', `GetDashboard${qs({ TripId: tripId })}`),
   recordSpending: (spending) => call('POST', 'RecordSpending', spending),
   setBudget: (budget) => call('POST', 'SetBudget', budget),
-  importBank: (payload) => call('POST', 'ImportBank', payload),
 }

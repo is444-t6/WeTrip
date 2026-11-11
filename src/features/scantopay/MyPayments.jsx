@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import Banner from '../../components/Banner'
 import Money from '../../components/Money'
+import SignedOutCard from '../../components/SignedOutCard'
 import DetailRow from './components/DetailRow'
 import PayLayout from './components/PayLayout'
 import { getCustomerId } from './customer'
@@ -66,9 +67,12 @@ function PlanCard({ plan }) {
 }
 
 export default function MyPayments() {
-  const { data, error, isLoading } = useHistory(getCustomerId())
+  const customerId = getCustomerId()
+  const { data, error, isLoading } = useHistory(customerId)
   const payments = data?.payments ?? []
   const plans = data?.bnplPlans ?? []
+
+  if (!customerId) return <SignedOutCard title="My Payments" />
 
   return (
     <PayLayout title="My Payments">

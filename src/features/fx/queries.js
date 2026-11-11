@@ -9,8 +9,6 @@ export const fxKeys = {
   rate: (currency, period) => ['fx', 'rate', currency, period],
 }
 
-const authed = () => ({ enabled: isLoggedIn() })
-
 export const useTrips = () => {
   const { data: children } = useChildren()
   const linkIds = (children || []).filter((c) => c.status === 'Active').map((c) => c.familyLinkId)
@@ -26,7 +24,11 @@ export const useTrips = () => {
 }
 
 export const useTrip = (tripId) =>
-  useQuery({ queryKey: fxKeys.trip(tripId), queryFn: () => FxApi.getTrip(tripId), ...authed() })
+  useQuery({
+    queryKey: fxKeys.trip(tripId),
+    queryFn: () => FxApi.getTrip(tripId),
+    enabled: isLoggedIn() && Boolean(tripId),
+  })
 
 export const useRate = (currency, period) =>
   useQuery({
@@ -48,14 +50,6 @@ function useInvalidate() {
 export function useCreateTrip() {
   const invalidate = useInvalidate()
   return useMutation({ mutationFn: FxApi.createTrip, onSuccess: () => invalidate() })
-}
-
-export function useUpdateTrip() {
-  const invalidate = useInvalidate()
-  return useMutation({
-    mutationFn: FxApi.updateTrip,
-    onSuccess: (_d, v) => invalidate(v.tripId),
-  })
 }
 
 export function useCancelTrip() {

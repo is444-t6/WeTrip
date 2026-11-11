@@ -22,6 +22,8 @@ const ACCOUNTS = {
     { AccountId: '0000006703', Currency: 'JPY' },
     CASA('0000004848', 4699.02),
   ],
+  // One deposit account, and GetMe knows the customer's name.
+  '0000004444': [CASA('0000005555', 100)],
   // Only a loan: nothing to sign in with.
   '0000007777': [
     { AccountId: '0000007778', ProductName: 'Home Loan', Currency: 'SGD', Balance: 1000 },
@@ -55,7 +57,12 @@ async function mockApi(page, { delay = 0 } = {}) {
       name === 'GetMyFamilyRole'
         ? { role: 'Parent' }
         : name === 'GetMe'
-          ? { customerId, accountId, displayName: '', balance: 1000 }
+          ? {
+              customerId,
+              accountId,
+              displayName: customerId === '0000004444' ? 'Sam Lee' : '',
+              balance: 1000,
+            }
           : name === 'GetChildren' || name === 'GetPendingRequests'
             ? []
             : {}
@@ -94,6 +101,24 @@ test.describe('one field', () => {
     expect(await session(page)).toBe('0000003018:0000006385:')
     // The lookup asked with the customer id only.
     expect(lookups).toEqual([{ token: '0000003018::', id: '0000003018' }])
+  })
+
+  test('a name GetMe knows is kept in the session and greets on the home page', async ({
+    page,
+  }) => {
+    await mockApi(page)
+    await page.goto('/login')
+    await customerField(page).fill('0000004444')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page.getByText('Hi, Sam!')).toBeVisible()
+    expect(await session(page)).toBe('0000004444:0000005555:Sam Lee')
+  })
+
+  test('the sign-in page no longer carries developer copy', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/login')
+    await expect(page.getByText('Sign in with your WeTrip customer ID.')).toBeVisible()
+    await expect(page.getByText(/Dev stub|ValidateSessionStub|SMU_TUSER2/)).toHaveCount(0)
   })
 
   test('the button shows the lookup is in progress and cannot be pressed twice', async ({

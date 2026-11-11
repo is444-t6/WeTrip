@@ -7,6 +7,7 @@ export const useHistory = (customerId) =>
   useQuery({
     queryKey: historyKey(customerId),
     queryFn: () => ScanToPayApi.getHistory(customerId),
+    enabled: Boolean(customerId),
   })
 
 export const usePreview = () => useMutation({ mutationFn: ScanToPayApi.previewPayment })

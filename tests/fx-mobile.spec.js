@@ -231,3 +231,68 @@ test.describe('trip pages, any width', () => {
     await expect(page.locator('.stack-table').first().locator('thead')).toBeVisible()
   })
 })
+
+test.describe('parent controls on a trip', () => {
+  test.beforeEach(({ page }) => as(page, PARENT))
+  const WATCHING = { ...TRIP, Status: 'Watching', LockedSgd: 0, LockedForeign: 0 }
+  const open = async (page, trip) => {
+    await mockApi(page, { GetTrip: () => ({ Trip: trip, Locks: [], Spends: [] }) })
+    await page.goto('/fx/trips/12')
+    await expect(page.getByRole('heading', { name: trip.Destination })).toBeVisible()
+  }
+  const button = (page, name) => page.getByRole('button', { name })
+
+  test('a fully locked trip says so and offers no more locking or cancelling', async ({ page }) => {
+    await open(page, TRIP)
+    await expect(page.getByText('Fully locked')).toBeVisible()
+    await expect(button(page, 'Lock rate')).toBeDisabled()
+    await expect(button(page, 'Cancel trip')).toBeDisabled()
+    await expect(button(page, 'Close & convert back')).toBeEnabled()
+  })
+
+  test('a finished trip has no controls left', async ({ page }) => {
+    await open(page, { ...TRIP, Status: 'Completed' })
+    await expect(page.getByText(/· Completed/)).toBeVisible()
+    for (const name of ['Lock rate', 'Cancel trip', 'Close & convert back'])
+      await expect(button(page, name)).toBeDisabled()
+  })
+
+  test('locking needs an amount, is capped at what is left and sends no rate or account', async ({
+    page,
+  }) => {
+    const bodies = []
+    await open(page, WATCHING)
+    await expect(page.getByText('Partly locked')).toHaveCount(0)
+    await page.route('**/api/fx/LockNow*', (route) => {
+      bodies.push(route.request().postDataJSON())
+      return route.fulfill(reply({ Lock: { SgdAmount: 800, LockedRate: 121.05 }, Trip: WATCHING }))
+    })
+    await expect(button(page, 'Lock rate')).toBeDisabled()
+    await page.getByLabel('Lock now (SGD)').fill('5000')
+    await button(page, 'Lock rate').click()
+    await expect.poll(() => bodies.length).toBe(1)
+    expect(bodies[0]).toMatchObject({ tripId: 12, sgdAmount: 800 })
+    expect(bodies[0]).not.toHaveProperty('rate')
+    expect(bodies[0]).not.toHaveProperty('parentAccountId')
+  })
+
+  test('closing and cancelling take a second tap, and Go back changes nothing', async ({
+    page,
+  }) => {
+    const sent = []
+    await open(page, { ...WATCHING, LockedForeign: 100 })
+    await page.route(/\/api\/fx\/(CancelTrip|CloseTrip)/, (route) => {
+      sent.push(new URL(route.request().url()).pathname.split('/').pop())
+      return route.fulfill(reply({ Id: 12, Status: 'Cancelled' }))
+    })
+    await button(page, 'Cancel trip').click()
+    await expect(button(page, 'Confirm cancel?')).toBeVisible()
+    await button(page, 'Go back').click()
+    await expect(button(page, 'Cancel trip')).toBeVisible()
+    await button(page, 'Close & convert back').click()
+    await expect(button(page, 'Confirm close?')).toBeVisible()
+    expect(sent).toEqual([])
+    await button(page, 'Confirm close?').click()
+    await expect.poll(() => sent).toEqual(['CloseTrip'])
+  })
+})

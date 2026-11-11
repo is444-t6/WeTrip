@@ -79,7 +79,10 @@ export function createClient({
 
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      throw new Error(friendlyError(data?.Errors?.[0], res.status))
+      // `status` lets callers tell a rejection from a gateway failure (502/503/504).
+      throw Object.assign(new Error(friendlyError(data?.Errors?.[0], res.status)), {
+        status: res.status,
+      })
     }
     return normalize ? decap(data) : data
   }

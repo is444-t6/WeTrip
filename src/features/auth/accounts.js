@@ -10,6 +10,19 @@ export function fetchAccounts(customerId) {
   return call('GET', 'GetMyAccounts')
 }
 
+// GetMyAccounts carries no name, so ask GetMe once the account is known. The name
+// is a nicety: any failure just means no name, never a failed sign-in. The token
+// rides in an HTTP header, so a name with characters outside printable ASCII is dropped.
+export async function fetchDisplayName(customerId, accountId) {
+  const { call } = serviceClient('family', { getToken: () => `${customerId}:${accountId}:` })
+  try {
+    const { displayName } = await call('GET', 'GetMe')
+    return /^[ -~]+$/.test(displayName ?? '') ? displayName : ''
+  } catch {
+    return ''
+  }
+}
+
 // The account a customer pays from and is paid into: an open SGD current
 // account. Loans, term deposits and foreign-currency wallets are not it.
 export function depositAccounts(accounts) {

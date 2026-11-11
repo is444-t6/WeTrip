@@ -151,9 +151,9 @@ test.describe('signed out / login', () => {
     await page.getByPlaceholder('0000003018').fill('0000002169')
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/$/)
-    // The name is no longer asked for, so the token ends after the account.
+    // The name is not asked for; it is whatever GetMe knows.
     expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(
-      '0000002169:0000004554:',
+      '0000002169:0000004554:Parent Demo',
     )
     await expect(page.getByText('Hi, Parent!')).toBeVisible()
     await expect(page.getByText('Available balance')).toBeVisible()
@@ -372,7 +372,7 @@ test.describe('child dashboard', () => {
     await field(page, 'Merchant account id').fill('0000006718')
     await field(page, 'Amount').fill('10')
     await page.getByRole('button', { name: 'Pay', exact: true }).click()
-    await expect(page.getByText('Paid! Remaining this period: 140')).toBeVisible()
+    await expect(page.getByText('Paid! Remaining this period: SGD 140.00')).toBeVisible()
     expect(last(calls, 'ChildSpend').body).toMatchObject({
       merchantAccountId: '0000006718',
       amount: 10,

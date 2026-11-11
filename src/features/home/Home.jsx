@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { usePendingRequests } from '../family/queries'
 import { useCurrentUser } from '../auth/useCurrentUser'
-import { clearSession } from '../auth/session'
+import { clearSession, getSessionDisplayName } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import { firstName, maskAccount } from './homeData'
@@ -55,7 +55,9 @@ export default function Home() {
 
       <div className="hero">
         <div className="row-between">
-          <h1 className="hero-greeting">Hi, {firstName(user?.displayName)}!</h1>
+          <h1 className="hero-greeting">
+            Hi, {firstName(user?.displayName || getSessionDisplayName())}!
+          </h1>
           <button
             type="button"
             className="eye-btn"
