@@ -65,7 +65,7 @@ export default function FxHome() {
         <div className="card empty">No trip goals yet.</div>
       )}
       {trips?.map((t) => (
-        <TripCard key={t.tripId} trip={t} />
+        <TripCard key={t.tripId} trip={t} role={role} />
       ))}
 
       {role === 'Parent' && hasChildren && (

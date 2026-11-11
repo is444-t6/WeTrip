@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { tenorFor } from '../../fx/api'
 import { useRate } from '../../fx/queries'
 import { useChildTrips } from '../tripQueries'
+import { tripStatus } from '../../fx/status'
 import { lockMessage, lockSummary, statusBadge, tripTiming } from '../trips'
 import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
@@ -28,7 +29,7 @@ function TripRow({ trip }) {
             {day(trip.tripStartDate)} → {day(trip.tripEndDate)} · {tripTiming(trip)}
           </span>
         </div>
-        <span className={`badge ${statusBadge(trip.status)}`}>{trip.status}</span>
+        <span className={`badge ${statusBadge(trip.status)}`}>{tripStatus(trip.status).label}</span>
       </div>
 
       <div className="progress" style={{ marginTop: 14 }}>
@@ -66,10 +67,21 @@ function TripRow({ trip }) {
         </p>
       )}
 
-      <Link to="/fx/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
-          Open trip
-        </button>
+      <Link
+        to="/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="btn secondary"
+        style={{ width: '100%', marginTop: 14 }}
+      >
+        Open trip
+      </Link>
+      <Link
+        to="/fx/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="muted"
+        style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
+      >
+        Manage FX &amp; locks
       </Link>
     </div>
   )

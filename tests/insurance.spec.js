@@ -607,3 +607,18 @@ test('family bundle reveals linked children for multi-select', async ({ page }) 
   await expect(page.getByLabel('Full name').nth(0)).toHaveValue('Jamie')
   await expect(page.getByLabel('Full name').nth(1)).toHaveValue('Alex')
 })
+
+test('confirmation total falls back to the premium when the bank fee is missing', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('wetrip_session', 'parent:account:Parent')
+    sessionStorage.setItem(
+      'wetrip.insurance.purchaseResult',
+      JSON.stringify({ paymentSuccess: true, premium: 12.5, currencyCode: 'SGD' }),
+    )
+  })
+  await page.goto('/insurance/confirmation')
+  const total = page.locator('.row-between', { hasText: 'Total wallet deduction' })
+  await expect(total).toContainText('$12.50')
+})

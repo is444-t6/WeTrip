@@ -9,7 +9,7 @@ export const CATEGORIES = [
 
 export const SOURCE = { MANUAL: 1, QR: 2, RECEIPT: 3, BANK: 4 }
 
-// TODO: read from the trip once Charles's trip API is wired in.
+// Budgets are SGD by design; a trip's foreign money lives in SmartFX, not here.
 export const DEFAULT_CURRENCY = 'SGD'
 
 export const categoryName = (id) => CATEGORIES.find((c) => c.id === Number(id))?.label ?? 'Other'

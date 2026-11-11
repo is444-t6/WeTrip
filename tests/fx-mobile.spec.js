@@ -195,6 +195,19 @@ test.describe('on a phone', () => {
     await page.goto('/fx')
     await expect(page.locator('.card', { hasText: 'Kyoto' })).toContainText('121.0190 JPY')
   })
+
+  test('the trip card opens the trip hub, with FX management one link away', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/fx')
+    const card = page.locator('.card', { hasText: 'Kyoto' })
+    await expect(card).toContainText('Partly locked')
+    await expect(card).not.toContainText('PartiallyLocked')
+    await expect(card.getByRole('link', { name: 'Open trip' })).toHaveAttribute('href', '/trips/12')
+    await expect(card.getByRole('link', { name: 'Manage FX & locks' })).toHaveAttribute(
+      'href',
+      '/fx/trips/12',
+    )
+  })
 })
 
 test.describe('trip pages, any width', () => {

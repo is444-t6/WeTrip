@@ -6,7 +6,6 @@ import Banner from '../../components/Banner'
 import Money from '../../components/Money'
 import SignedOutCard from '../../components/SignedOutCard'
 import { useDashboard } from '../budget/queries'
-import { DEFAULT_CURRENCY } from '../budget/constants'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { useMyInsurance } from '../insurance/queries'
@@ -51,6 +50,12 @@ export default function TripHub() {
         </span>
       </div>
 
+      {role === 'Child' && (
+        <Link to="/pay" className="btn" style={{ marginTop: 12 }}>
+          Pay
+        </Link>
+      )}
+
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} trip={trip} spends={data.spends || []} />
         <BudgetCard tripId={tripId} role={role} />
@@ -86,7 +91,8 @@ function MoneyCard({ tripId, trip, spends }) {
       <p style={{ margin: '10px 0 0' }}>
         {foreignLocked > 0 ? (
           <>
-            {foreignLocked.toFixed(0)} {trip.currency} locked, {spent.toFixed(0)} spent
+            <Money amount={foreignLocked} currency={trip.currency} /> locked,{' '}
+            <Money amount={spent} currency={trip.currency} /> spent
           </>
         ) : (
           <span className="muted">Nothing locked yet.</span>
@@ -98,7 +104,7 @@ function MoneyCard({ tripId, trip, spends }) {
         className="btn secondary"
         style={{ width: '100%', marginTop: 12 }}
       >
-        Open rate lock
+        Manage FX &amp; locks
       </Link>
     </div>
   )
@@ -120,8 +126,8 @@ function BudgetCard({ tripId, role }) {
       ) : lines.length > 0 ? (
         <>
           <p style={{ margin: 0 }}>
-            <Money amount={summary.totalSpent} currency={DEFAULT_CURRENCY} /> spent of{' '}
-            <Money amount={summary.totalLimit} currency={DEFAULT_CURRENCY} />
+            <Money amount={summary.totalSpent} currency="SGD" /> spent of{' '}
+            <Money amount={summary.totalLimit} currency="SGD" />
           </p>
           <p className="muted" style={{ margin: '4px 0 0' }}>
             {lines.length} categories

@@ -1,29 +1,16 @@
-import { Link } from '@tanstack/react-router'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { isLoggedIn, clearSession } from '../auth/session'
 import ParentHome from './ParentHome'
 import ChildHome from './ChildHome'
 import ChildInvite from './ChildInvite'
-import AppShell, { BrandMark } from '../../components/AppShell'
+import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
 
 export default function FamilyHome() {
   const { role, error } = useCurrentUser()
 
-  if (!isLoggedIn()) {
-    return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <BrandMark alt="WeTrip" size={48} style={{ margin: '0 auto 12px' }} />
-          <h2>WeTrip Family</h2>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/login">
-            <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip Family" />
 
   function signOut() {
     clearSession()

@@ -15,6 +15,7 @@ import {
 import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
 import ChildOverview from './components/ChildOverview'
 import Money from '../../components/Money'
 import SpendingInsights from './components/SpendingInsights'
@@ -37,18 +38,7 @@ export default function ChildDetail() {
   const { data: children, error } = useChildren()
   const [tab, setTab] = useState('overview')
 
-  if (!isLoggedIn()) {
-    return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/login">
-            <button style={{ width: '100%' }}>Sign in</button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip Family" />
 
   function signOut() {
     clearSession()

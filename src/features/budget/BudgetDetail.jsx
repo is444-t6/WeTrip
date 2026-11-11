@@ -6,6 +6,7 @@ import Banner from '../../components/Banner'
 import SignedOutCard from '../../components/SignedOutCard'
 import BalanceHero from '../../components/BalanceHero'
 import { DEFAULT_CURRENCY } from './constants'
+import { useTrip } from '../fx/queries'
 import { useDashboard } from './queries'
 import BudgetBars from './components/BudgetBars'
 import ExpenseList from './components/ExpenseList'
@@ -15,6 +16,8 @@ import SetBudgetForm from './components/SetBudgetForm'
 export default function BudgetDetail() {
   const { tripId } = useParams({ from: '/budget/$tripId' })
   const { data, error, isLoading } = useDashboard(tripId)
+  // The destination only names the page; a SmartFX outage must not hide the budget.
+  const destination = useTrip(tripId).data?.trip?.destination
   const { role } = useCurrentUser()
 
   function signOut() {
@@ -40,7 +43,7 @@ export default function BudgetDetail() {
         &larr; Back
       </Link>
 
-      <h1>Trip {tripId} budget</h1>
+      <h1>{destination || `Trip ${tripId}`} budget</h1>
 
       <BalanceHero
         label="Budget remaining"

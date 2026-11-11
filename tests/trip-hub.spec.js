@@ -83,8 +83,16 @@ test('the trip header and all four sections show their own data', async ({ page 
   await expect(page.getByText('2027-04-01 → 2027-04-14')).toBeVisible()
 
   await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
-  await expect(section(page, 'Money')).toContainText('48000 JPY locked, 10000 spent')
+  await expect(section(page, 'Money')).toContainText('JPY 48000.00 locked, JPY 10000.00 spent')
   await expect(section(page, 'Budget')).toContainText('SGD 150.00 spent of SGD 600.00')
+  await expect(
+    section(page, 'Money').getByRole('link', { name: 'Manage FX & locks' }),
+  ).toHaveAttribute('href', '/fx/trips/12')
+  await expect(section(page, 'Budget').getByRole('link', { name: 'Open budget' })).toHaveAttribute(
+    'href',
+    '/budget/12',
+  )
+  await expect(page.locator('.page').getByRole('link', { name: 'Pay', exact: true })).toHaveCount(0)
   await expect(section(page, 'Insurance')).toContainText('1 policy covers these dates, for 2')
   await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
   await expect(section(page, 'Family')).toContainText('SGD 50.00 spent of SGD 200.00 this period')
@@ -157,6 +165,9 @@ test('a child sees their own money, with no parent actions', async ({ page }) =>
   await expect(section(page, 'Family').getByRole('link', { name: 'Open Family' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Get cover for this trip' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Set a budget' })).toHaveCount(0)
+  await expect(
+    page.locator('.page').getByRole('link', { name: 'Pay', exact: true }),
+  ).toHaveAttribute('href', '/pay')
 })
 
 test('signed out, the page offers sign-in', async ({ page }) => {
@@ -170,6 +181,19 @@ test('the SmartFX trip card links to the overview', async ({ page }) => {
     GetTrips: () => [{ ...TRIP }],
   })
   await page.goto('/fx')
-  await page.getByRole('link', { name: /See budget, cover and family/ }).click()
+  await page.getByRole('link', { name: 'Open trip' }).click()
   await expect(page).toHaveURL(/\/trips\/12$/)
+})
+
+test('foreign amounts keep their cents', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTrip: () => ({
+      Trip: { ...TRIP, LockedForeign: 96675.38 },
+      Locks: [],
+      Spends: [{ Amount: 20000.5 }],
+    }),
+  })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toContainText('JPY 96675.38 locked, JPY 20000.50 spent')
 })
