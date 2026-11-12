@@ -1,81 +1,43 @@
-# WeTrip — Family, SmartFX, Budget, Insurance & Payments
+# WeTrip
 
-Redesigned React frontend for WeTrip. The UI applies the YouTrip design system
-(see [`docs/DESIGN.md`](docs/DESIGN.md)) while keeping the existing product
-behaviour and API contracts intact.
+A student travel-fintech prototype for the IS444 group project: family accounts, SmartFX trip forwards, trip budgets, travel insurance and Scan-to-Pay. The React SPA in this repository talks to six OutSystems composite services layered over the SMU tBank (`SMUtBank`) sandbox.
 
-The current build covers the front-door home and dev login, role-aware Family
-dashboards and child insights, SmartFX trip goals, category budgets, travel
-insurance and Scan-to-Pay / My Payments.
+React 19 · Vite 8 · TanStack Router · TanStack Query · plain `fetch` · no UI kit.
 
-Talks only to `WeTrip_Family_Composite`, `WeTrip_SmartFX_Composite`,
-`WeTrip_Budget_Composite`, `WeTrip_Insurance_Composite` and `ScanToPay` — never
-to the atomic modules, never directly to SMUtBank.
+## Quick start
 
-Routing is TanStack Router (file-based, `src/routes`). Server state is TanStack
-Query (`src/features/*/queries.js`). The API clients stay plain fetch
-(`src/features/*/api.js` over `src/lib/http.js`).
-
-## Run the app
-
-```
+```bash
 npm install
-npm run dev
+cp .env.example .env.local     # then set WETRIP_SERVER_KEY
+npm run dev                    # http://localhost:5173
 ```
 
-Fill in `.env.local` first (see `.env.example`). The dev server proxies
-`/api/family/*`, `/api/fx/*`, `/api/budget/*` and `/scantopay/*` (see
-`vite.config.js`), so CORS never comes up locally. For the Scan-to-Pay camera,
-use `npm run dev:https` and open the LAN URL on your phone.
+The dev server proxies every API path to OutSystems and adds the key server-side, so there is no CORS and no secret in the browser bundle.
 
-Before any screen works, you need a session. Visit `/login` and enter a demo
-customer's `CustomerId`; the app looks up their SGD deposit account and writes
-a stub token into `sessionStorage` that `ValidateSessionStub` (Task 12.4 Option
-C) expects. Swap this for real WeTrip login later; nothing else in the feature
-folders needs to change.
+Open `/login`, enter a demo customer's `CustomerId`, and the app looks up their SGD deposit account and stores a stub session. For the Scan-to-Pay camera, use `npm run dev:https` and open the LAN URL on a phone.
 
-## Screens
+## Scripts
 
-| Route                         | What                                                          |
-| ----------------------------- | ------------------------------------------------------------- |
-| `/`                           | signed-in home or the WeTrip sign-in card                     |
-| `/family`                     | role-aware family home                                        |
-| `/login`                      | dev session stub (`/family/dev-login` redirects here)         |
-| `/family/child/:familyLinkId` | budget, allowance, top-up, expenses, trend                    |
-| `/fx`                         | trip goals (parent) / trips (child), live quote, check-now    |
-| `/fx/trips/:tripId`           | locked pot, rate watch, locks, spending, close & convert back |
-| `/budget` / `/budget/:tripId` | category budgets, budget bars/alerts, add expense, ledger     |
-| `/insurance`                  | travel insurance: trip details, plans, travellers, checkout   |
-| `/insurance/policies`         | purchased policies                                            |
-| `/pay` / `/pay/history`       | Scan to Pay, PayNow/PayLater, payment history                 |
+| Command                                                                 | What                                                      |
+| ----------------------------------------------------------------------- | --------------------------------------------------------- |
+| `npm run dev`                                                           | Vite dev server with the API proxy                        |
+| `npm run dev:https`                                                     | HTTPS + LAN URL for the phone camera                      |
+| `npm run build`                                                         | Production build into `dist/`                             |
+| `npm run lint` / `npm run format` / `npm run format:check`              | oxlint / oxfmt                                            |
+| `npm run test:mocked` / `npm run test:ui:mocked`                        | Mocked browser specs, no backend                          |
+| `npm run test:ui`                                                       | Live read-only Family UI suite                            |
+| `npm run test:e2e`                                                      | All specs (mocked, then live; live writes to the sandbox) |
+| `npm run test:atomic` / `test:composite` / `test:trip` / `test:smartfx` | API contract suites; several write to the shared sandbox  |
 
-## Test
+Run `npm run format:check`, `npm run lint` and `npm run build` before pushing. Live suites are serialized because they share one sandbox.
 
-```
-# uses the same .env.local as the app (see .env.example); no separate test env file
-npm run test:atomic               # Family_Atomic only, writes test rows
-npm run test:composite            # Family_Composite + real SMUtBank calls
-npm run test:smartfx              # SmartFX E2E, defaults to the live sandbox
-```
+## Docs
 
-UI suites:
-
-```
-npx playwright install chromium
-npx playwright test --config playwright.config.js
-```
-
-`family.spec.js` reads the live sandbox; the home, auth, family, insurance,
-budget-mobile, FX-mobile and Scan-to-Pay suites use mocked APIs. Scan-to-Pay
-payments are always mocked so no real money moves. The UI suites pass (209
-tests at the time of writing). `smartfx-api.spec.js` is the live contract test
-and writes real trips, so keep it to the sandbox.
-
-`test:composite` moves real sandbox money (TopUp, allowance, ChildSpend) and
-creates a family link — only run it against demo accounts you're fine
-mutating. It's safe to re-run (it reuses an existing link if one exists).
-
-`test:smartfx` is the end-to-end contract test for the SmartFX feature: rate
-quote, trip lifecycle, server-quoted lock, spend, convert-back, watcher and
-cancel. It needs no env vars — every value has a working default — and it
-writes real trips and wallets, so keep it to the sandbox.
+| Doc                                          | Contents                                                                                                        |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | C4 context/container/component diagrams, OutSystems module boundaries, data model and ERDs, cross-cutting rules |
+| [docs/features/](docs/features/README.md)    | One page per feature: routes, API contract, query keys, rules, tests, known issues                              |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Vercel topology, env vars and keys, CI/CD, deploy/rollback, test suites, troubleshooting                        |
+| [docs/DESIGN.md](docs/DESIGN.md)             | YouTrip design system and application-layer rules                                                               |
+| [PRODUCT.md](PRODUCT.md)                     | Product truth: users, scope, evidence, limitations                                                              |
+| [AGENTS.md](AGENTS.md)                       | Working rules for contributors and coding agents                                                                |
