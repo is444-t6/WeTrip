@@ -9,6 +9,8 @@ export const TripApi = {
   getOverview: (tripId) => call('GET', `GetTripOverview${qs({ TripId: tripId })}`),
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
+  // The trip's child's miles, readable by the parent buying cover: { ChildBalance }.
+  getTripMiles: (tripId) => call('GET', `GetTripMiles${qs({ TripId: tripId })}`),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
 }
 

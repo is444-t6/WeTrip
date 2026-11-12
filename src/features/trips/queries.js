@@ -13,6 +13,14 @@ export const useTripOverview = (tripId) =>
     enabled: isLoggedIn() && Boolean(tripId),
   })
 
+export const useTripMiles = (tripId) =>
+  useQuery({
+    queryKey: ['trip', 'miles', String(tripId)],
+    queryFn: () => TripApi.getTripMiles(tripId),
+    enabled: isLoggedIn() && Boolean(tripId),
+    retry: false,
+  })
+
 // A trip change shows up on SmartFX lists, the budget page and the family cards too.
 function refreshTripViews(qc, tripId) {
   qc.invalidateQueries({ queryKey: ['trip'] })

@@ -51,6 +51,8 @@ export function usePurchaseInsurance() {
         queryClient.invalidateQueries({
           queryKey: familyKeys.me,
         }),
+        // Redeemed miles change the child's balance; a linked policy changes the trip page.
+        queryClient.invalidateQueries({ queryKey: ['trip'] }),
       ])
     },
   })

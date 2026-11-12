@@ -24,6 +24,7 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                  |
 | GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, CallerRole}` |
 | POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
+| GET    | `GetTripMiles?TripId=`    | `{ChildBalance}`: the trip child's miles, readable by the parent (insurance checkout)                        |
 | POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
 
 ### `PlanTrip`
