@@ -7,11 +7,10 @@ import Money from '../../components/Money'
 import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
-import { useMyInsurance } from '../insurance/queries'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
 import FixedCostsNotice from './FixedCostsNotice'
 import { useCloseTrip, useTripOverview } from './queries'
-import { COUNTRY_BY_CURRENCY, day, policiesCovering } from './trip'
+import { COUNTRY_BY_CURRENCY, day } from './trip'
 import { useState } from 'react'
 
 // One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
@@ -177,10 +176,8 @@ function BudgetCard({ tripId, role, overview }) {
 
 function InsuranceCard({ trip, role, tripPolicies }) {
   const navigate = useNavigate()
-  const { data, error } = useMyInsurance()
-  // Policies bought for this trip carry its id; older ones are matched by dates.
-  const linked = (tripPolicies ?? []).filter((p) => p.status !== 'Cancelled')
-  const covering = linked.length > 0 ? linked : policiesCovering(data, trip)
+  // Only policies bought for this trip (linked by TripId) count as cover.
+  const covering = (tripPolicies ?? []).filter((p) => p.status !== 'Cancelled')
 
   // Start the insurance flow with this trip's destination and dates already filled in.
   function getCover() {
@@ -206,9 +203,7 @@ function InsuranceCard({ trip, role, tripPolicies }) {
           trip.
         </p>
       ) : (
-        <p className="muted">
-          {error ? 'Policies could not be loaded right now.' : 'No policy covers these dates yet.'}
-        </p>
+        <p className="muted">No policy covers this trip yet.</p>
       )}
       {covering.length > 0 ? (
         <Link
@@ -237,6 +232,10 @@ function FamilyCard({ trip, role }) {
     : null
   const who = parentView ? linked : childView ? dash.data : null
   const name = parentView ? linked?.nickname : dash.data?.nickname
+  const loading =
+    useCurrentUser().isLoading ||
+    (parentView && children.isLoading) ||
+    (childView && dash.isLoading)
   const budget = Number(who?.budget) || 0
   const spent = Number(who?.spent) || 0
   return (
@@ -260,7 +259,7 @@ function FamilyCard({ trip, role }) {
           </p>
         </>
       ) : (
-        <p className="muted">No child account is linked to this trip.</p>
+        <p className="muted">{loading ? 'Loading…' : 'No child account is linked to this trip.'}</p>
       )}
       {who && (
         <Link

@@ -373,7 +373,7 @@ erDiagram
     }
 ```
 
-`tripId` is optional and logical: `0` means the policy was not bought from a trip, and the trip hub matches it by date overlap.
+`tripId` is optional and logical: `0` means the policy was not bought from a trip, so no trip page counts it as cover.
 
 #### Payments DB — Scan-to-Pay module
 
@@ -472,7 +472,7 @@ This section only covers flows that cross service boundaries. Per-feature sequen
 
 - **Family money:** invite/activate, limits, allowances, spending, approvals — [features/family.md](features/family.md).
 - **Trip lifecycle:** `PlanTrip` (Trip) opens the foreign wallet and writes category budgets; `LockNow` (SmartFX) records a lock and optionally books an FX forward; `PayOnTrip` (Trip) moves SGD at the locked rate and writes a `TripSpend` + budget expense; `CloseTrip` (Trip) values the leftover at spot and completes the trip. See [features/trips.md](features/trips.md) and [features/fx.md](features/fx.md).
-- **Insurance + trips:** `Purchase` optionally carries a `TripId`; otherwise policies are matched to trips by date overlap — [features/insurance.md](features/insurance.md).
+- **Insurance + trips:** `Purchase` optionally carries a `TripId`; policies without it are not shown as cover on any trip — [features/insurance.md](features/insurance.md).
 - **Payments:** wallet Scan-to-Pay and trip payment share the scanner UI and the JSON QR format, but each parses it in its own helper (`ScanToPay.jsx` `parseQr`, `trip.js` `parseMerchantQr`) and calls a different composite (`ScanToPay` vs `Trip.PayOnTrip`) — [features/scantopay.md](features/scantopay.md).
 
 ---
