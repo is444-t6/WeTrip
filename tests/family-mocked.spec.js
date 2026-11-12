@@ -359,7 +359,9 @@ test.describe('child dashboard', () => {
     await expect(page.locator('.hero-amount')).toContainText('SGD 250.50')
     await expect(page.locator('.hero-sub')).toContainText('1 SGD = 123.52 JPY')
     await expect(page.getByText('150.00 remaining')).toBeVisible()
-    await expect(page.locator('.card', { hasText: 'Budget this' }).getByText('Food')).toBeVisible()
+    await expect(
+      page.locator('.card', { hasText: 'Spending limit this' }).getByText('Food'),
+    ).toBeVisible()
   })
 
   test('paying within budget confirms; over budget is declined, not held', async ({ page }) => {
@@ -827,7 +829,7 @@ test.describe('child detail (parent)', () => {
     await expect(field(c, 'Amount (SGD)')).toHaveValue('200')
     await expect(field(c, 'Period')).toHaveValue('Weekly')
     await c.getByRole('button', { name: 'Save budget' }).click()
-    await expect(page.getByText('Budget saved.')).toBeVisible()
+    await expect(page.getByText('Spending limit saved.')).toBeVisible()
     expect(last(calls, 'SetBudget').body).toEqual({
       familyLinkId: 3,
       period: 'Weekly',
@@ -1194,7 +1196,7 @@ test.describe('child pay flow', () => {
   test('the budget card shows a daily amount to stay on track', async ({ page }) => {
     await mockApi(page, child)
     await page.goto('/family')
-    const budget = page.locator('.card', { hasText: 'Budget this week' })
+    const budget = page.locator('.card', { hasText: 'Spending limit this week' })
     await expect(budget).toContainText('SGD 150.00 remaining')
     await expect(budget).toContainText('about SGD 30.00 a day for 5 days')
     await expect(budget.locator('.pace-tick')).toHaveCount(1)

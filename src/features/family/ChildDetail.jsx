@@ -74,7 +74,7 @@ export default function ChildDetail() {
 
           {tab === 'manage' && (
             <div role="tabpanel" id="panel-manage" aria-labelledby="tab-manage">
-              <h2 className="section-title">Budget</h2>
+              <h2 className="section-title">Spending limit</h2>
               <BudgetCard child={child} />
               <div className="section-title">Spending rules</div>
               <RulesCard familyLinkId={familyLinkId} />
@@ -115,7 +115,7 @@ function BudgetCard({ child }) {
     setOk('')
     setBudget.mutate(
       { familyLinkId: Number(familyLinkId), period, amount: Number(amount) },
-      { onSuccess: () => setOk('Budget saved.') },
+      { onSuccess: () => setOk('Spending limit saved.') },
     )
   }
 
