@@ -39,6 +39,15 @@ export function usePayOnTrip(tripId) {
   })
 }
 
+export function useAddFixedCost(tripId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: TripApi.addFixedCost,
+    retry: false,
+    onSuccess: () => refreshTripViews(qc, tripId),
+  })
+}
+
 export function useCloseTrip(tripId) {
   const qc = useQueryClient()
   return useMutation({

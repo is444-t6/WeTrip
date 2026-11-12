@@ -23,14 +23,21 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                  |
 | GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, CallerRole}` |
+| POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                      |
 | POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
 | POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
 
 ### `PlanTrip`
 
-Request (PascalCase): `FamilyLinkId`, `Destination`, `Currency`, `TripStartDate`, `TripEndDate`, `TargetBudgetSgd`, `TargetRate`, `AutoLockEnabled`, `Budgets[]` of `{CategoryId, LimitAmount}`.
+Request (PascalCase): `FamilyLinkId`, `Destination`, `Currency`, `TripStartDate`, `TripEndDate`, `TargetBudgetSgd`, `TargetRate`, `AutoLockEnabled`, `Budgets[]` of `{CategoryId, LimitAmount}`, `FixedCosts[]` of `{Name, CategoryId, AmountSgd}` (max 10, always sent, `[]` when none).
 
-Returns a trip with `Id`, `Status: 'Watching'`, `ForeignAccountId`, `ParentAccountId`, `ChildCustomerId`. Child tokens are refused.
+Returns a trip with `Id`, `Status: 'Watching'`, `ForeignAccountId`, `ParentAccountId`, `ChildCustomerId`, `FixedCostsFailed` (count of fixed costs that were not saved; the trip exists regardless). Child tokens are refused. The new-trip form hands `FixedCostsFailed` to the trip page in router state and the page shows "1 fixed cost wasn't saved. Add it on the budget page."
+
+### Fixed costs
+
+A fixed cost is a Budget expense with `SourceId` 5, so it uses up its category's limit like any spend and stays inside `TotalSpent` and `TotalRemaining`. The form blocks Plan trip when one category's fixed costs exceed its limit; a category with no limit set is not checked.
+
+`AddFixedCost` body: `TripId`, `Name`, `CategoryId`, `AmountSgd`, `RequestId`. The budget page keeps one `RequestId` per attempt: a resend after a lost reply reuses it, an edited cost gets a new one. `GetTripOverview.Budget.FixedSgd` feeds the Budget card's "SGD 300.00 fixed". Editing or removing fixed costs is not built; the Budget ledger is append-only.
 
 ### `PayOnTrip`
 
@@ -79,7 +86,8 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Tests
 
-- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state.
+- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state, the Budget card's fixed line.
+- `tests/new-trip.spec.js` — the new-trip form: fixed-cost rows, the over-limit rules, the `PlanTrip` body, the "not saved" notice on the trip page.
 - `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
 - `tests/trips.spec.js` — pure date/trip helpers.
 - `bun run test:trip` — live Trip composite contract; moves sandbox money.

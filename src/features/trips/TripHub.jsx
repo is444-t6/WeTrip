@@ -9,6 +9,7 @@ import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { useMyInsurance } from '../insurance/queries'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
+import FixedCostsNotice from './FixedCostsNotice'
 import { useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day, policiesCovering } from './trip'
 import { useState } from 'react'
@@ -37,6 +38,7 @@ export default function TripHub() {
       <Link to="/fx" className="back-link">
         &larr; All trips
       </Link>
+      <FixedCostsNotice />
       <div className="row-between trip-head" style={{ marginBottom: 4 }}>
         <div className="stack">
           <h1 style={{ margin: 0 }}>{trip.destination}</h1>
@@ -154,6 +156,11 @@ function BudgetCard({ tripId, role, overview }) {
         <p className="muted">
           No category budget yet.
           {role === 'Parent' ? ' Split the trip money by category.' : ''}
+        </p>
+      )}
+      {Number(summary?.fixedSgd) > 0 && (
+        <p className="muted" style={{ margin: '4px 0 0' }}>
+          <Money amount={summary.fixedSgd} currency="SGD" /> fixed
         </p>
       )}
       <Link
