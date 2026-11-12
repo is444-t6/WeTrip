@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test'
 const BASE =
   process.env.SMARTFX_BASE ??
   'https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX'
-const API_KEY = process.env.SMARTFX_API_KEY ?? ''
+const API_KEY = process.env.WETRIP_SERVER_KEY ?? ''
 
 const PARENT = {
   id: process.env.PARENT_CUSTOMER_ID ?? '0000002169',

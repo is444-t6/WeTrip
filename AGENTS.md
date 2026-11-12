@@ -107,11 +107,11 @@ To add or change a screen:
 
 ## Environment and secrets
 
-- One key, `WETRIP_SERVER_KEY`, is accepted by every WeTrip module (each module's key site property holds the same value) and is added by the proxy; `VITE_FAMILY_API_KEY` is accepted as its old name.
+- One key, `WETRIP_SERVER_KEY`, is accepted by every WeTrip module (each module's key site property holds the same value) and is added by the proxy. It has no `VITE_` prefix because it is server-side only.
 - `.env.local` is gitignored and holds real composite API keys. Only server-side code reads them (`vite.config.js`, `api/proxy.js`, the test scripts); never echo, copy or commit its contents.
 - `.env.example` lists `WETRIP_SERVER_KEY`, the only app key. `test:atomic` and `test:composite` read their own variables from `.env.local`; see the headers of `scripts/test-atomic.mjs` and `scripts/test-composite.mjs`. `.env.test.example` is out of date.
-- Playwright takes `SMARTFX_API_KEY` from the environment, else uses `WETRIP_SERVER_KEY` (or its old name `VITE_FAMILY_API_KEY`) from the environment or `.env.local`.
-- Browser code must never read `import.meta.env`: Vite inlines every `VITE_*` value it can reach, keys included. The keys keep their `VITE_*` names for compatibility but are server-side only; Vercel needs them in the project environment for `api/proxy.js`. The session token is still an unsigned stub, so this is demo-grade, not production authentication.
+- Playwright and the test scripts read `WETRIP_SERVER_KEY` from the environment (CI secret) or `.env.local`.
+- Browser code must never read `import.meta.env`: Vite inlines every `VITE_*` value it can reach, keys included. Vercel needs `WETRIP_SERVER_KEY` in the project environment for `api/proxy.js`. The session token is still an unsigned stub, so this is demo-grade, not production authentication.
 
 ## Done
 

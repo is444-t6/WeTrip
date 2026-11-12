@@ -5,7 +5,7 @@
 // Usage:
 //   node --env-file=.env.local scripts/test-atomic.mjs
 //
-// Needs in .env.local: ATOMIC_BASE, ATOMIC_API_KEY, ATOMIC_TEST_PARENT_ID,
+// Needs in .env.local: ATOMIC_BASE, WETRIP_SERVER_KEY, ATOMIC_TEST_PARENT_ID,
 // ATOMIC_TEST_CHILD_ID, ATOMIC_TEST_MERCHANT_ID.
 //
 // Deliberately uses its own throwaway synthetic identities, NOT the real
@@ -21,7 +21,7 @@
 import { assert, env, http, step, summary } from './_lib.mjs'
 
 const BASE = env('ATOMIC_BASE')
-const API_KEY = env('ATOMIC_API_KEY')
+const API_KEY = env('WETRIP_SERVER_KEY')
 const PARENT_CUSTOMER_ID = env('ATOMIC_TEST_PARENT_ID')
 const PARENT_ACCOUNT_ID = '0000000001'
 const CHILD_CUSTOMER_ID = env('ATOMIC_TEST_CHILD_ID')

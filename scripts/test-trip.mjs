@@ -16,7 +16,7 @@ import { assert, env, field, http, step, summary } from './_lib.mjs'
 const ORIGIN = 'https://smuedu-dev.outsystemsenterprise.com'
 const TRIP = `${ORIGIN}/WeTrip_Trip_Composite/rest/Trip`
 const SMARTFX = `${ORIGIN}/WeTrip_SmartFX_Composite/rest/SmartFX`
-const KEY = env('WETRIP_SERVER_KEY', process.env.VITE_FAMILY_API_KEY)
+const KEY = env('WETRIP_SERVER_KEY')
 const FX_KEY = KEY
 const PARENT = `${env('PARENT_CUSTOMER_ID', '0000002169')}:${env('PARENT_ACCOUNT_ID', '0000004554')}:TripHarness`
 const CHILD = `${env('CHILD_CUSTOMER_ID', '0000002828')}:${env('CHILD_ACCOUNT_ID', '0000006064')}:TripHarness`

@@ -3,9 +3,7 @@ name: E2E Tests
 on:
   workflow_call:
     secrets:
-      VITE_FAMILY_API_KEY:
-        required: true
-      VITE_FX_API_KEY:
+      WETRIP_SERVER_KEY:
         required: true
   workflow_dispatch:
 
@@ -23,10 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      VITE_FAMILY_API_BASE: /api/family
-      VITE_FAMILY_API_KEY: ${{ secrets.VITE_FAMILY_API_KEY }}
-      VITE_FX_API_BASE: /api/fx
-      VITE_FX_API_KEY: ${{ secrets.VITE_FX_API_KEY }}
+      WETRIP_SERVER_KEY: ${{ secrets.WETRIP_SERVER_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

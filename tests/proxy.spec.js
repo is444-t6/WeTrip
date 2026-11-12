@@ -4,7 +4,7 @@ import handler from '../api/proxy.js'
 
 // The proxy that adds composite keys on the server (api/proxy.js on Vercel, the
 // same map in vite.config.js). Pure Node: no browser, no backend.
-const ENV = { VITE_FAMILY_API_KEY: 'fam' }
+const ENV = { WETRIP_SERVER_KEY: 'fam' }
 
 test('header services get X-Contacts-Key and keep their query string', () => {
   const t = upstream('trip', 'GetTripOverview', new URLSearchParams('TripId=12'), ENV)
@@ -28,7 +28,10 @@ test('SmartFX gets apiKey in the query, replacing anything the caller sent', () 
   expect(t.headers).toEqual({})
 })
 
-test('the old VITE_FAMILY_API_KEY name still works; unknown services are refused', () => {
+test('old VITE_* key names are ignored; unknown services are refused', () => {
+  expect(
+    upstream('family', 'x', '', { VITE_FAMILY_API_KEY: 'old' }).headers['X-Contacts-Key'],
+  ).toBe('')
   expect(upstream('budget', 'x', '', ENV).headers['X-Contacts-Key']).toBe('fam')
   expect(upstream('scantopay', 'x', '', ENV).headers['X-Contacts-Key']).toBe('fam')
   expect(upstream('nope', 'x', '', ENV)).toBeNull()
