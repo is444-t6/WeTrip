@@ -10,6 +10,8 @@ export const TripApi = {
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
+  // Read-only, parent only: leftover foreign money at today's rate vs the locked cost.
+  getCloseOptions: (tripId) => call('GET', `GetCloseOptions${qs({ TripId: tripId })}`),
 }
 
 // One id per payment attempt, kept for that attempt's lifetime, so a double tap

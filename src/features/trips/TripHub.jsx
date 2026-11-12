@@ -8,7 +8,7 @@ import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
-import { useCloseTrip, useTripOverview } from './queries'
+import { useCloseOptions, useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day } from './trip'
 import { useState } from 'react'
 
@@ -268,6 +268,37 @@ function FamilyCard({ trip, role }) {
   )
 }
 
+const BETTER_LINE = {
+  Spot: 'Converting now beats your locked cost',
+  Locked: "Your locked cost beats today's rate",
+}
+
+// Before closing: what the leftover is worth at today's rate against what it cost
+// at the locked rate. Preview only; the CloseTrip reply stays authoritative.
+// Shows nothing when there is nothing unspent or GetCloseOptions fails.
+function CloseOptions({ tripId }) {
+  const { data } = useCloseOptions(tripId)
+  if (!(Number(data?.unspentForeign) > 0)) return null
+  return (
+    <div style={{ margin: '0 0 12px' }}>
+      <p style={{ margin: 0 }}>
+        Value in SGD at today's rate: <Money amount={data.valueAtSpotSgd} />
+      </p>
+      <p style={{ margin: '4px 0 0' }}>
+        What it cost you at your locked rate: <Money amount={data.costAtLockedSgd} />
+      </p>
+      {BETTER_LINE[data.better] && (
+        <p style={{ margin: '4px 0 0' }}>
+          <strong>{BETTER_LINE[data.better]}</strong>
+        </p>
+      )}
+      <p className="muted" style={{ margin: '4px 0 0' }}>
+        No money moves when you close.
+      </p>
+    </div>
+  )
+}
+
 // Closing values whatever foreign money is left at today's server spot rate and
 // marks the trip Completed. No money moves; the confirm step says so.
 function CloseTripCard({ tripId, trip }) {
@@ -295,6 +326,7 @@ function CloseTripCard({ tripId, trip }) {
         <h3>Close &amp; convert back</h3>
       </div>
       <Banner>{close.error?.message}</Banner>
+      {!result && <CloseOptions tripId={tripId} />}
       {result ? (
         <p style={{ margin: 0 }}>
           Trip closed. <Money amount={result.returnedForeign} currency={trip.currency} /> unspent,

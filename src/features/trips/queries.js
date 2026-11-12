@@ -4,6 +4,7 @@ import { TripApi } from './api'
 
 export const tripKeys = {
   overview: (tripId) => ['trip', 'overview', String(tripId)],
+  closeOptions: (tripId) => ['trip', 'closeOptions', String(tripId)],
 }
 
 export const useTripOverview = (tripId) =>
@@ -11,6 +12,16 @@ export const useTripOverview = (tripId) =>
     queryKey: tripKeys.overview(tripId),
     queryFn: () => TripApi.getOverview(tripId),
     enabled: isLoggedIn() && Boolean(tripId),
+  })
+
+// Parent only and refused once the trip has ended: the caller mounts it only for
+// a parent on an open trip. A failed read just leaves the plain close card.
+export const useCloseOptions = (tripId) =>
+  useQuery({
+    queryKey: tripKeys.closeOptions(tripId),
+    queryFn: () => TripApi.getCloseOptions(tripId),
+    enabled: isLoggedIn() && Boolean(tripId),
+    retry: false,
   })
 
 // A trip change shows up on SmartFX lists, the budget page and the family cards too.
