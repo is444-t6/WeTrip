@@ -6,7 +6,7 @@ import { CATEGORIES } from '../budget/constants'
 import PayLayout from '../scantopay/components/PayLayout'
 import QrScanner from '../scantopay/components/QrScanner'
 import { newRequestId } from './api'
-import { parseMerchantQr } from './trip'
+import { milesLabel, parseMerchantQr } from './trip'
 import { usePayOnTrip, useTripOverview } from './queries'
 
 // Paying on a trip: the child scans the merchant's QR and the Trip composite pays
@@ -93,6 +93,9 @@ export default function TripPay({ tripId }) {
               <Money amount={result.remainingForeign} currency={result.currency} /> left on this
               trip.
             </p>
+          )}
+          {Number(result.milesEarned) > 0 && (
+            <p style={{ margin: '6px 0 0' }}>+{milesLabel(Number(result.milesEarned))}</p>
           )}
           {result.ledgerPending && (
             <p className="muted" style={{ margin: '6px 0 0' }}>

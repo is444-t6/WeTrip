@@ -2,6 +2,9 @@
 
 export const day = (value) => String(value ?? '').slice(0, 10)
 
+// "1 mile", "0 miles", "1250 miles".
+export const milesLabel = (n) => `${n} ${n === 1 ? 'mile' : 'miles'}`
+
 // Where each trip currency is spent, to pre-fill the insurance country code.
 // Euro is left out on purpose: it covers many countries, so the traveller picks.
 export const COUNTRY_BY_CURRENCY = { JPY: 'JP', GBP: 'GB', CHF: 'CH', USD: 'US' }

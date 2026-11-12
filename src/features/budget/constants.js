@@ -7,7 +7,10 @@ export const CATEGORIES = [
   { id: 4, label: 'Others' },
 ]
 
-export const SOURCE = { MANUAL: 1, QR: 2, RECEIPT: 3, BANK: 4 }
+export const SOURCE = { MANUAL: 1, QR: 2, RECEIPT: 3, BANK: 4, FIXED: 5 }
+
+// A fixed-cost row as typed in the forms (strings until submitted).
+export const blankFixedCost = () => ({ name: '', categoryId: CATEGORIES[0].id, amount: '' })
 
 // Budgets are SGD by design; a trip's foreign money lives in SmartFX, not here.
 export const DEFAULT_CURRENCY = 'SGD'

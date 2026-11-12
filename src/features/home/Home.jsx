@@ -10,6 +10,7 @@ import FamilyOverview from './components/FamilyOverview'
 import { EyeIcon } from './components/Icons'
 import QuickActions from './components/QuickActions'
 import RecentPayments from './components/RecentPayments'
+import MilesCard from './components/MilesCard'
 import TripWallets from './components/TripWallets'
 
 const HIDE_KEY = 'wetrip_hide_balance'
@@ -89,6 +90,7 @@ export default function Home() {
       <h2 className="section-title">Your accounts</h2>
       <FamilyOverview role={role} pendingApprovals={pendingApprovals} />
       <TripWallets role={role} />
+      {role === 'Child' && <MilesCard />}
 
       <h2 className="section-title">Recent activity</h2>
       <RecentPayments />

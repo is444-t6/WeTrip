@@ -1136,6 +1136,11 @@ tr:last-child td {
 .new-trip-form .card-header {
   align-items: flex-start;
 }
+.fixed-cost-fields {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr;
+  gap: 16px;
+}
 .quote-panel {
   display: flex;
   align-items: center;
@@ -1335,7 +1340,8 @@ tr:last-child td {
     font-size: 120px;
     bottom: -34px;
   }
-  .grid-2 {
+  .grid-2,
+  .fixed-cost-fields {
     grid-template-columns: 1fr;
     gap: 0;
   }
