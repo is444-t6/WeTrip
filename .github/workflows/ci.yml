@@ -3,7 +3,16 @@ name: CI
 on:
   push:
     branches: [main]
+    # Docs and diagrams cannot change the bundle or an API contract, so a
+    # docs-only push does not need build/lint or the live-sandbox E2E suite.
+    # CD follows CI, so it is skipped for these commits too.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 permissions:
   contents: read

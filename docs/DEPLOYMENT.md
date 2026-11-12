@@ -162,7 +162,7 @@ CI, Playwright, the Vite proxy and `api/proxy.js` all use `WETRIP_SERVER_KEY`. L
 
 ## 5. CI pipeline
 
-Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Triggers: every pull request and every push to `main`.
+Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Triggers: every pull request and every push to `main`, except docs-only changes (`**/*.md` or `docs/**`), which skip CI and therefore CD.
 
 | Stage             | What runs                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
