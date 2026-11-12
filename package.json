@@ -18,8 +18,9 @@
     "test:smartfx": "playwright test tests/smartfx-api.spec.js",
     "test:ui": "playwright test tests/family.spec.js",
     "test:ui:mocked": "playwright test tests/family-mocked.spec.js",
-    "test:e2e": "playwright test",
-    "test:ui:report": "playwright show-report"
+    "test:e2e": "playwright test --project=mocked && playwright test --project=live --workers=1",
+    "test:ui:report": "playwright show-report",
+    "test:mocked": "playwright test --project=mocked"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.105.0",
