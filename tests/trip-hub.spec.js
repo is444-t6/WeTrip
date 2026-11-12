@@ -169,8 +169,9 @@ test('the Family card says Loading… until the children arrive, not that none i
 }) => {
   await as(page, PARENT)
   await mockApi(page)
-  // Registered after mockApi, so it wins; never fulfilling keeps the query loading.
+  // Registered after mockApi, so they win; never fulfilling keeps the queries loading.
   await page.route('**/GetChildren*', () => {})
+  await page.route('**/MyInsurance*', () => {})
   await page.goto('/trips/12')
   await expect(section(page, 'Family')).toContainText('Loading…')
   await expect(section(page, 'Family')).not.toContainText('No child account')
