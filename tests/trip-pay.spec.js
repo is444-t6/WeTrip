@@ -77,6 +77,23 @@ test('a trip payment sends the trip, merchant, amount, category and one request 
   expect(bodies[0].RequestId).toBeTruthy()
 })
 
+test('the Paid card shows the miles earned, and nothing when none were', async ({ page }) => {
+  await as(page, CHILD)
+  const reply = { Status: 'Paid', Amount: 1200, Currency: 'JPY', SgdCharged: 10, MilesEarned: 12 }
+  await mockApi(page, reply)
+  await page.goto('/pay?tripId=12')
+  await scan(page, RAMEN_QR)
+  await page.getByRole('button', { name: 'Pay from trip' }).click()
+  await expect(page.getByRole('status')).toContainText('+12 miles')
+
+  reply.MilesEarned = 0
+  await page.getByRole('button', { name: 'Pay again' }).click()
+  await scan(page, RAMEN_QR)
+  await page.getByRole('button', { name: 'Pay from trip' }).click()
+  await expect(page.getByRole('status')).toContainText('JPY 1200.00 charged as SGD 10.00')
+  await expect(page.getByRole('status')).not.toContainText('mile')
+})
+
 test('an open-amount QR asks for the amount before paying', async ({ page }) => {
   await as(page, CHILD)
   const bodies = await mockApi(page, {

@@ -4,6 +4,8 @@ import { TripApi } from './api'
 
 export const tripKeys = {
   overview: (tripId) => ['trip', 'overview', String(tripId)],
+  // Under ['trip'], so every trip mutation (PayOnTrip earns) refreshes it too.
+  miles: () => ['trip', 'miles'],
 }
 
 export const useTripOverview = (tripId) =>
@@ -11,6 +13,13 @@ export const useTripOverview = (tripId) =>
     queryKey: tripKeys.overview(tripId),
     queryFn: () => TripApi.getOverview(tripId),
     enabled: isLoggedIn() && Boolean(tripId),
+  })
+
+export const useMyMiles = (enabled) =>
+  useQuery({
+    queryKey: tripKeys.miles(),
+    queryFn: TripApi.getMyMiles,
+    enabled: isLoggedIn() && enabled,
   })
 
 // A trip change shows up on SmartFX lists, the budget page and the family cards too.

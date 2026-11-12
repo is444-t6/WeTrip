@@ -10,6 +10,8 @@ export const TripApi = {
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
+  // The caller's miles balance; the customer comes from the session token.
+  getMyMiles: () => call('GET', 'GetMyMiles'),
 }
 
 // One id per payment attempt, kept for that attempt's lifetime, so a double tap

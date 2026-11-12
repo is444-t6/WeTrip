@@ -10,7 +10,7 @@ import { saveTrip } from '../insurance/storage'
 import { useMyInsurance } from '../insurance/queries'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
 import { useCloseTrip, useTripOverview } from './queries'
-import { COUNTRY_BY_CURRENCY, day, policiesCovering } from './trip'
+import { COUNTRY_BY_CURRENCY, day, milesLabel, policiesCovering } from './trip'
 import { useState } from 'react'
 
 // One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
@@ -86,6 +86,7 @@ function MoneyCard({ tripId, overview }) {
   const spent = Number(overview.spentForeign) || 0
   const left = Number(overview.remainingForeign) || 0
   const rate = Number(overview.lockedRate) || 0
+  const miles = Number(overview.milesEarned) || 0
   return (
     <div className="card" aria-label="Money">
       <div className="card-header">
@@ -118,6 +119,7 @@ function MoneyCard({ tripId, overview }) {
           <span className="muted">Nothing locked yet.</span>
         )}
       </p>
+      {miles > 0 && <p style={{ margin: '6px 0 0' }}>{milesLabel(miles)} earned on this trip</p>}
       <Link
         to="/fx/trips/$tripId"
         params={{ tripId: String(tripId) }}

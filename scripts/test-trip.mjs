@@ -1,5 +1,5 @@
 // Live contract test for WeTrip_Trip_Composite (PlanTrip, GetTripOverview,
-// PayOnTrip, CloseTrip) plus the real FX forward booked by SmartFX LockNow.
+// PayOnTrip, GetMyMiles, CloseTrip) plus the real FX forward booked by SmartFX LockNow.
 //
 //   bun --env-file=.env.local scripts/test-trip.mjs
 //
@@ -32,11 +32,21 @@ const as = (token) => (method, path, body) =>
 const parent = as(PARENT)
 const child = as(CHILD)
 const refused = (r) => r.status >= 400 && JSON.stringify(r.json)
+// Miles rule (#32): floor(round2(sgdCharged) x 10), worked in whole cents so a float
+// like 0.97 x 10 cannot land just under the integer.
+const milesFor = (sgd) => Math.floor(Math.round(Number(sgd) * 100) / 10)
+const myMiles = async () => {
+  const r = await child('GET', 'GetMyMiles')
+  assert(r.status === 200, `GetMyMiles: expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+  return Number(field(r.json, 'balance'))
+}
 
 console.log(`\nTrip composite live test\nBase: ${TRIP}\n`)
 let trip
 let requestId
 let paidForeign = 0
+let milesBefore = 0
+let milesEarned = 0
 
 await step('PlanTrip as the child is refused', async () => {
   const r = await child('POST', 'PlanTrip', planBody())
@@ -97,6 +107,11 @@ await step('PayOnTrip as the parent is refused', async () => {
   assert(refused(r), `expected a refusal, got ${r.status}`)
 })
 
+await step('GetMyMiles: the child reads a starting balance', async () => {
+  milesBefore = await myMiles()
+  assert(Number.isInteger(milesBefore) && milesBefore >= 0, `bad balance ${milesBefore}`)
+})
+
 await step(`PayOnTrip as the child pays ${PAY_JPY} JPY once, at the locked rate`, async () => {
   requestId = `harness-${Date.now()}`
   const r = await child('POST', 'PayOnTrip', payBody(requestId, PAY_JPY))
@@ -105,9 +120,19 @@ await step(`PayOnTrip as the child pays ${PAY_JPY} JPY once, at the locked rate`
   assert(field(r.json, 'transactionId'), 'no bank transaction id')
   assert(Number(field(r.json, 'sgdCharged')) > 0, 'nothing charged')
   paidForeign = PAY_JPY
+  milesEarned = Number(field(r.json, 'milesEarned'))
+  assert(
+    milesEarned === milesFor(field(r.json, 'sgdCharged')),
+    `milesEarned ${milesEarned}, expected ${milesFor(field(r.json, 'sgdCharged'))} for SGD ${field(r.json, 'sgdCharged')}`,
+  )
   console.log(
     `      charged SGD ${field(r.json, 'sgdCharged')}, ledger pending: ${field(r.json, 'ledgerPending')}`,
   )
+})
+
+await step('GetMyMiles: the balance grew by exactly the miles earned', async () => {
+  const now = await myMiles()
+  assert(now === milesBefore + milesEarned, `balance ${now}, expected ${milesBefore + milesEarned}`)
 })
 
 await step('PayOnTrip with the same requestId is a no-op', async () => {
@@ -117,11 +142,17 @@ await step('PayOnTrip with the same requestId is a no-op', async () => {
     field(r.json, 'status') === 'Duplicate',
     `expected Duplicate, got ${JSON.stringify(r.json)}`,
   )
+  assert(Number(field(r.json, 'milesEarned')) === 0, 'a Duplicate must earn 0 miles')
+  const now = await myMiles()
+  assert(now === milesBefore + milesEarned, `Duplicate moved the balance to ${now}`)
 })
 
 await step('PayOnTrip for more than the pot holds is declined without paying', async () => {
   const r = await child('POST', 'PayOnTrip', payBody(`harness-${Date.now()}-big`, 10_000_000))
   assert(field(r.json, 'status') === 'Declined', `expected Declined, got ${JSON.stringify(r.json)}`)
+  assert(Number(field(r.json, 'milesEarned') || 0) === 0, 'a Declined must earn 0 miles')
+  const now = await myMiles()
+  assert(now === milesBefore + milesEarned, `Declined moved the balance to ${now}`)
 })
 
 await step('the overview shows the spend, the pot left and the budget expense', async () => {
@@ -140,6 +171,10 @@ await step('the overview shows the spend, the pot left and the budget expense', 
     (l) => field(l, 'categoryId') === FOOD,
   )
   assert(Number(field(food, 'spentAmount')) > 0, 'budget expense not recorded')
+  assert(
+    Number(field(r.json, 'milesEarned')) === milesEarned,
+    `overview milesEarned ${field(r.json, 'milesEarned')}, expected ${milesEarned}`,
+  )
 })
 
 await step('CloseTrip as the child is refused', async () => {

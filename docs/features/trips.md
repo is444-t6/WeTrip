@@ -19,12 +19,13 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 
 Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-side.
 
-| Method | Endpoint                  | Purpose                                                                                                      |
-| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                  |
-| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, CallerRole}` |
-| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
-| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
+| Method | Endpoint                  | Purpose                                                                                                                   |
+| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                               |
+| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, MilesEarned, CallerRole}` |
+| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                                           |
+| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                             |
+| GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                       |
 
 ### `PlanTrip`
 
@@ -36,14 +37,19 @@ Returns a trip with `Id`, `Status: 'Watching'`, `ForeignAccountId`, `ParentAccou
 
 Request: `TripId`, `MerchantCode`, `Amount` (trip currency), `CategoryId`, `RequestId`, `Narrative`.
 
-Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`, `currency`, `sgdCharged`, `remainingForeign`, `ledgerPending`, message.
+Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`, `currency`, `sgdCharged`, `remainingForeign`, `ledgerPending`, `milesEarned`, message.
 
 - Requires a locked pot.
 - **Idempotent by `RequestId`**; a repeat returns `Duplicate` and the UI shows "Already paid".
 - An oversized amount returns `Declined`; no payment is attempted.
 - One SGD transfer at the trip's locked rate; writes `TripSpend` and a Budget expense.
 - `ledgerPending` may be true even when `Paid`.
+- Earns miles: `milesEarned = floor(round2(sgdCharged) × 10)`, 0 for `Duplicate` and `Declined`. The Paid card shows "+N miles" when it is above 0.
 - Never retried. `retry: false`; a lost reply is treated as "may have completed".
+
+### `GetMyMiles`
+
+Child's miles balance, derived on the server from their trip spends (10 miles per SGD charged). `TripHub`'s Money card shows the overview's `MilesEarned` ("N miles earned on this trip") when it is above 0. Home's `MilesCard` reads `GetMyMiles` for children only (`['trip','miles']`, so `PayOnTrip` refreshes it); a failed read hides the card.
 
 ### `CloseTrip`
 
@@ -75,12 +81,12 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `policiesCovering`, `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `policiesCovering`, `foreignSpent`, `milesLabel`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
 
 ## Tests
 
 - `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state.
-- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
+- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR, miles on the Paid card.
 - `tests/trips.spec.js` — pure date/trip helpers.
 - `bun run test:trip` — live Trip composite contract; moves sandbox money.
 
