@@ -3,7 +3,7 @@
 // not-found cases, and upsert/idempotency behavior for every method.
 //
 // Usage:
-//   node --env-file=.env.local scripts/test-atomic.mjs
+//   bun --env-file=.env.local scripts/test-atomic.mjs
 //
 // Needs in .env.local: ATOMIC_BASE, WETRIP_SERVER_KEY, ATOMIC_TEST_PARENT_ID,
 // ATOMIC_TEST_CHILD_ID, ATOMIC_TEST_MERCHANT_ID.

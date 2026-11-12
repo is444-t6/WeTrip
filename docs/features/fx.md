@@ -65,8 +65,8 @@ The five-minute `SmartFXWatcher` timer lives in the composite and auto-locks wat
 
 - `tests/fx-mobile.spec.js` — mobile layout, loading/error, tables, lock/close/cancel confirmations.
 - `tests/smartfx-api.spec.js` — live contract test; writes trips and locks, cancels one, and closes one through `Trip.CloseTrip`.
-- `npm run test:smartfx` — runs that spec.
-- `npm run test:trip` — Trip composite lifecycle including lock and close.
+- `bun run test:smartfx` — runs that spec.
+- `bun run test:trip` — Trip composite lifecycle including lock and close.
 
 ## Known issues
 

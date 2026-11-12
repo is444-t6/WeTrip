@@ -25,13 +25,13 @@ Related: [ARCHITECTURE.md](ARCHITECTURE.md) · [README](../README.md) · [CI](..
 
 ## 1. Environments
 
-| Environment | URL                     | Frontend                         | API path                                             | Key source          | Data                                           |
-| ----------- | ----------------------- | -------------------------------- | ---------------------------------------------------- | ------------------- | ---------------------------------------------- |
-| Local       | `http://localhost:5173` | Vite dev server                  | Vite `server.proxy` → OutSystems                     | `.env.local`        | Shared sandbox                                 |
-| Local HTTPS | `https://<LAN-IP>:5173` | Vite + self-signed cert          | Same proxy                                           | `.env.local`        | Shared sandbox                                 |
-| Playwright  | `http://localhost:5199` | `npm run build` + `vite preview` | Same proxy (`preview.proxy` inherits `server.proxy`) | env or `.env.local` | Mocked specs: none. Live specs: shared sandbox |
-| CI          | GitHub runner           | `npm ci` + build + Playwright    | Same Vite proxy                                      | GitHub secret       | Shared sandbox (live project)                  |
-| Production  | Vercel project `wetrip` | Vercel CDN (`dist/`)             | `api/proxy.js`                                       | Vercel project env  | Shared sandbox                                 |
+| Environment | URL                     | Frontend                                             | API path                                             | Key source          | Data                                           |
+| ----------- | ----------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ------------------- | ---------------------------------------------- |
+| Local       | `http://localhost:5173` | Vite dev server                                      | Vite `server.proxy` → OutSystems                     | `.env.local`        | Shared sandbox                                 |
+| Local HTTPS | `https://<LAN-IP>:5173` | Vite + self-signed cert                              | Same proxy                                           | `.env.local`        | Shared sandbox                                 |
+| Playwright  | `http://localhost:5199` | `bun run build` + `vite preview`                     | Same proxy (`preview.proxy` inherits `server.proxy`) | env or `.env.local` | Mocked specs: none. Live specs: shared sandbox |
+| CI          | GitHub runner           | `bun install --frozen-lockfile` + build + Playwright | Same Vite proxy                                      | GitHub secret       | Shared sandbox (live project)                  |
+| Production  | Vercel project `wetrip` | Vercel CDN (`dist/`)                                 | `api/proxy.js`                                       | Vercel project env  | Shared sandbox                                 |
 
 There is **no staging environment** and no separate preview deploy workflow. Preview URLs exist only if the Vercel project's Git integration is enabled in the dashboard; they share the same sandbox and key unless Preview env vars are added.
 
@@ -45,13 +45,13 @@ The production URL is not recorded in the repository; read it from the Vercel da
 GitHub  is444-t6/WeTrip
   │ push / pull_request
   ▼
-CI (ubuntu-latest, Node 22)
-  ├─ checks: npm ci → format:check → lint → build
+CI (ubuntu-latest, Bun 1.4.4; Node 22 for Playwright)
+  ├─ checks: bun install --frozen-lockfile → format:check → lint → build
   └─ e2e:    Playwright mocked project, then live project
   │ push to main, CI success
   ▼
-CD (ubuntu-latest, Node 22, Vercel CLI 63.1.2)
-  └─ checkout tested SHA → npm ci → vercel pull → vercel build --prod
+CD (ubuntu-latest, Bun 1.4.4, Vercel CLI 63.1.2)
+  └─ checkout tested SHA → bun install --frozen-lockfile → vercel pull → vercel build --prod
      → confirm SHA is still origin/main → vercel deploy --prebuilt --prod
   ▼
 Vercel project "wetrip"
@@ -72,18 +72,18 @@ Vercel holds no database, queue, cron or object storage. The only scheduled back
 
 The project is linked by IDs, not by a committed `.vercel/` directory:
 
-| Setting                             | Value                                                           |
-| ----------------------------------- | --------------------------------------------------------------- |
-| Project name                        | `wetrip`                                                        |
-| Project ID                          | `prj_jzBF2zUnIDyhXQzrz87o239c9IaQ` (also in `cd.yml`)           |
-| Org ID                              | `team_qxSt8IYPnfIh6WNbpzI2nMBq` (also in `cd.yml`)              |
-| Framework preset                    | Vite (dashboard setting; not pinned in `vercel.json`)           |
-| Build command                       | `npm run build` → `vite build`                                  |
-| Output directory                    | `dist`                                                          |
-| Node version                        | Not pinned in the repo (`engines`, `.nvmrc` absent); CI uses 22 |
-| Function runtime                    | Node.js (the handler uses `req`/`res` and `Buffer`; not Edge)   |
-| Function region / memory / duration | Not configured — Vercel project/plan defaults                   |
-| Domains / TLS                       | Vercel-managed; custom domain not recorded                      |
+| Setting                             | Value                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| Project name                        | `wetrip`                                                                    |
+| Project ID                          | `prj_jzBF2zUnIDyhXQzrz87o239c9IaQ` (also in `cd.yml`)                       |
+| Org ID                              | `team_qxSt8IYPnfIh6WNbpzI2nMBq` (also in `cd.yml`)                          |
+| Framework preset                    | Vite (dashboard setting; not pinned in `vercel.json`)                       |
+| Build command                       | `bun run build` → `vite build` (under Bun)                                  |
+| Output directory                    | `dist`                                                                      |
+| Toolchain                           | Bun 1.4.4 for installs, format, lint and build; Node 22 for Playwright only |
+| Function runtime                    | Node.js (the handler uses `req`/`res` and `Buffer`; not Edge)               |
+| Function region / memory / duration | Not configured — Vercel project/plan defaults                               |
+| Domains / TLS                       | Vercel-managed; custom domain not recorded                                  |
 
 `vercel.json` contains rewrites only:
 
@@ -131,7 +131,7 @@ Operational limits that follow:
 | -------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `WETRIP_SERVER_KEY`                          | Vercel project env (Production; add Preview/Development if previews are used) | Added by `api/proxy.js` to every composite call. One value for all six modules. Must match each module's `WETRIP_SERVER_KEY` site property. |
 | `WETRIP_SERVER_KEY`                          | GitHub Actions secret                                                         | Supplied to Playwright so the Vite proxy can call the sandbox.                                                                              |
-| `WETRIP_SERVER_KEY`                          | Local `.env.local`                                                            | Same value for `npm run dev`, `dev:https`, Playwright and the test scripts.                                                                 |
+| `WETRIP_SERVER_KEY`                          | Local `.env.local`                                                            | Same value for `bun run dev`, `dev:https`, Playwright and the test scripts.                                                                 |
 | `VERCEL_TOKEN`                               | GitHub Actions secret `VERCEL_TOKEN`                                          | Used by `vercel pull`, `build` and `deploy`. Not a runtime variable.                                                                        |
 | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`         | Hardcoded in `cd.yml`                                                         | Link the CLI to the project. Not secrets.                                                                                                   |
 | `ATOMIC_TEST_*`, `MERCHANT_ACCOUNT_ID`, etc. | Local `.env.local` only                                                       | Inputs for `scripts/test-atomic.mjs`, `test-composite.mjs`, `test-trip.mjs`. `.env.test.example` is stale.                                  |
@@ -166,15 +166,17 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Triggers: e
 
 | Stage             | What runs                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `checks` (15 min) | `npm ci` → `npm run format:check` → `npm run lint` → `npm run build`                                             |
+| `checks` (15 min) | `bun install --frozen-lockfile` → `bun run format:check` → `bun run lint` → `bun run build`                      |
 | `e2e` (20 min)    | Reusable [`e2e-tests.yml`](../.github/workflows/e2e-tests.yml), skipped for fork PRs because they get no secrets |
 
 The E2E workflow:
 
-1. Installs Node 22, `npm ci`, caches `~/.cache/ms-playwright`.
+1. Installs Bun 1.4.4 and Node 22, runs `bun install --frozen-lockfile`, caches `~/.cache/ms-playwright`.
 2. Installs Chromium with `npx playwright install --with-deps chromium`.
-3. Runs `npm run test:e2e`, which is `playwright test --project=mocked` followed by `playwright test --project=live --workers=1`.
+3. Runs `bun run test:e2e`, which is `playwright test --project=mocked` followed by `playwright test --project=live --workers=1`.
 4. Uploads `test-results/` on failure (7-day retention).
+
+Playwright runs on Node.js and is the only Node-only tool in the pipeline; Bun manages dependencies and runs the package scripts.
 
 Live runs share one sandbox, so the workflow is serialized with `concurrency: group: e2e-live-sandbox`. Mocked specs run fully parallel; the `live` project matches only `family.spec.js` and `smartfx-api.spec.js` and runs with one worker.
 
@@ -198,11 +200,11 @@ Guard conditions (all must hold):
 Steps:
 
 1. Checkout the exact SHA that CI tested.
-2. `npm ci`.
-3. `npx vercel@63.1.2 pull --yes --environment=production` with `VERCEL_TOKEN`.
-4. `npx vercel@63.1.2 build --prod` on the GitHub runner.
+2. `bun install --frozen-lockfile`.
+3. `bunx vercel@63.1.2 pull --yes --environment=production` with `VERCEL_TOKEN`.
+4. `bunx vercel@63.1.2 build --prod` on the GitHub runner.
 5. Fetch `origin/main` and fail unless it still equals the CI-tested SHA.
-6. `npx vercel@63.1.2 deploy --prebuilt --prod`.
+6. `bunx vercel@63.1.2 deploy --prebuilt --prod`.
 
 Properties:
 
@@ -233,9 +235,9 @@ There is no `workflow_dispatch` on CD. Options:
 - Or run the CLI locally with a `VERCEL_TOKEN`:
 
 ```bash
-npx vercel@63.1.2 pull --yes --environment=production
-npx vercel@63.1.2 build --prod
-npx vercel@63.1.2 deploy --prebuilt --prod
+bunx vercel@63.1.2 pull --yes --environment=production
+bunx vercel@63.1.2 build --prod
+bunx vercel@63.1.2 deploy --prebuilt --prod
 ```
 
 The CLI path bypasses the CI gate; use it only when the tested SHA is current `main`.
@@ -260,46 +262,48 @@ The OutSystems backend is deployed from Service Studio or the Model API, separat
 
 ```bash
 cd WeTrip
-npm install
+bun install
 cp .env.example .env.local     # then fill WETRIP_SERVER_KEY
-npm run dev                    # http://localhost:5173
+bun run dev                    # http://localhost:5173
 ```
+
+Bun 1.4+ is the package manager and runs the app tooling. Node 22 is only needed for Playwright.
 
 The Vite proxy forwards `/api/family`, `/api/fx`, `/api/budget`, `/api/trip`, `/api/insurance` and `/scantopay` to the same OutSystems host as production, adding the key from `.env.local`. The browser only ever sees same-origin paths, so there is no CORS.
 
 Scan-to-Pay needs the camera, which requires HTTPS or localhost:
 
 ```bash
-npm run dev:https              # HTTPS + LAN URL for a phone
+bun run dev:https              # HTTPS + LAN URL for a phone
 ```
 
 `@vitejs/plugin-basic-ssl` uses a self-signed certificate; accept the warning on the phone.
 
-`npm run preview` serves the built `dist/` and inherits the same proxy config. It is not a Vercel emulator: it does not run `api/proxy.js`, and it does not reproduce Vercel rewrites or function limits.
+`bun run preview` serves the built `dist/` and inherits the same proxy config. It is not a Vercel emulator: it does not run `api/proxy.js`, and it does not reproduce Vercel rewrites or function limits.
 
 Useful checks before pushing:
 
 ```bash
-npm run format:check
-npm run lint
-npm run build
+bun run format:check
+bun run lint
+bun run build
 ```
 
 ---
 
 ## 9. Testing and verification
 
-Playwright starts a production build served by `vite preview` on port 5199 (`npm run build && npx vite preview --port 5199`). It reuses an existing server on that port if one is running.
+Playwright starts a production build served by `vite preview` on port 5199 (`bun run build && bun --bun vite preview --port 5199`). It reuses an existing server on that port if one is running.
 
 | Command                                          | Scope                                             | Writes to the sandbox?                        |
 | ------------------------------------------------ | ------------------------------------------------- | --------------------------------------------- |
-| `npm run test:mocked` / `npm run test:ui:mocked` | Mocked browser specs, parallel                    | No                                            |
-| `npm run test:ui`                                | `family.spec.js` live, read-only                  | No (reads)                                    |
-| `npm run test:smartfx`                           | `smartfx-api.spec.js` live contract test          | Yes: trips, locks, a cancellation and a close |
-| `npm run test:e2e`                               | Mocked project, then live project with one worker | Yes (live part)                               |
-| `npm run test:atomic`                            | `scripts/test-atomic.mjs`, Family atomic          | Yes: synthetic links/rows                     |
-| `npm run test:composite`                         | `scripts/test-composite.mjs`, Family composite    | Yes: moves sandbox money                      |
-| `npm run test:trip`                              | `scripts/test-trip.mjs`, Trip composite           | Yes: moves sandbox money                      |
+| `bun run test:mocked` / `bun run test:ui:mocked` | Mocked browser specs, parallel                    | No                                            |
+| `bun run test:ui`                                | `family.spec.js` live, read-only                  | No (reads)                                    |
+| `bun run test:smartfx`                           | `smartfx-api.spec.js` live contract test          | Yes: trips, locks, a cancellation and a close |
+| `bun run test:e2e`                               | Mocked project, then live project with one worker | Yes (live part)                               |
+| `bun run test:atomic`                            | `scripts/test-atomic.mjs`, Family atomic          | Yes: synthetic links/rows                     |
+| `bun run test:composite`                         | `scripts/test-composite.mjs`, Family composite    | Yes: moves sandbox money                      |
+| `bun run test:trip`                              | `scripts/test-trip.mjs`, Trip composite           | Yes: moves sandbox money                      |
 
 Guidelines:
 
@@ -366,7 +370,7 @@ A frontend rollback does not revert OutSystems publishes, database rows, site pr
 | Parent family page fails with `SMUtBank error 400: Account record not found` | A pending link has no `ChildAccountId`; `GetChildren` still calls the balance API | Known backend gap; guard belongs in the composite                                |
 | Deploy succeeds but production is old                                        | Vercel Git integration may have deployed independently, or CD was skipped         | Check the deployment's commit SHA in Vercel                                      |
 | CI is green but production API calls fail                                    | CD has no smoke test; production env can differ from CI                           | Check Vercel env and function logs                                               |
-| Camera does not open                                                         | Insecure context (plain HTTP on a LAN IP)                                         | Use `npm run dev:https`, or localhost                                            |
+| Camera does not open                                                         | Insecure context (plain HTTP on a LAN IP)                                         | Use `bun run dev:https`, or localhost                                            |
 | Live Playwright fails only in CI                                             | Sandbox contention, missing key secret, or an OutSystems/Vercel key mismatch      | Re-run; verify the `WETRIP_SERVER_KEY` value and `concurrency: e2e-live-sandbox` |
 
 ---

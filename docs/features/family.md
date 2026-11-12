@@ -82,8 +82,8 @@ Mutations invalidate the keys they affect: linking a child refreshes children/re
 - `tests/family-mocked.spec.js` — full parent/child UI, approvals, link-a-child, budgets, rules, insights, forms.
 - `tests/family.spec.js` — live read-only UI against the sandbox.
 - `tests/insights.spec.js`, `tests/approvals-chart.spec.js` — pure helpers.
-- `npm run test:atomic` — Family_Atomic CRUD with synthetic `ATOMIC_TEST_*` identities.
-- `npm run test:composite` — Family_Composite; moves sandbox money.
+- `bun run test:atomic` — Family_Atomic CRUD with synthetic `ATOMIC_TEST_*` identities.
+- `bun run test:composite` — Family_Composite; moves sandbox money.
 
 ## Known issues
 

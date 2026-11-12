@@ -2,34 +2,40 @@
 
 A student travel-fintech prototype for the IS444 group project: family accounts, SmartFX trip forwards, trip budgets, travel insurance and Scan-to-Pay. The React SPA in this repository talks to six OutSystems composite services layered over the SMU tBank (`SMUtBank`) sandbox.
 
-React 19 · Vite 8 · TanStack Router · TanStack Query · plain `fetch` · no UI kit.
+React 19 · Vite 8 · TanStack Router · TanStack Query · plain `fetch` · no UI kit · Bun 1.4+.
+
+## Prerequisites
+
+- [Bun](https://bun.sh) 1.4+ — installs dependencies and runs the app tooling.
+- [Node.js](https://nodejs.org) 22 — only for Playwright, which runs the browser and API suites.
+- `WETRIP_SERVER_KEY` for the sandbox composites, stored in `.env.local` (see Quick start).
 
 ## Quick start
 
 ```bash
-npm install
+bun install
 cp .env.example .env.local     # then set WETRIP_SERVER_KEY
-npm run dev                    # http://localhost:5173
+bun run dev                    # http://localhost:5173
 ```
 
 The dev server proxies every API path to OutSystems and adds the key server-side, so there is no CORS and no secret in the browser bundle.
 
-Open `/login`, enter a demo customer's `CustomerId`, and the app looks up their SGD deposit account and stores a stub session. For the Scan-to-Pay camera, use `npm run dev:https` and open the LAN URL on a phone.
+Open `/login`, enter a demo customer's `CustomerId`, and the app looks up their SGD deposit account and stores a stub session. For the Scan-to-Pay camera, use `bun run dev:https` and open the LAN URL on a phone.
 
 ## Scripts
 
 | Command                                                                 | What                                                      |
 | ----------------------------------------------------------------------- | --------------------------------------------------------- |
-| `npm run dev`                                                           | Vite dev server with the API proxy                        |
-| `npm run dev:https`                                                     | HTTPS + LAN URL for the phone camera                      |
-| `npm run build`                                                         | Production build into `dist/`                             |
-| `npm run lint` / `npm run format` / `npm run format:check`              | oxlint / oxfmt                                            |
-| `npm run test:mocked` / `npm run test:ui:mocked`                        | Mocked browser specs, no backend                          |
-| `npm run test:ui`                                                       | Live read-only Family UI suite                            |
-| `npm run test:e2e`                                                      | All specs (mocked, then live; live writes to the sandbox) |
-| `npm run test:atomic` / `test:composite` / `test:trip` / `test:smartfx` | API contract suites; several write to the shared sandbox  |
+| `bun run dev`                                                           | Vite dev server with the API proxy                        |
+| `bun run dev:https`                                                     | HTTPS + LAN URL for the phone camera                      |
+| `bun run build`                                                         | Production build into `dist/`                             |
+| `bun run lint` / `bun run format` / `bun run format:check`              | oxlint / oxfmt                                            |
+| `bun run test:mocked` / `bun run test:ui:mocked`                        | Mocked browser specs, no backend                          |
+| `bun run test:ui`                                                       | Live read-only Family UI suite                            |
+| `bun run test:e2e`                                                      | All specs (mocked, then live; live writes to the sandbox) |
+| `bun run test:atomic` / `test:composite` / `test:trip` / `test:smartfx` | API contract suites; several write to the shared sandbox  |
 
-Run `npm run format:check`, `npm run lint` and `npm run build` before pushing. Live suites are serialized because they share one sandbox.
+Run `bun run format:check`, `bun run lint` and `bun run build` before pushing. Live suites are serialized because they share one sandbox.
 
 ## Docs
 

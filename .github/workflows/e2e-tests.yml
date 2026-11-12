@@ -24,21 +24,25 @@ jobs:
       WETRIP_SERVER_KEY: ${{ secrets.WETRIP_SERVER_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      # Playwright runs on Node.js; Bun only installs dependencies and runs the
+      # package scripts.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: bun install --frozen-lockfile
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
       - run: npx playwright install --with-deps chromium
       # Runs both the read-only UI suite and the SmartFX API suite. The latter
       # writes trips to the sandbox; the job is serialized to keep runs apart.
-      - run: npm run test:e2e
+      - run: bun run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
