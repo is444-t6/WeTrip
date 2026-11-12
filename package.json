@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "test:atomic": "node --env-file=.env.local scripts/test-atomic.mjs",
     "test:composite": "node --env-file=.env.local scripts/test-composite.mjs",
+    "test:trip": "node --env-file=.env.local scripts/test-trip.mjs",
     "test:smartfx": "playwright test tests/smartfx-api.spec.js",
     "test:ui": "playwright test tests/family.spec.js",
     "test:ui:mocked": "playwright test tests/family-mocked.spec.js",
