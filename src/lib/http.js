@@ -56,7 +56,9 @@ export function createClient({
       // Every SmartFX REST method declares apiKey as a URL parameter — GET and
       // POST alike — so it always rides in the query string. sessionToken has
       // no server-side counterpart yet and is ignored.
-      const q = new URLSearchParams({ apiKey, sessionToken: token })
+      const q = new URLSearchParams(
+        apiKey ? { apiKey, sessionToken: token } : { sessionToken: token },
+      )
       url += (path.includes('?') ? '&' : '?') + q.toString()
     }
 
@@ -71,7 +73,7 @@ export function createClient({
             ? { 'Content-Type': 'application/json' }
             : {
                 'Content-Type': 'application/json',
-                'X-Contacts-Key': apiKey,
+                ...(apiKey ? { 'X-Contacts-Key': apiKey } : {}),
                 'X-Session-Token': token,
               },
       body: payload ? JSON.stringify(payload) : undefined,

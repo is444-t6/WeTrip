@@ -55,7 +55,7 @@ src/index.css           design tokens and most app CSS; Scan-to-Pay layout lives
                         src/features/scantopay/scantopay.css
 ```
 
-Every backend path is same-origin, proxied in dev by `vite.config.js` and in production by `vercel.json`:
+Every backend path is same-origin. In dev `vite.config.js` proxies it; in production `vercel.json` rewrites it to the `api/proxy.js` function. Both use the map in `api/_services.js` and add the composite key on the server, so the browser never holds one:
 
 | App path         | OutSystems module / REST endpoint                            |
 | ---------------- | ------------------------------------------------------------ |
@@ -66,7 +66,7 @@ Every backend path is same-origin, proxied in dev by `vite.config.js` and in pro
 | `/api/trip`      | `WeTrip_Trip_Composite/rest/Trip`                            |
 | `/scantopay`     | `ScanToPay/rest/ScanToPay` (separate OutSystems environment) |
 
-A base URL change means editing `services.js`, `vite.config.js` and `vercel.json` together.
+A new service means an entry in `api/_services.js`, a base in `src/lib/services.js`, and a rewrite in `vercel.json`.
 
 To add or change a screen:
 
@@ -107,10 +107,10 @@ To add or change a screen:
 
 ## Environment and secrets
 
-- `.env.local` is gitignored and holds real composite API keys. Read it through Vite env vars; never echo, copy or commit its contents.
+- `.env.local` is gitignored and holds real composite API keys. Only server-side code reads them (`vite.config.js`, `api/proxy.js`, the test scripts); never echo, copy or commit its contents.
 - `.env.example` covers the app's `VITE_*` variables (it omits `VITE_INSURANCE_API_KEY`, which `services.js` reads). `test:atomic` and `test:composite` read their own variables from `.env.local`; see the headers of `scripts/test-atomic.mjs` and `scripts/test-composite.mjs`. `.env.test.example` is out of date.
 - Playwright takes `SMARTFX_API_KEY` from the environment, else maps `VITE_FX_API_KEY` from the environment or `.env.local`.
-- `VITE_*` values are bundled into the browser. This is a class sandbox, not production authentication; do not describe the key as secret in user-facing code.
+- Browser code must never read `import.meta.env`: Vite inlines every `VITE_*` value it can reach, keys included. The keys keep their `VITE_*` names for compatibility but are server-side only; Vercel needs them in the project environment for `api/proxy.js`. The session token is still an unsigned stub, so this is demo-grade, not production authentication.
 
 ## Done
 

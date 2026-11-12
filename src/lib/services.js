@@ -1,51 +1,41 @@
 import { createClient } from './http'
 
 // Every backend service the app talks to, configured in one place: where it lives,
-// which key it gets, how it wants authentication sent, and whether its JSON is
-// normalised. A feature's api.js asks for its service by name instead of building
+// how it wants the session sent, and whether its JSON is normalised. A feature's api.js asks for its service by name instead of building
 // its own client, so changing a base URL or auth style is a one-line edit here.
 //
 // Every base is a same-origin path (/api/<name>): Vite forwards it in dev
 // (vite.config.js) and Vercel rewrites it in production (vercel.json), so the
-// browser never calls OutSystems directly. A VITE_*_API_BASE variable overrides one.
-// Outside Vite (the plain-Node unit tests import helpers from api modules) there is no env.
-const env = import.meta.env ?? {}
-
-// SmartFX, Budget and Insurance fall back to the Family key when they have none of their own.
-const familyKey = env.VITE_FAMILY_API_KEY
-
+// browser never calls OutSystems directly. Nothing here reads import.meta.env:
+// touching it would inline every VITE_* value, keys included, into the bundle.
+// Composite keys are added by that proxy (api/proxy.js, vite.config.js), never here,
+// so no key ships in the browser bundle.
 export const SERVICES = {
   family: {
-    base: env.VITE_FAMILY_API_BASE || '/api/family',
-    apiKey: familyKey,
+    base: '/api/family',
     normalize: true,
   },
-  // SmartFX cannot read request headers, so it takes the key and token as query/body fields.
+  // SmartFX cannot read request headers, so the token rides in the query (the proxy adds the key).
   fx: {
-    base: env.VITE_FX_API_BASE || '/api/fx',
-    apiKey: env.VITE_FX_API_KEY || familyKey,
+    base: '/api/fx',
     auth: 'params',
   },
   budget: {
-    base: env.VITE_BUDGET_API_BASE || '/api/budget',
-    apiKey: env.VITE_BUDGET_API_KEY || familyKey,
+    base: '/api/budget',
     normalize: true,
   },
   insurance: {
-    base: env.VITE_INSURANCE_API_BASE || '/api/insurance',
-    apiKey: env.VITE_INSURANCE_API_KEY || familyKey,
+    base: '/api/insurance',
     normalize: true,
   },
-  // Cross-feature trip flows (plan, overview, pay on a trip, close). Same key as Family.
+  // Cross-feature trip flows (plan, overview, pay on a trip, close).
   trip: {
-    base: env.VITE_TRIP_API_BASE || '/api/trip',
-    apiKey: env.VITE_TRIP_API_KEY || familyKey,
+    base: '/api/trip',
     normalize: true,
   },
-  // Scan to Pay lives in a separate OutSystems environment, with its own key.
+  // Scan to Pay has its own key, added by the proxy.
   scantopay: {
-    base: env.VITE_SCANTOPAY_API_BASE || '/scantopay',
-    apiKey: env.VITE_SCANTOPAY_KEY,
+    base: '/scantopay',
     normalize: true,
   },
 }
