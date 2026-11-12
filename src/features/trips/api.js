@@ -13,7 +13,9 @@ export const TripApi = {
   getTripMiles: (tripId) => call('GET', `GetTripMiles${qs({ TripId: tripId })}`),
   // Ledger write (SourceId 5); requestId makes a repeat a no-op.
   addFixedCost: (request) => call('POST', 'AddFixedCost', request),
-  closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
+  // carryToTripId moves the leftover to that trip's pot instead of valuing it; absent = just close.
+  closeTrip: (tripId, carryToTripId) =>
+    call('POST', `CloseTrip${qs({ TripId: tripId, CarryToTripId: carryToTripId })}`),
   // Read-only, parent only: leftover foreign money at today's rate vs the locked cost.
   getCloseOptions: (tripId) => call('GET', `GetCloseOptions${qs({ TripId: tripId })}`),
   // The caller's miles balance; the customer comes from the session token.
