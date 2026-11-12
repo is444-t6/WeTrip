@@ -20,7 +20,6 @@ const PARENT = {
   id: process.env.PARENT_CUSTOMER_ID ?? '0000002169',
   account: process.env.PARENT_ACCOUNT_ID ?? '0000004554',
 }
-const CHILD = { id: process.env.CHILD_CUSTOMER_ID ?? '0000002828' }
 const FAMILY_LINK_ID = Number(process.env.FAMILY_LINK_ID ?? 3) // the active demo link (parent 2169, child 2828)
 const CURRENCY = process.env.SMARTFX_CURRENCY ?? 'JPY'
 const TENOR = process.env.SMARTFX_TENOR ?? '3M'
