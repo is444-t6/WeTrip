@@ -157,15 +157,24 @@ test.describe.serial('SmartFX API', () => {
     expect(saved.Category).toBe('Food')
   })
 
-  test('CloseTrip converts the pot back at the given rate', async ({ request }) => {
-    const returnRate = Number(quote.spotRate)
-    const res = await request.post(withAuth(`CloseTrip?tripId=${trip.Id}&rate=${returnRate}`))
+  test('CloseTrip returns only the unspent pot, at the server spot rate, not the rate sent', async ({
+    request,
+  }) => {
+    // The client's rate is ignored: an absurd one must not change the result.
+    const res = await request.post(withAuth(`CloseTrip?tripId=${trip.Id}&rate=999999`))
     expect(res.status()).toBe(200)
 
     const body = await res.json()
     expect(body.Status).toBe('Completed')
-    expect(Number(body.ReturnedForeign)).toBe(Number(body.LockedForeign))
-    expect(near(body.ReturnedSgd, Number(body.LockedForeign) / returnRate, 0.01)).toBeTruthy()
+    // 20 was spent in the TripSpend test, so only the rest comes back.
+    expect(near(body.ReturnedForeign, Number(body.LockedForeign) - 20, 0.001)).toBeTruthy()
+    const spot = Number(body.ReturnRate)
+    expect(spot).toBeGreaterThan(0)
+    expect(near(spot, Number(quote.spotRate), 0.05)).toBeTruthy()
+    expect(near(body.ReturnedSgd, Number(body.ReturnedForeign) / spot, 0.01)).toBeTruthy()
+
+    const again = await request.post(withAuth(`CloseTrip?tripId=${trip.Id}&rate=1`))
+    expect(again.ok()).toBeFalsy()
   })
 
   test('CheckRatesNow reports how many active trips it checked', async ({ request }) => {

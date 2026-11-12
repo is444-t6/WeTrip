@@ -31,3 +31,12 @@ export function savePurchaseResult(result) {
 export function clearPurchaseResult() {
   sessionStorage.removeItem(PURCHASE_KEY)
 }
+
+// The trip page stores { tripId, startDate, endDate } before opening insurance. Only
+// trust it when the checkout still covers exactly those dates.
+export function tripIdFor(stored, trip) {
+  if (!stored?.tripId || !trip) return 0
+  return stored.startDate === trip.startDate && stored.endDate === trip.endDate
+    ? Number(stored.tripId)
+    : 0
+}

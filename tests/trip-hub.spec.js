@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-// The one-trip overview (/trips/:id), against a faked backend for every service it
-// reads: SmartFX (the trip), Budget, Insurance and Family.
+// The one-trip overview (/trips/:id), against a faked backend. The trip, its
+// money, budget and trip-linked policies come from one call, Trip.GetTripOverview;
+// Family and Insurance (for older, date-matched policies) are read as before.
 const PARENT = '0000002169:0000004554:'
 const CHILD = '0000002828:0000006064:'
 const as = (page, v) => page.addInitScript((x) => sessionStorage.setItem('wetrip_session', x), v)
@@ -24,20 +25,17 @@ const TRIP = {
   LockedForeign: 48000,
 }
 const BUDGET = {
-  Summary: {
-    TripId: 12,
-    TotalLimit: 600,
-    TotalSpent: 150,
-    TotalRemaining: 450,
-    Lines: [
-      { Category: 'Food', Limit: 300, Spent: 150, AlertLevel: 'OK' },
-      { Category: 'Transport', Limit: 300, Spent: 0, AlertLevel: 'OK' },
-    ],
-  },
-  Expenses: [],
+  TripId: 12,
+  TotalLimit: 600,
+  TotalSpent: 150,
+  TotalRemaining: 450,
+  Lines: [
+    { CategoryName: 'Food', LimitAmount: 300, SpentAmount: 150, AlertLevel: 'OK' },
+    { CategoryName: 'Transport', LimitAmount: 300, SpentAmount: 0, AlertLevel: 'OK' },
+  ],
 }
-const EMPTY_BUDGET = { Summary: { TripId: 12 } }
-const POLICY = {
+const LINKED_POLICY = { Id: 7, TripId: 12, Status: 'Confirmed', PolicyNumber: '7' }
+const DATED_POLICY = {
   PurchaseId: 5,
   CoverageStart: '2027-03-30',
   CoverageEnd: '2027-04-15',
@@ -47,14 +45,26 @@ const POLICY = {
 const CHILDREN = [
   { familyLinkId: 3, nickname: 'Jamie', status: 'Active', balance: 250.5, budget: 200, spent: 50 },
 ]
+const overview = (over = {}) => ({
+  Trip: TRIP,
+  Locks: [],
+  Spends: [{ Id: 1, TripId: 12, Amount: 10000 }],
+  SpentForeign: 10000,
+  RemainingForeign: 38000,
+  LockedRate: 120,
+  HasBudget: true,
+  Budget: BUDGET,
+  Policies: [LINKED_POLICY],
+  CallerRole: 'Parent',
+  ...over,
+})
 
-// Each service answers by name; override one to change what it says.
+// Each service answers by method name; override one to change what it says.
 async function mockApi(page, over = {}) {
   const handlers = {
     GetMyFamilyRole: () => ({ role: 'Parent', FamilyLinkId: 3 }),
-    GetTrip: () => ({ Trip: TRIP, Locks: [], Spends: [{ Id: 1, TripId: 12, Amount: 10000 }] }),
-    GetDashboard: () => BUDGET,
-    MyInsurance: () => [POLICY],
+    GetTripOverview: () => overview(),
+    MyInsurance: () => [],
     GetChildren: () => CHILDREN,
     GetChildDashboard: () => ({ Nickname: 'Jamie', Balance: 250.5, Budget: 200, Spent: 50 }),
     ...over,
@@ -65,7 +75,7 @@ async function mockApi(page, over = {}) {
       const name = new URL(route.request().url()).pathname.split('/').pop()
       const h = handlers[name]
       if (!h) return route.fulfill(json({ Errors: [`unmocked ${name}`] }, 500))
-      const out = h()
+      const out = h(route)
       return out && out.__status
         ? route.fulfill(json(out.body, out.__status))
         : route.fulfill(json(out))
@@ -83,7 +93,10 @@ test('the trip header and all four sections show their own data', async ({ page 
   await expect(page.getByText('2027-04-01 → 2027-04-14')).toBeVisible()
 
   await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
-  await expect(section(page, 'Money')).toContainText('JPY 48000.00 locked, JPY 10000.00 spent')
+  await expect(section(page, 'Money')).toContainText(
+    'JPY 38000.00 left of JPY 48000.00 (JPY 10000.00 spent)',
+  )
+  await expect(section(page, 'Money')).toContainText('Locked at 120.0000 JPY per SGD')
   await expect(section(page, 'Budget')).toContainText('SGD 150.00 spent of SGD 600.00')
   await expect(
     section(page, 'Money').getByRole('link', { name: 'Manage FX & locks' }),
@@ -92,19 +105,20 @@ test('the trip header and all four sections show their own data', async ({ page 
     'href',
     '/budget/12',
   )
-  await expect(page.locator('.page').getByRole('link', { name: 'Pay', exact: true })).toHaveCount(0)
-  await expect(section(page, 'Insurance')).toContainText('1 policy covers these dates, for 2')
+  await expect(page.getByRole('link', { name: 'Pay on this trip' })).toHaveCount(0)
+  await expect(section(page, 'Insurance')).toContainText('1 policy covers this trip')
   await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
   await expect(section(page, 'Family')).toContainText('SGD 50.00 spent of SGD 200.00 this period')
 })
 
-test('Budget is read with the SmartFX trip id', async ({ page }) => {
+test('the overview is read with the trip id from the URL', async ({ page }) => {
   await as(page, PARENT)
   const seen = []
-  await mockApi(page, {})
-  await page.route('**/api/budget/GetDashboard*', (route) => {
-    seen.push(new URL(route.request().url()).searchParams.get('TripId'))
-    return route.fulfill(json(BUDGET))
+  await mockApi(page, {
+    GetTripOverview: (route) => {
+      seen.push(new URL(route.request().url()).searchParams.get('TripId'))
+      return overview()
+    },
   })
   await page.goto('/trips/12')
   await expect(section(page, 'Budget')).toContainText('spent of')
@@ -113,17 +127,30 @@ test('Budget is read with the SmartFX trip id', async ({ page }) => {
 
 test('a trip with no budget offers to set one', async ({ page }) => {
   await as(page, PARENT)
-  await mockApi(page, { GetDashboard: () => EMPTY_BUDGET })
+  await mockApi(page, { GetTripOverview: () => overview({ HasBudget: false, Budget: {} }) })
   await page.goto('/trips/12')
   await expect(section(page, 'Budget')).toContainText('No category budget yet')
   await section(page, 'Budget').getByRole('link', { name: 'Set a budget' }).click()
   await expect(page).toHaveURL(/\/budget\/12$/)
 })
 
+test('older policies without a trip id still count when their dates overlap', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTripOverview: () => overview({ Policies: [] }),
+    MyInsurance: () => [DATED_POLICY],
+  })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Insurance')).toContainText('1 policy covers this trip')
+})
+
 test('a policy that does not overlap the trip dates does not count as cover', async ({ page }) => {
   await as(page, PARENT)
   await mockApi(page, {
-    MyInsurance: () => [{ ...POLICY, CoverageStart: '2027-06-01', CoverageEnd: '2027-06-05' }],
+    GetTripOverview: () => overview({ Policies: [] }),
+    MyInsurance: () => [
+      { ...DATED_POLICY, CoverageStart: '2027-06-01', CoverageEnd: '2027-06-05' },
+    ],
   })
   await page.goto('/trips/12')
   await expect(section(page, 'Insurance')).toContainText('No policy covers these dates yet')
@@ -131,43 +158,73 @@ test('a policy that does not overlap the trip dates does not count as cover', as
 
 test('getting cover starts the insurance flow with this trip filled in', async ({ page }) => {
   await as(page, PARENT)
-  await mockApi(page, { MyInsurance: () => [] })
+  await mockApi(page, { GetTripOverview: () => overview({ Policies: [] }) })
   await page.goto('/trips/12')
   await section(page, 'Insurance').getByRole('button', { name: 'Get cover for this trip' }).click()
 
   await expect(page).toHaveURL(/\/insurance(\?|$)/)
   await expect(page.getByLabel('Destination', { exact: true })).toHaveValue('Kyoto')
   await expect(page.getByLabel(/country code/i)).toHaveValue('JP')
+  const stored = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem('wetrip.insurance.trip')),
+  )
+  expect(stored).toMatchObject({ tripId: 12, startDate: '2027-04-01', endDate: '2027-04-14' })
 })
 
-test('one service being down leaves the other sections working', async ({ page }) => {
+test('the overview failing shows the error instead of an empty page', async ({ page }) => {
   await as(page, PARENT)
   await mockApi(page, {
-    GetDashboard: () => ({ __status: 500, body: { Errors: ['budget down'] } }),
-    MyInsurance: () => ({ __status: 500, body: { Errors: ['insurance down'] } }),
+    GetTripOverview: () => ({
+      __status: 500,
+      body: { Errors: ['This trip belongs to another family'] },
+    }),
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Budget')).toContainText('could not be loaded')
-  await expect(section(page, 'Insurance')).toContainText('could not be loaded')
-  await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
-  await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
+  await expect(page.getByText('This trip belongs to another family')).toBeVisible()
 })
 
-test('a child sees their own money, with no parent actions', async ({ page }) => {
+test('a child can pay on the trip, with no parent actions', async ({ page }) => {
   await as(page, CHILD)
   await mockApi(page, {
     GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }),
-    MyInsurance: () => [],
-    GetDashboard: () => EMPTY_BUDGET,
+    GetTripOverview: () => overview({ CallerRole: 'Child', HasBudget: false, Policies: [] }),
   })
   await page.goto('/trips/12')
   await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
-  await expect(section(page, 'Family').getByRole('link', { name: 'Open Family' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Get cover for this trip' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Set a budget' })).toHaveCount(0)
-  await expect(
-    page.locator('.page').getByRole('link', { name: 'Pay', exact: true }),
-  ).toHaveAttribute('href', '/pay')
+  await expect(page.getByLabel('Close trip', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Pay on this trip' })).toHaveAttribute(
+    'href',
+    '/pay?tripId=12',
+  )
+})
+
+test('closing takes a confirm, then shows what locking saved', async ({ page }) => {
+  await as(page, PARENT)
+  const calls = []
+  await mockApi(page, {
+    CloseTrip: (route) => {
+      calls.push(new URL(route.request().url()).searchParams.get('TripId'))
+      return {
+        Trip: { ...TRIP, Status: 'Completed' },
+        SpentForeign: 10000,
+        ReturnedForeign: 38000,
+        SpotRate: 119,
+        LockedRate: 120,
+        ReturnedSgd: 319.33,
+        SavedVsSpotSgd: 0.7,
+      }
+    },
+  })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  expect(calls).toEqual([])
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await expect(card).toContainText('JPY 38000.00 unspent, worth SGD 319.33 today')
+  await expect(card).toContainText('Locking saved SGD 0.70 versus today')
+  expect(calls).toEqual(['12'])
 })
 
 test('signed out, the page offers sign-in', async ({ page }) => {
@@ -188,12 +245,15 @@ test('the SmartFX trip card links to the overview', async ({ page }) => {
 test('foreign amounts keep their cents', async ({ page }) => {
   await as(page, PARENT)
   await mockApi(page, {
-    GetTrip: () => ({
-      Trip: { ...TRIP, LockedForeign: 96675.38 },
-      Locks: [],
-      Spends: [{ Amount: 20000.5 }],
-    }),
+    GetTripOverview: () =>
+      overview({
+        Trip: { ...TRIP, LockedForeign: 96675.38 },
+        SpentForeign: 20000.5,
+        RemainingForeign: 76674.88,
+      }),
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Money')).toContainText('JPY 96675.38 locked, JPY 20000.50 spent')
+  await expect(section(page, 'Money')).toContainText(
+    'JPY 76674.88 left of JPY 96675.38 (JPY 20000.50 spent)',
+  )
 })

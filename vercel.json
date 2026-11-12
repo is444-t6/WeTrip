@@ -2,24 +2,31 @@
   "rewrites": [
     {
       "source": "/api/family/:path*",
-      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Family_Composite/rest/Family/:path*"
+      "destination": "/api/proxy?service=family&path=:path*"
     },
     {
       "source": "/api/fx/:path*",
-      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_SmartFX_Composite/rest/SmartFX/:path*"
+      "destination": "/api/proxy?service=fx&path=:path*"
     },
     {
       "source": "/api/budget/:path*",
-      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Budget_Composite/rest/BudgetComposite/:path*"
+      "destination": "/api/proxy?service=budget&path=:path*"
+    },
+    {
+      "source": "/api/trip/:path*",
+      "destination": "/api/proxy?service=trip&path=:path*"
     },
     {
       "source": "/api/insurance/:path*",
-      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Insurance_Composite/rest/InsuranceAPI/:path*"
+      "destination": "/api/proxy?service=insurance&path=:path*"
     },
     {
       "source": "/scantopay/:path*",
-      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_ScanToPay_Composite/rest/ScanToPay/:path*"
+      "destination": "/api/proxy?service=scantopay&path=:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

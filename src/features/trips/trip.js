@@ -23,3 +23,19 @@ export function policiesCovering(policies, trip) {
     return from && to && from <= end && to >= start
   })
 }
+
+// Merchant QRs are JSON: { merchantCode, amount, currency }. amount 0 = open amount.
+export function parseMerchantQr(text) {
+  try {
+    const qr = JSON.parse(text)
+    const merchantCode = String(qr?.merchantCode ?? qr?.MerchantCode ?? '').trim()
+    if (!merchantCode) return null
+    return {
+      merchantCode,
+      amount: Number(qr.amount ?? qr.Amount ?? 0) || 0,
+      currency: String(qr.currency ?? qr.Currency ?? ''),
+    }
+  } catch {
+    return null
+  }
+}

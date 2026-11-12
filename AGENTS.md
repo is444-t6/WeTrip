@@ -55,7 +55,7 @@ src/index.css           design tokens and most app CSS; Scan-to-Pay layout lives
                         src/features/scantopay/scantopay.css
 ```
 
-Every backend path is same-origin, proxied in dev by `vite.config.js` and in production by `vercel.json`:
+Every backend path is same-origin. In dev `vite.config.js` proxies it; in production `vercel.json` rewrites it to the `api/proxy.js` function. Both use the map in `api/_services.js` and add the composite key on the server, so the browser never holds one:
 
 | App path         | OutSystems module / REST endpoint                            |
 | ---------------- | ------------------------------------------------------------ |
@@ -63,9 +63,10 @@ Every backend path is same-origin, proxied in dev by `vite.config.js` and in pro
 | `/api/fx`        | `WeTrip_SmartFX_Composite/rest/SmartFX`                      |
 | `/api/budget`    | `WeTrip_Budget_Composite/rest/BudgetComposite`               |
 | `/api/insurance` | `WeTrip_Insurance_Composite/rest/InsuranceAPI`               |
+| `/api/trip`      | `WeTrip_Trip_Composite/rest/Trip`                            |
 | `/scantopay`     | `ScanToPay/rest/ScanToPay` (separate OutSystems environment) |
 
-A base URL change means editing `services.js`, `vite.config.js` and `vercel.json` together.
+A new service means an entry in `api/_services.js`, a base in `src/lib/services.js`, and a rewrite in `vercel.json`.
 
 To add or change a screen:
 
@@ -91,24 +92,26 @@ To add or change a screen:
 - **SmartFX:** base is SGD, quote is the trip currency, and every rate is foreign units per 1 SGD. Higher is better; auto-lock fires at `forwardRate >= targetRate`. Supported currencies: USD, EUR, JPY, GBP, CHF. Tenors: 1M, 3M, 6M, 1Y. Only an Active family link can own a trip; the parent funds locks, the child spends from the pot, and closing converts unused foreign balance back.
 - **Family:** roles are `Parent`, `Child`, `Pending` or `None`; only `Active` links count. Parent sets budgets/allowance, tops up, approves or rejects asks, grants extra budget, and can freeze spending or restrict categories.
 - **Budget:** categories and sources live in `src/features/budget/constants.js`. Budgets are keyed by the SmartFX `tripId`. Responses are camelCase but request bodies and query parameters are PascalCase. Budget amounts are SGD by design (`DEFAULT_CURRENCY`); a trip's foreign money lives in SmartFX.
-- **Insurance:** plans → travellers → checkout → policies. Insurance has no foreign key to a SmartFX trip, so `/trips/$tripId` matches policies by date overlap.
+- **Insurance:** plans → travellers → checkout → policies. A purchase started from a trip page sends that trip's `TripId` (only while the dates still match); older policies have none and are matched by date overlap.
 - **Scan-to-Pay:** preview first, then PayNow or PayLater (BNPL). History is per customer. Payment mutations refresh history even on failure, because the bank may have completed after the request died.
-- **Trip hub:** `/trips/$tripId` is a read-only aggregation. The SmartFX trip id is the shared key across Budget and the trip hub.
+- **Trip hub:** `/trips/$tripId` reads `Trip.GetTripOverview` (trip, locks, spends, pot left, SGD budget, trip-linked policies). The child pays from a trip at `/pay?tripId=` through `Trip.PayOnTrip` (one SGD transfer at the trip's locked rate, a `RequestId` per scan, never retried); the parent closes it with `Trip.CloseTrip` (server spot rate, no money moves). New trips are planned with `Trip.PlanTrip`, which derives the child from the family link and sets the SGD category budgets.
 
 ## OutSystems and tBank context
 
 - The course platform is `SMUtBank` ("tBank"), a training core bank. The provided atomic services WeTrip uses are `MarketData` (spot and benchmark rates), `FXForward` (quote, open and list contracts), `Deposit Account` (accounts and balances) and `Payments` (transfers and beneficiaries).
 - WeTrip composites on `smuedu-dev.outsystemsenterprise.com` orchestrate those atomics and own the WeTrip tables. SmartFX is split into `WeTrip_SmartFX_Atomic` (Trip/TripLock/TripSpend CRUD) and `WeTrip_SmartFX_Composite` (orchestration, session checks, an API key that is sent but not enforced, and the five-minute watcher timer).
 - Backend edits happen in Service Studio or through the Model API. When editing an `.oml`, use the `servicestudio-mcp-oml` skill under `../.agents/skills/servicestudio-mcp-oml`. Publishing can still require a manual step.
-- Known backend gaps: the SmartFX API key is sent but not enforced; header auth is unavailable; locks do not book FXForward contracts (manual or timer-driven), and the timer passes an empty `ParentAccountId`; `OpenFXForwardContract` wiring is blocked through the Model API.
+- Layering: atomics own the tables and expose CRUD REST; composites call only atomics and SMUtBank and own no tables. `WeTrip_Trip_Composite` holds the cross-feature flows.
+- Known backend gaps: the SmartFX composite cannot read headers; a lock books a real FXForward contract only for trips that carry `ParentAccountId` and `ForeignAccountId` (trips made by `PlanTrip` do; older ones don't); sandbox forwards never settle, so the trip pot is a ledger and the only money movement is `PayOnTrip`.
 - Family failures to check before assuming a frontend bug: an empty session user, an empty `Status` on newly created links, and swapped `GetDepositAccountBalance` arguments.
 
 ## Environment and secrets
 
-- `.env.local` is gitignored and holds real composite API keys. Read it through Vite env vars; never echo, copy or commit its contents.
-- `.env.example` covers the app's `VITE_*` variables (it omits `VITE_INSURANCE_API_KEY`, which `services.js` reads). `test:atomic` and `test:composite` read their own variables from `.env.local`; see the headers of `scripts/test-atomic.mjs` and `scripts/test-composite.mjs`. `.env.test.example` is out of date.
-- Playwright takes `SMARTFX_API_KEY` from the environment, else maps `VITE_FX_API_KEY` from the environment or `.env.local`.
-- `VITE_*` values are bundled into the browser. This is a class sandbox, not production authentication; do not describe the key as secret in user-facing code.
+- One key, `WETRIP_SERVER_KEY`, is accepted by every WeTrip module (each module's key site property holds the same value) and is added by the proxy; `VITE_FAMILY_API_KEY` is accepted as its old name.
+- `.env.local` is gitignored and holds real composite API keys. Only server-side code reads them (`vite.config.js`, `api/proxy.js`, the test scripts); never echo, copy or commit its contents.
+- `.env.example` lists `WETRIP_SERVER_KEY`, the only app key. `test:atomic` and `test:composite` read their own variables from `.env.local`; see the headers of `scripts/test-atomic.mjs` and `scripts/test-composite.mjs`. `.env.test.example` is out of date.
+- Playwright takes `SMARTFX_API_KEY` from the environment, else uses `WETRIP_SERVER_KEY` (or its old name `VITE_FAMILY_API_KEY`) from the environment or `.env.local`.
+- Browser code must never read `import.meta.env`: Vite inlines every `VITE_*` value it can reach, keys included. The keys keep their `VITE_*` names for compatibility but are server-side only; Vercel needs them in the project environment for `api/proxy.js`. The session token is still an unsigned stub, so this is demo-grade, not production authentication.
 
 ## Done
 

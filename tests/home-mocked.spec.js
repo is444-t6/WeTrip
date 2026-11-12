@@ -330,7 +330,7 @@ test.describe('child home page', () => {
   test('a child whose parent has not set a budget is told so', async ({ page }) => {
     await mockApi(page, { ...child, GetChildDashboard: () => ({ HasBudget: false, Balance: 10 }) })
     await page.goto('/')
-    await expect(page.getByText("Your parent hasn't set a budget yet.")).toBeVisible()
+    await expect(page.getByText("Your parent hasn't set a spending limit yet.")).toBeVisible()
   })
 })
 

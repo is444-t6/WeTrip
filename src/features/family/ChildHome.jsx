@@ -100,7 +100,7 @@ export default function ChildHome() {
 
       <div className="card">
         <div className="card-header">
-          <h3>Budget this {span}</h3>
+          <h3>Spending limit this {span}</h3>
           {pct >= 100 && <span className="badge removed">over</span>}
         </div>
         {dash.hasBudget ? (
@@ -126,7 +126,7 @@ export default function ChildHome() {
             </p>
           </>
         ) : (
-          <p className="muted">Your parent hasn't set a budget yet.</p>
+          <p className="muted">Your parent hasn't set a spending limit yet.</p>
         )}
         {dash.byCategory?.length > 0 && (
           <table className="table-compact" style={{ marginTop: 8 }}>

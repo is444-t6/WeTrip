@@ -69,7 +69,9 @@ function ChildFamily() {
         {pct >= 100 && <span className="badge removed">over</span>}
       </div>
       {isLoading && <p className="muted">Loading…</p>}
-      {dash && !dash.hasBudget && <p className="muted">Your parent hasn't set a budget yet.</p>}
+      {dash && !dash.hasBudget && (
+        <p className="muted">Your parent hasn't set a spending limit yet.</p>
+      )}
       {dash?.hasBudget && (
         <>
           <div className="row-between">

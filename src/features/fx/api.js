@@ -42,16 +42,11 @@ export const FxApi = {
     }
   },
 
-  createTrip: async (body) => asTrip(await call('POST', 'CreateTrip', body)),
-
   cancelTrip: (tripId) => call('POST', `CancelTrip${qs({ tripId })}`),
   lockNow: async ({ tripId, sgdAmount, period }) => {
     const r = await call('POST', 'LockNow', { tripId, sgdAmount, period })
     return { lock: asLock(r.Lock), trip: asTrip(r.Trip) }
   },
-  tripSpend: async (body) => asSpend(await call('POST', 'TripSpend', body)),
-  closeTrip: async ({ tripId, rate }) =>
-    asTrip(await call('POST', `CloseTrip${qs({ tripId, rate })}`)),
 
   getRate: (currency, period) => call('GET', `GetRate${qs({ currency, period })}`),
   checkRatesNow: () => call('POST', 'CheckRatesNow'),

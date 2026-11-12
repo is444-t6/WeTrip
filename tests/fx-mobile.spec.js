@@ -294,7 +294,7 @@ test.describe('parent controls on a trip', () => {
   }) => {
     const sent = []
     await open(page, { ...WATCHING, LockedForeign: 100 })
-    await page.route(/\/api\/fx\/(CancelTrip|CloseTrip)/, (route) => {
+    await page.route(/\/api\/(fx|trip)\/(CancelTrip|CloseTrip)/, (route) => {
       sent.push(new URL(route.request().url()).pathname.split('/').pop())
       return route.fulfill(reply({ Id: 12, Status: 'Cancelled' }))
     })

@@ -1,43 +1,41 @@
 import react from '@vitejs/plugin-react'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+import { ORIGIN, upstream } from './api/_services.js'
+
+// Same-origin API paths, forwarded to the composites the way production does it
+// (api/proxy.js): the dev server adds each composite's key from .env.local, so the
+// browser never holds one and never calls OutSystems directly.
+const env = loadEnv(
+  process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  process.cwd(),
+  '',
+)
+
+function proxyTo(service, prefix) {
+  return {
+    target: ORIGIN,
+    changeOrigin: true,
+    rewrite: (path) => {
+      const u = new URL(path, 'http://localhost')
+      const rest = u.pathname.slice(prefix.length)
+      return upstream(service, rest, u.searchParams, env).url.slice(ORIGIN.length)
+    },
+    headers: upstream(service, '', '', env).headers,
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react()],
   server: {
     proxy: {
-      // Frontend calls /api/family/<Method>, Vite forwards it to
-      // Family_Composite so the browser never hits OutSystems (and SMU's
-      // CORS/AllowedOrigin setup) directly during local dev.
-      '/api/family': {
-        target: 'https://smuedu-dev.outsystemsenterprise.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/family/, '/WeTrip_Family_Composite/rest/Family'),
-      },
-      '/api/fx': {
-        target: 'https://smuedu-dev.outsystemsenterprise.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/fx/, '/WeTrip_SmartFX_Composite/rest/SmartFX'),
-      },
-      '/api/budget': {
-        target: 'https://smuedu-dev.outsystemsenterprise.com',
-        changeOrigin: true,
-        rewrite: (path) =>
-          path.replace(/^\/api\/budget/, '/WeTrip_Budget_Composite/rest/BudgetComposite'),
-      },
-      '/api/insurance': {
-        target: 'https://smuedu-dev.outsystemsenterprise.com',
-        changeOrigin: true,
-        rewrite: (path) =>
-          path.replace(/^\/api\/insurance/, '/WeTrip_Insurance_Composite/rest/InsuranceAPI'),
-      },
-      '/scantopay': {
-        target: 'https://smuedu-dev.outsystemsenterprise.com',
-        changeOrigin: true,
-        rewrite: (path) =>
-          path.replace(/^\/scantopay/, '/WeTrip_ScanToPay_Composite/rest/ScanToPay'),
-      },
+      '/api/family': proxyTo('family', '/api/family'),
+      '/api/fx': proxyTo('fx', '/api/fx'),
+      '/api/budget': proxyTo('budget', '/api/budget'),
+      '/api/trip': proxyTo('trip', '/api/trip'),
+      '/api/insurance': proxyTo('insurance', '/api/insurance'),
+      '/scantopay': proxyTo('scantopay', '/scantopay'),
     },
   },
 })

@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useChildren } from '../../family/queries'
-import { getSessionCustomerId } from '../../auth/session'
 import Banner from '../../../components/Banner'
+import { CATEGORIES } from '../../budget/constants'
+import { usePlanTrip } from '../../trips/queries'
 import { CURRENCIES, tenorFor } from '../api'
-import { useCreateTrip, useRate } from '../queries'
+import { useRate } from '../queries'
 
 export default function NewTripForm() {
   const { data: children } = useChildren()
@@ -21,37 +22,38 @@ export default function NewTripForm() {
   const [targetBudgetSgd, setTargetBudgetSgd] = useState('')
   const [targetRate, setTargetRate] = useState('')
   const [autoLockEnabled, setAutoLockEnabled] = useState(true)
+  const [split, setSplit] = useState({}) // category id -> SGD limit, all optional
 
   const period = tenorFor(tripStartDate)
   const quote = useRate(currency, period)
-  const create = useCreateTrip()
+  const create = usePlanTrip()
+  const navigate = useNavigate()
+  const splitTotal = Object.values(split).reduce((sum, v) => sum + (Number(v) || 0), 0)
+  const overSplit = splitTotal > (Number(targetBudgetSgd) || 0)
 
+  // PlanTrip opens the trip wallet, creates the trip and sets the SGD category
+  // budgets in one call. The child comes from the family link on the server.
   function submit(e) {
     e.preventDefault()
-    const child = active.find((c) => String(c.familyLinkId) === String(familyLinkId))
+    if (overSplit) return
     create.mutate(
       {
-        familyLinkId: Number(familyLinkId),
-        parentCustomerId: getSessionCustomerId(),
-        childCustomerId: child?.childCustomerId || '',
-        destination: destination.trim(),
-        currency,
-        tripStartDate,
-        tripEndDate,
-        targetBudgetSgd: Number(targetBudgetSgd),
-        targetRate: Number(targetRate),
-        autoLockEnabled,
+        FamilyLinkId: Number(familyLinkId),
+        Destination: destination.trim(),
+        Currency: currency,
+        TripStartDate: tripStartDate,
+        TripEndDate: tripEndDate,
+        TargetBudgetSgd: Number(targetBudgetSgd),
+        TargetRate: Number(targetRate),
+        AutoLockEnabled: autoLockEnabled,
+        Budgets: CATEGORIES.filter((c) => Number(split[c.id]) > 0).map((c) => ({
+          CategoryId: c.id,
+          LimitAmount: Number(split[c.id]),
+        })),
       },
       {
-        onSuccess: () => {
-          setDestination('')
-          setTripStartDate('')
-          setTripEndDate('')
-          setTargetBudgetSgd('')
-          setTargetRate('')
-          setOpen(false)
-          requestAnimationFrame(() => triggerRef.current?.focus())
-        },
+        onSuccess: (trip) =>
+          navigate({ to: '/trips/$tripId', params: { tripId: String(trip.id) } }),
       },
     )
   }
@@ -241,8 +243,34 @@ export default function NewTripForm() {
           </span>
         </label>
 
-        <button type="submit" disabled={create.isPending} style={{ width: '100%' }}>
-          {create.isPending ? 'Creating…' : 'Create trip goal'}
+        <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 16px' }}>
+          <legend style={{ fontWeight: 600, marginBottom: 6 }}>
+            Split the budget by category (SGD, optional)
+          </legend>
+          <div className="grid-2">
+            {CATEGORIES.map((c) => (
+              <div className="field" key={c.id}>
+                <label htmlFor={`trip-split-${c.id}`}>{c.label}</label>
+                <input
+                  id={`trip-split-${c.id}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={split[c.id] ?? ''}
+                  onChange={(e) => setSplit({ ...split, [c.id]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          {overSplit && (
+            <p className="muted" role="alert">
+              The categories add up to more than the trip budget.
+            </p>
+          )}
+        </fieldset>
+
+        <button type="submit" disabled={create.isPending || overSplit} style={{ width: '100%' }}>
+          {create.isPending ? 'Planning…' : 'Plan trip'}
         </button>
       </form>
     </div>

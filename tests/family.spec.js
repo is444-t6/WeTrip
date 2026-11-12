@@ -80,7 +80,7 @@ test.describe('parent view', () => {
     await expect(page.getByText('Spending insights')).toBeVisible()
 
     await page.getByRole('tab', { name: 'Manage' }).click()
-    for (const section of ['Budget', 'Allowance', 'Top up']) {
+    for (const section of ['Spending limit', 'Allowance', 'Top up']) {
       await expect(page.getByText(section, { exact: true }).first()).toBeVisible()
     }
     await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
@@ -103,7 +103,7 @@ test.describe('parent view', () => {
     await page.getByRole('button', { name: 'New trip goal' }).click()
     await expect(page.getByRole('heading', { name: 'New trip goal' })).toBeVisible()
     await expect(page.getByPlaceholder('Tokyo')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create trip goal' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Plan trip' })).toBeVisible()
   })
 })
 
@@ -119,7 +119,7 @@ test.describe('child view', () => {
     // when the rate source is slow, so the first assertion gets a long timeout.
     // By then everything else on the page is there.
     await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 25_000 })
-    await expect(page.getByRole('heading', { name: /Budget this/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Spending limit this/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()
   })
