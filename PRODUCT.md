@@ -23,14 +23,14 @@ It exists as the IS444 Digital Banking Enterprise Architecture group project —
 
 An all-in-one family travel wallet: the parent's control account and the child's spending account are the same product. WeTrip combines FX forward rate locks, shared trip budgets, travel insurance and Scan-to-Pay in one place.
 
-The mechanism is the trip as the shared object. One SmartFX trip id ties the wallet, budget and payment history together, and insurance is matched to the same travel dates. A product that offers only a multi-currency wallet, or only parental controls, would need both the family account structure and the bank-side FX and deposit rails to match it.
+The mechanism is the trip as the shared object. One SmartFX trip id ties the wallet, budget and payment history together, and insurance policies are linked to it by `TripId`. A product that offers only a multi-currency wallet, or only parental controls, would need both the family account structure and the bank-side FX and deposit rails to match it.
 
 ## Operating Context
 
 - The project brief is to build a fintech app that disrupts a traditional bank, with the backend on OutSystems, using SMUtBank APIs plus the team's own APIs, and a 10–15 slide deck with a live demo.
 - The app is a mobile-web SPA. The demo path is a parent or child signing in with a demo customer id; authentication is a development stub, not a bank login.
 - The backend is a set of OutSystems composites. The frontend calls only those composites and never the atomic services or SMUtBank directly. Data is sandbox money in demo accounts.
-- The trip hub at `/trips/:tripId` is the join point across features: SmartFX owns the trip id, Budget reads the same id, and Insurance is matched by date overlap.
+- The trip hub at `/trips/:tripId` is the join point across features: SmartFX owns the trip id, Budget reads the same id, and Insurance policies carry it as `TripId`.
 - Scan-to-Pay runs in a separate OutSystems environment and uses the phone camera, so it needs the HTTPS/LAN development path.
 
 ## Capabilities and Constraints
@@ -41,7 +41,7 @@ Implemented capabilities:
 - **Family:** parent links a child, sets budget and allowance, tops up, approves or rejects requests, grants extra budget, freezes spending or restricts categories. The child sees a dashboard, spends, views insights, and asks for more.
 - **SmartFX:** trip goals, live forward quotes, target rate and auto-lock, multiple locks per trip, child spending from the pot, and convert-back on close. Rates are foreign units per 1 SGD; supported currencies are USD, EUR, JPY, GBP and CHF; tenors are 1M, 3M, 6M and 1Y. Only a parent can own a trip, and only for an Active family link.
 - **Budget:** category budgets, expenses, progress bars and alerts, and a ledger. Budgets are keyed by the SmartFX trip id; categories and sources are fixed in `src/features/budget/constants.js`.
-- **Insurance:** plans, benefits, quote, traveller details, checkout and purchased policies. Insurance has no foreign key to a SmartFX trip, so the trip hub matches policies by date overlap.
+- **Insurance:** plans, benefits, quote, traveller details, checkout and purchased policies. A purchase started from a trip page carries its `TripId`; policies bought before trip links existed have none, so they show under My policies but not as cover on a trip page.
 - **Scan-to-Pay:** QR scanning, payment preview, PayNow and PayLater (BNPL), and payment history. Payments are user-triggered and never retried automatically.
 - **Trip hub:** a read-only aggregation of the wallet, budget, insurance and payment state for one trip.
 
@@ -53,7 +53,7 @@ Constraints and explicitly undecided facts:
 - Timer-driven SmartFX locks record the lock in WeTrip tables but do not book an FXForward contract. `OpenFXForwardContract` wiring is still blocked through the Model API.
 - A family link must be accepted by the child before their balance is available; pending links are shown as pending.
 - Budget currency is a fixed `SGD` placeholder until the trip currency is wired through.
-- Not implemented in the current build: loyalty or miles, receipt scanning/OCR, bill splitting or peer transfers, and card/merchant rails. A child can add a cash receipt to a trip (photo optional, amount typed by hand); it only records a budget expense and moves no money.
+- Not implemented in the current build: loyalty or miles, receipt scanning/OCR, bill splitting or peer transfers, card/merchant rails, and editing or removing fixed trip costs (they can be added, not changed; there is no "paid" flag, every fixed cost counts as spent). A child can add a cash receipt to a trip (photo optional, amount typed by hand); it only records a budget expense and moves no money.
 
 ## Brand Commitments
 

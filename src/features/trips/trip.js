@@ -11,19 +11,6 @@ export function foreignSpent(spends) {
   return (spends ?? []).reduce((sum, s) => sum + Number(s.amount ?? 0), 0)
 }
 
-// Policies whose cover overlaps the trip's dates. The insurance service holds no
-// link to a SmartFX trip, so the dates are what tie the two together.
-export function policiesCovering(policies, trip) {
-  const start = day(trip.tripStartDate)
-  const end = day(trip.tripEndDate)
-  if (!Array.isArray(policies) || !start || !end) return []
-  return policies.filter((p) => {
-    const from = day(p.coverageStart)
-    const to = day(p.coverageEnd)
-    return from && to && from <= end && to >= start
-  })
-}
-
 // Merchant QRs are JSON: { merchantCode, amount, currency }. amount 0 = open amount.
 export function parseMerchantQr(text) {
   try {

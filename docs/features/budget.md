@@ -8,10 +8,10 @@ Per-trip category budgets and an expense ledger. Budget amounts are SGD even whe
 
 ## Screens
 
-| Route             | Screen                                                                                                     | Access    |
-| ----------------- | ---------------------------------------------------------------------------------------------------------- | --------- |
-| `/budget/`        | `BudgetHome`: trips for the active link; a parent sees every active child                                  | Signed in |
-| `/budget/$tripId` | `BudgetDetail`: summary hero, bars, expense list, add-expense form (everyone) and set-limit form (parents) | Signed in |
+| Route             | Screen                                                                                                                                                                            | Access    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `/budget/`        | `BudgetHome`: trips for the active link; a parent sees every active child                                                                                                         | Signed in |
+| `/budget/$tripId` | `BudgetDetail`: summary hero (fixed vs day-to-day), bars, expense list, add-expense form (everyone), set-limit and add-fixed-cost forms (parents; fixed costs only on open trips) | Signed in |
 
 `BudgetDetail` reads the SmartFX trip only for the destination name; the budget still renders when SmartFX fails. Ended trips collapse under "Past trips" on `BudgetHome`.
 
@@ -48,7 +48,7 @@ Expenses: [{ Id, ExpenseDate, MerchantName, CategoryId, Amount, Currency, Descri
 | 2   | Transport     | 2   | QR      |
 | 3   | Accommodation | 3   | Receipt |
 | 4   | Others        | 4   | Bank    |
-| 5   | Shopping      |     |         |
+| 5   | Shopping      | 5   | Fixed   |
 | 6   | Food          |     |         |
 
 `DEFAULT_CURRENCY = 'SGD'`; there is no currency picker.
@@ -64,15 +64,17 @@ Expenses: [{ Id, ExpenseDate, MerchantName, CategoryId, Amount, Currency, Descri
 - `RecordSpending` returns the alert rather than throwing when a category crosses its limit.
 - Budget rows and expenses reference the SmartFX `tripId` logically; this service's database has no FK to the SmartFX database.
 - `PlanTrip` creates the initial category budgets in the Trip composite; the forms here edit them later.
+- A **fixed cost** (hotel, flights, a rail pass) is an expense with `SourceId` 5, so it uses up its category's limit and is already inside `TotalSpent` and `TotalRemaining`. The page splits the total for display only: "Fixed" is the sum of `SourceId` 5 amounts, "Day-to-day" is `TotalSpent` minus that, and fixed rows carry a "Fixed" badge. Parents add one later through `Trip.AddFixedCost` (not `RecordSpending`) while the trip is open; children see them read-only. Editing and removing are not built.
 
 ## Files
 
-`BudgetHome.jsx`, `BudgetDetail.jsx`, `api.js`, `queries.js`, `constants.js`, and components `BudgetBars`, `ExpenseList`, `AddExpenseForm`, `SetBudgetForm`. `BudgetShell.jsx` exists but is unused.
+`BudgetHome.jsx`, `BudgetDetail.jsx`, `api.js`, `queries.js`, `constants.js`, and components `BudgetBars`, `ExpenseList`, `AddExpenseForm`, `SetBudgetForm`, `AddFixedCostForm`, `FixedCostFields` (also used by the new-trip form). `BudgetShell.jsx` exists but is unused.
 
 ## Tests
 
 - `tests/budget-mobile.spec.js` — 375 px layout, category rows, expense blocks, trip list, SmartFX-down fallback, query id, signed-out state, wide-screen table.
-- `tests/trip-hub.spec.js` covers the trip hub's Budget card link to `/budget/$tripId`.
+- `tests/trip-budget.spec.js` — fixed vs day-to-day split, "Fixed" badge, negative remaining, `AddFixedCost` body and `RequestId` reuse, read-only for the child, no form on a closed trip.
+- `tests/trip-hub.spec.js` covers the trip hub's Budget card link to `/budget/$tripId` and its fixed line.
 
 ## Known issues
 

@@ -58,6 +58,12 @@ export default function ExpenseList({ expenses }) {
                 <td data-label="Date">{String(e.expenseDate).slice(0, 10)}</td>
                 <td data-label="Details">
                   {e.merchantName || e.description || 'Expense'}
+                  {Number(e.sourceId) === SOURCE.FIXED && (
+                    <>
+                      {' '}
+                      <span className="badge">Fixed</span>
+                    </>
+                  )}
                   {Number(e.sourceId) === SOURCE.RECEIPT && (
                     <>
                       {' '}
