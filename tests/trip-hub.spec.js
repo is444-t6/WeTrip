@@ -136,6 +136,22 @@ test('a trip with no budget offers to set one', async ({ page }) => {
   await expect(page).toHaveURL(/\/budget\/12$/)
 })
 
+test('the Budget card shows the fixed costs when the budget has any', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, { GetTripOverview: () => overview({ Budget: { ...BUDGET, FixedSgd: 300 } }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Budget')).toContainText('SGD 300.00 fixed')
+  await expect(section(page, 'Budget')).toContainText('SGD 150.00 spent of SGD 600.00')
+})
+
+test('the Budget card has no fixed line when there are no fixed costs', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, { GetTripOverview: () => overview({ Budget: { ...BUDGET, FixedSgd: 0 } }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Budget')).toContainText('spent of')
+  await expect(section(page, 'Budget')).not.toContainText('fixed')
+})
+
 test('policies that overlap the dates but are not linked to this trip do not count', async ({
   page,
 }) => {

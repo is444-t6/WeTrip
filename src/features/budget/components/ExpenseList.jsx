@@ -1,4 +1,4 @@
-import { categoryName } from '../constants'
+import { SOURCE, categoryName } from '../constants'
 
 export default function ExpenseList({ expenses }) {
   return (
@@ -18,7 +18,16 @@ export default function ExpenseList({ expenses }) {
             {expenses.map((e) => (
               <tr key={e.id}>
                 <td data-label="Date">{String(e.expenseDate).slice(0, 10)}</td>
-                <td data-label="Details">{e.merchantName || e.description || 'Expense'}</td>
+                <td data-label="Details">
+                  {Number(e.sourceId) === SOURCE.FIXED ? (
+                    <span>
+                      {e.merchantName || e.description || 'Expense'}{' '}
+                      <span className="badge">Fixed</span>
+                    </span>
+                  ) : (
+                    e.merchantName || e.description || 'Expense'
+                  )}
+                </td>
                 <td data-label="Category" className="muted">
                   {categoryName(e.categoryId)}
                 </td>
