@@ -4,35 +4,37 @@
 // The leading underscore keeps Vercel from deploying this file as a function.
 export const ORIGIN = 'https://smuedu-dev.outsystemsenterprise.com'
 
-// Every WeTrip module accepts one shared key, WETRIP_SERVER_KEY. The older
-// per-service variables are fallbacks for environments that still set them.
+// Every WeTrip module accepts one shared key, WETRIP_SERVER_KEY (each module's
+// WETRIP_SERVER_KEY site property holds it). VITE_FAMILY_API_KEY is accepted as a
+// fallback name for environments that still use it; it holds the same value.
+const KEY = ['WETRIP_SERVER_KEY', 'VITE_FAMILY_API_KEY']
 // keyIn: 'header' sends X-Contacts-Key; 'query' appends apiKey (the SmartFX
 // composite cannot read request headers).
 export const SERVICES = {
   family: {
     path: '/WeTrip_Family_Composite/rest/Family',
-    key: ['WETRIP_SERVER_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
   },
   fx: {
     path: '/WeTrip_SmartFX_Composite/rest/SmartFX',
-    key: ['WETRIP_SERVER_KEY', 'VITE_FX_API_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
     keyIn: 'query',
   },
   budget: {
     path: '/WeTrip_Budget_Composite/rest/BudgetComposite',
-    key: ['WETRIP_SERVER_KEY', 'VITE_BUDGET_API_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
   },
   insurance: {
     path: '/WeTrip_Insurance_Composite/rest/InsuranceAPI',
-    key: ['WETRIP_SERVER_KEY', 'VITE_INSURANCE_API_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
   },
   trip: {
     path: '/WeTrip_Trip_Composite/rest/Trip',
-    key: ['WETRIP_SERVER_KEY', 'VITE_TRIP_API_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
   },
   scantopay: {
     path: '/WeTrip_ScanToPay_Composite/rest/ScanToPay',
-    key: ['WETRIP_SERVER_KEY', 'VITE_SCANTOPAY_KEY', 'VITE_FAMILY_API_KEY'],
+    key: KEY,
   },
 }
 

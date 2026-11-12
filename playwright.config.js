@@ -1,13 +1,17 @@
 import { defineConfig, devices } from '@playwright/test'
 import fs from 'node:fs'
 
-// The API suite needs the SmartFX ApiKey site property. Prefer the env CI
-// provides, then fall back to .env.local so the secret is never committed.
+// The API suite needs the shared WETRIP_SERVER_KEY. Prefer the env CI provides,
+// then fall back to .env.local so the secret is never committed. Both names hold
+// the same value.
 if (!process.env.SMARTFX_API_KEY) {
-  if (process.env.VITE_FX_API_KEY) {
-    process.env.SMARTFX_API_KEY = process.env.VITE_FX_API_KEY
+  const fromEnv = process.env.WETRIP_SERVER_KEY || process.env.VITE_FAMILY_API_KEY
+  if (fromEnv) {
+    process.env.SMARTFX_API_KEY = fromEnv
   } else if (fs.existsSync('.env.local')) {
-    const match = fs.readFileSync('.env.local', 'utf8').match(/^VITE_FX_API_KEY=(.+)$/m)
+    const match = fs
+      .readFileSync('.env.local', 'utf8')
+      .match(/^(?:WETRIP_SERVER_KEY|VITE_FAMILY_API_KEY)=(.+)$/m)
     if (match) process.env.SMARTFX_API_KEY = match[1].trim()
   }
 }

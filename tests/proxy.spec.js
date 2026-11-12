@@ -4,7 +4,7 @@ import handler from '../api/proxy.js'
 
 // The proxy that adds composite keys on the server (api/proxy.js on Vercel, the
 // same map in vite.config.js). Pure Node: no browser, no backend.
-const ENV = { VITE_FAMILY_API_KEY: 'fam', VITE_FX_API_KEY: 'fx', VITE_SCANTOPAY_KEY: 'stp' }
+const ENV = { VITE_FAMILY_API_KEY: 'fam' }
 
 test('header services get X-Contacts-Key and keep their query string', () => {
   const t = upstream('trip', 'GetTripOverview', new URLSearchParams('TripId=12'), ENV)
@@ -23,14 +23,14 @@ test('SmartFX gets apiKey in the query, replacing anything the caller sent', () 
   )
   const u = new URL(t.url)
   expect(u.pathname).toBe('/WeTrip_SmartFX_Composite/rest/SmartFX/GetTrips')
-  expect(u.searchParams.get('apiKey')).toBe('fx')
+  expect(u.searchParams.get('apiKey')).toBe('fam')
   expect(u.searchParams.get('sessionToken')).toBe('s')
   expect(t.headers).toEqual({})
 })
 
-test('a service without its own key falls back to the Family key; unknown services are refused', () => {
+test('the old VITE_FAMILY_API_KEY name still works; unknown services are refused', () => {
   expect(upstream('budget', 'x', '', ENV).headers['X-Contacts-Key']).toBe('fam')
-  expect(upstream('scantopay', 'x', '', ENV).headers['X-Contacts-Key']).toBe('stp')
+  expect(upstream('scantopay', 'x', '', ENV).headers['X-Contacts-Key']).toBe('fam')
   expect(upstream('nope', 'x', '', ENV)).toBeNull()
   expect(Object.keys(SERVICES).sort()).toEqual([
     'budget',
