@@ -5,6 +5,8 @@ import { TripApi } from './api'
 export const tripKeys = {
   overview: (tripId) => ['trip', 'overview', String(tripId)],
   closeOptions: (tripId) => ['trip', 'closeOptions', String(tripId)],
+  // Under ['trip'], so every trip mutation (PayOnTrip earns) refreshes it too.
+  miles: () => ['trip', 'miles'],
 }
 
 export const useTripOverview = (tripId) =>
@@ -22,6 +24,13 @@ export const useCloseOptions = (tripId) =>
     queryFn: () => TripApi.getCloseOptions(tripId),
     enabled: isLoggedIn() && Boolean(tripId),
     retry: false,
+  })
+
+export const useMyMiles = (enabled) =>
+  useQuery({
+    queryKey: tripKeys.miles(),
+    queryFn: TripApi.getMyMiles,
+    enabled: isLoggedIn() && enabled,
   })
 
 // A trip change shows up on SmartFX lists, the budget page and the family cards too.
@@ -49,6 +58,33 @@ export function usePayOnTrip(tripId) {
     onSettled: () => refreshTripViews(qc, tripId),
   })
 }
+
+export function useAddFixedCost(tripId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: TripApi.addFixedCost,
+    retry: false,
+    onSuccess: () => refreshTripViews(qc, tripId),
+  })
+}
+
+export function useAddReceipt(tripId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: TripApi.addReceipt,
+    retry: false,
+    onSuccess: () => refreshTripViews(qc, tripId),
+  })
+}
+
+// A receipt photo never changes, so it is read once, and only when someone opens it.
+export const useReceipt = (receiptId, enabled) =>
+  useQuery({
+    queryKey: ['receipt', String(receiptId)],
+    queryFn: () => TripApi.getReceipt(receiptId),
+    enabled: isLoggedIn() && enabled,
+    staleTime: Infinity,
+  })
 
 export function useCloseTrip(tripId) {
   const qc = useQueryClient()

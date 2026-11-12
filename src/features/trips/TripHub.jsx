@@ -8,8 +8,10 @@ import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
+import FixedCostsNotice from './FixedCostsNotice'
+import ReceiptForm from './ReceiptForm'
 import { useCloseOptions, useCloseTrip, useTripOverview } from './queries'
-import { COUNTRY_BY_CURRENCY, day } from './trip'
+import { COUNTRY_BY_CURRENCY, day, milesLabel } from './trip'
 import { useState } from 'react'
 
 // One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
@@ -36,6 +38,7 @@ export default function TripHub() {
       <Link to="/fx" className="back-link">
         &larr; All trips
       </Link>
+      <FixedCostsNotice />
       <div className="row-between trip-head" style={{ marginBottom: 4 }}>
         <div className="stack">
           <h1 style={{ margin: 0 }}>{trip.destination}</h1>
@@ -62,6 +65,8 @@ export default function TripHub() {
         </Link>
       )}
 
+      {role === 'Child' && !isEnded(trip.status) && <ReceiptForm trip={trip} />}
+
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} overview={data} />
         <BudgetCard tripId={tripId} role={role} overview={data} />
@@ -85,6 +90,7 @@ function MoneyCard({ tripId, overview }) {
   const spent = Number(overview.spentForeign) || 0
   const left = Number(overview.remainingForeign) || 0
   const rate = Number(overview.lockedRate) || 0
+  const miles = Number(overview.milesEarned) || 0
   return (
     <div className="card" aria-label="Money">
       <div className="card-header">
@@ -117,6 +123,7 @@ function MoneyCard({ tripId, overview }) {
           <span className="muted">Nothing locked yet.</span>
         )}
       </p>
+      {miles > 0 && <p style={{ margin: '6px 0 0' }}>{milesLabel(miles)} earned on this trip</p>}
       <Link
         to="/fx/trips/$tripId"
         params={{ tripId: String(tripId) }}
@@ -153,6 +160,11 @@ function BudgetCard({ tripId, role, overview }) {
         <p className="muted">
           No category budget yet.
           {role === 'Parent' ? ' Split the trip money by category.' : ''}
+        </p>
+      )}
+      {Number(summary?.fixedSgd) > 0 && (
+        <p className="muted" style={{ margin: '4px 0 0' }}>
+          <Money amount={summary.fixedSgd} currency="SGD" /> fixed
         </p>
       )}
       <Link

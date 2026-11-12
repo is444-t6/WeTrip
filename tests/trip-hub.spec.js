@@ -113,6 +113,22 @@ test('the trip header and all four sections show their own data', async ({ page 
   await expect(section(page, 'Family')).toContainText('SGD 50.00 spent of SGD 200.00 this period')
 })
 
+test('the Money card shows the miles earned on the trip, and nothing when none', async ({
+  page,
+}) => {
+  await as(page, CHILD)
+  const child = { GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }) }
+  let earned = 30
+  await mockApi(page, { ...child, GetTripOverview: () => overview({ MilesEarned: earned }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toContainText('30 miles earned on this trip')
+
+  earned = 0
+  await page.reload()
+  await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
+  await expect(section(page, 'Money')).not.toContainText('miles')
+})
+
 test('the overview is read with the trip id from the URL', async ({ page }) => {
   await as(page, PARENT)
   const seen = []
@@ -134,6 +150,22 @@ test('a trip with no budget offers to set one', async ({ page }) => {
   await expect(section(page, 'Budget')).toContainText('No category budget yet')
   await section(page, 'Budget').getByRole('link', { name: 'Set a budget' }).click()
   await expect(page).toHaveURL(/\/budget\/12$/)
+})
+
+test('the Budget card shows the fixed costs when the budget has any', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, { GetTripOverview: () => overview({ Budget: { ...BUDGET, FixedSgd: 300 } }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Budget')).toContainText('SGD 300.00 fixed')
+  await expect(section(page, 'Budget')).toContainText('SGD 150.00 spent of SGD 600.00')
+})
+
+test('the Budget card has no fixed line when there are no fixed costs', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, { GetTripOverview: () => overview({ Budget: { ...BUDGET, FixedSgd: 0 } }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Budget')).toContainText('spent of')
+  await expect(section(page, 'Budget')).not.toContainText('fixed')
 })
 
 test('policies that overlap the dates but are not linked to this trip do not count', async ({
