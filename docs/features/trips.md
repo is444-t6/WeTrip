@@ -8,10 +8,10 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 
 ## Screens
 
-| Route            | Screen                                                                                      | Access                   |
-| ---------------- | ------------------------------------------------------------------------------------------- | ------------------------ |
-| `/trips/$tripId` | `TripHub`: Money, Budget, Insurance, Family cards; close for parents; pay link for children | Signed in, family member |
-| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip`                                                            | Signed in child          |
+| Route            | Screen                                                                                                        | Access                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `/trips/$tripId` | `TripHub`: Money, Budget, Insurance, Family cards; close for parents; pay link and Add a receipt for children | Signed in, family member |
+| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip`                                                                              | Signed in child          |
 
 `TripHub` makes one `GetTripOverview` call. It does not use the SmartFX-only `TripDetail` screen; that one is for locks/rates.
 
@@ -26,6 +26,8 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                      |
 | POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
 | POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
+| POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                        |
+| GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                            |
 
 ### `PlanTrip`
 
@@ -52,6 +54,15 @@ Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`,
 - `ledgerPending` may be true even when `Paid`.
 - Never retried. `retry: false`; a lost reply is treated as "may have completed".
 
+### `AddReceipt` and `GetReceipt`
+
+There is no OCR: the child types the amount. `ReceiptForm` (child, trip not Completed or Cancelled) sends `TripId`, `Amount`, `Currency` (the trip's or `SGD`), `CategoryId`, `RequestId` and, if a photo was picked, `ImageBase64` + `ContentType`. Returns `{ExpenseId, AmountSgd}`.
+
+- The photo is resized in the browser (canvas, longest edge 1280 px, JPEG); over 1 MB afterwards it is refused ("That photo is too large").
+- One `RequestId` per opened form, so a double submit is one POST (the server dedupes on it too).
+- A receipt creates no `TripSpend`, leaves the pot unchanged and earns no miles. Non-SGD amounts convert at the trip's locked rate; with nothing locked the server answers 400 "Lock a rate first so we can convert this receipt".
+- Budget expenses carry `SourceId` 3 and `ReceiptId`; `GetReceipt` serves the photo.
+
 ### `CloseTrip`
 
 No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The reply carries top-level `ReturnedForeign`, `ReturnedSgd`, `SpotRate`, `SavedVsSpotSgd` and sets `Trip.Status = 'Completed'`. No money moves because sandbox forwards never settle. A second close is refused.
@@ -63,7 +74,7 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 | `['trip','overview', String(tripId)]`                            | `GetTripOverview`                                 |
 | `['fx']`, `['family']`, `['budget','dashboard', String(tripId)]` | Cross-feature data refreshed after trip mutations |
 
-`PlanTrip` and `CloseTrip` invalidate trip, FX, family and the trip budget on success. `PayOnTrip` invalidates them in `onSettled`, so a failed or lost call still refreshes what the bank may have changed.
+`AddReceipt` invalidates the same keys on success; a receipt photo is cached under `['receipt', String(receiptId)]`. `PlanTrip` and `CloseTrip` invalidate trip, FX, family and the trip budget on success. `PayOnTrip` invalidates them in `onSettled`, so a failed or lost call still refreshes what the bank may have changed.
 
 ## Flow
 
@@ -82,15 +93,16 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, `ReceiptForm`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
 
 ## Tests
 
 - `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state, the Budget card's fixed line.
 - `tests/new-trip.spec.js` — the new-trip form: fixed-cost rows, the over-limit rules, the `PlanTrip` body, the "not saved" notice on the trip page.
 - `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
+- `tests/trip-receipt.spec.js` — receipt form (fields, photo resize, validation, lock message, double submit), receipt rows and photo in the budget.
 - `tests/trips.spec.js` — pure date/trip helpers.
-- `bun run test:trip` — live Trip composite contract; moves sandbox money.
+- `bun run test:trip` — live Trip composite contract (including `AddReceipt` / `GetReceipt`); moves sandbox money.
 
 ## Known issues
 

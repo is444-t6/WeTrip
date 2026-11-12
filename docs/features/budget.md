@@ -31,8 +31,10 @@ Request bodies and query parameters are **PascalCase**; responses pass through `
 Summary: { TripId, TotalLimit, TotalSpent, TotalRemaining,
            Lines: [{ CategoryId, CategoryName, LimitAmount, SpentAmount,
                      PercentUsed, AlertLevel: OK|WARNING|OVER }] }
-Expenses: [{ Id, ExpenseDate, MerchantName, CategoryId, Amount, Currency, Description, SourceId }]
+Expenses: [{ Id, ExpenseDate, MerchantName, CategoryId, Amount, Currency, Description, SourceId, ReceiptId }]
 ```
+
+`ExpenseList` shows a "Receipt" marker on `SourceId` 3 rows. With `ReceiptId > 0` the marker is a button that loads the photo through `Trip.GetReceipt` and shows it in a dialog. Receipts are added from the trip hub, not here; see [trips.md](trips.md).
 
 `RecordSpending` body: `TripId`, `ChildAccountId`, `CategoryId`, `Amount`, `Currency`, `MerchantName`, `Description`, `ExpenseDate`, `SourceId`, `BankTransactionId`, `ReceiptId`.
 

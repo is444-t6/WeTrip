@@ -9,6 +9,7 @@ import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
 import FixedCostsNotice from './FixedCostsNotice'
+import ReceiptForm from './ReceiptForm'
 import { useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day } from './trip'
 import { useState } from 'react'
@@ -63,6 +64,8 @@ export default function TripHub() {
           Pay on this trip
         </Link>
       )}
+
+      {role === 'Child' && !isEnded(trip.status) && <ReceiptForm trip={trip} />}
 
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} overview={data} />
