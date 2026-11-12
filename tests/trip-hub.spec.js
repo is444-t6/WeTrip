@@ -200,10 +200,19 @@ test('a child can pay on the trip, with no parent actions', async ({ page }) => 
   )
 })
 
-test('closing takes a confirm, then shows what locking saved', async ({ page }) => {
+test('closing takes a confirm, then keeps showing what locking saved', async ({ page }) => {
   await as(page, PARENT)
   const calls = []
+  const CLOSED = {
+    ...TRIP,
+    Status: 'Completed',
+    ReturnedForeign: 38000,
+    ReturnedSgd: 319.33,
+    ReturnRate: 119,
+  }
   await mockApi(page, {
+    // After closing, the refetched overview reads Completed; the result must not vanish.
+    GetTripOverview: () => overview(calls.length ? { Trip: CLOSED } : {}),
     CloseTrip: (route) => {
       calls.push(new URL(route.request().url()).searchParams.get('TripId'))
       return {
@@ -225,6 +234,36 @@ test('closing takes a confirm, then shows what locking saved', async ({ page }) 
   await expect(card).toContainText('JPY 38000.00 unspent, worth SGD 319.33 today')
   await expect(card).toContainText('Locking saved SGD 0.70 versus today')
   expect(calls).toEqual(['12'])
+  await expect(page.getByText('Completed', { exact: true })).toBeVisible()
+  await expect(card).toContainText('Locking saved SGD 0.70 versus today')
+})
+
+test('a closed trip shows the stored result when opened later', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTripOverview: () =>
+      overview({
+        Trip: {
+          ...TRIP,
+          Status: 'Completed',
+          ReturnedForeign: 38000,
+          ReturnedSgd: 319.33,
+          ReturnRate: 115,
+        },
+      }),
+  })
+  await page.goto('/trips/12')
+  // 48000 JPY locked for SGD 400 is worth 48000 / 115 = SGD 417.39 at the close rate.
+  await expect(section(page, 'Close trip')).toContainText('Locking saved SGD 17.39 versus today')
+})
+
+test('a trip in demo market mode says so', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTripOverview: () => overview({ Trip: { ...TRIP, DemoRateShiftPct: -4 } }),
+  })
+  await page.goto('/trips/12')
+  await expect(page.getByText('Demo market -4%')).toBeVisible()
 })
 
 test('signed out, the page offers sign-in', async ({ page }) => {
