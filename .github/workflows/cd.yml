@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -44,10 +45,20 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       # A newer push may already be on main; deploying an older SHA would roll
-      # production back.
+      # production back. Docs-only commits are the exception: CI is skipped for
+      # them, so allow this deploy to proceed when only *.md or docs/** moved.
       - run: |
-          git fetch origin main --depth=1
-          test "$(git rev-parse origin/main)" = "${{ github.event.workflow_run.head_sha }}"
+          tested="${{ github.event.workflow_run.head_sha }}"
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" = "$tested" ]; then
+            exit 0
+          fi
+          changed="$(git diff --name-only "$tested" origin/main)"
+          if grep -vE '^(docs/|.*\.md$)' <<< "$changed" | grep -q .; then
+            echo "main moved past $tested with non-doc changes; refusing to deploy"
+            exit 1
+          fi
+          echo "only docs changed since $tested; deploying the tested code"
 
       - run: npx --yes vercel@63.1.2 deploy --prebuilt --prod
         env:
