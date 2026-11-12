@@ -6,6 +6,8 @@ import { tripStatus } from '../../fx/status'
 import { lockMessage, lockSummary, statusBadge, tripTiming } from '../trips'
 import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
+import PastTrips from '../../../components/PastTrips'
+import { splitTrips } from '../../fx/status'
 
 const day = (value) => String(value).slice(0, 10)
 
@@ -90,6 +92,7 @@ function TripRow({ trip }) {
 // Everything SmartFX knows about this child's trips, on the child's Family page.
 export default function TripsPanel({ familyLinkId }) {
   const { data: trips, error, isLoading } = useChildTrips(Number(familyLinkId))
+  const { active, ended } = splitTrips(trips)
 
   return (
     <>
@@ -100,9 +103,10 @@ export default function TripsPanel({ familyLinkId }) {
           No trips planned yet. Set one up under <Link to="/fx">SmartFX</Link>.
         </div>
       )}
-      {trips?.map((t) => (
+      {active.map((t) => (
         <TripRow key={t.tripId} trip={t} />
       ))}
+      <PastTrips trips={ended}>{(t) => <TripRow key={t.tripId} trip={t} />}</PastTrips>
     </>
   )
 }

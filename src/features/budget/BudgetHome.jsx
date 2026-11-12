@@ -8,6 +8,8 @@ import { useChildren } from '../family/queries'
 import { useChildTrips } from '../family/tripQueries'
 import { useTrips } from '../fx/queries'
 import { day } from '../trips/trip'
+import PastTrips from '../../components/PastTrips'
+import { splitTrips } from '../fx/status'
 
 export default function BudgetHome() {
   const { role, familyLinkId, error: roleError } = useCurrentUser()
@@ -16,6 +18,7 @@ export default function BudgetHome() {
   // A child's trips hang off their own link; useTrips only knows a parent's children.
   const childTrips = useChildTrips(role === 'Child' ? familyLinkId : undefined)
   const { data: trips, error, isLoading } = role === 'Child' ? childTrips : parentTrips
+  const { active, ended } = splitTrips(trips)
   // useTrips waits for the children list, so a parent is still loading until it arrives.
   const loading = isLoading || (!role && !roleError) || (role === 'Parent' && children.isLoading)
 
@@ -39,7 +42,7 @@ export default function BudgetHome() {
         </div>
       )}
       <div className="explore-grid">
-        {trips?.map((t) => (
+        {active.map((t) => (
           <Link
             key={t.tripId}
             to="/budget/$tripId"
@@ -53,6 +56,21 @@ export default function BudgetHome() {
           </Link>
         ))}
       </div>
+      <PastTrips trips={ended}>
+        {(t) => (
+          <Link
+            key={t.tripId}
+            to="/budget/$tripId"
+            params={{ tripId: String(t.tripId) }}
+            className="card explore-card"
+          >
+            <strong>{t.destination}</strong>
+            <span className="muted">
+              {day(t.tripStartDate)} → {day(t.tripEndDate)}
+            </span>
+          </Link>
+        )}
+      </PastTrips>
     </AppShell>
   )
 }

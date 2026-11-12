@@ -7,7 +7,9 @@ import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import NewTripForm from './components/NewTripForm'
 import TripCard from './components/TripCard'
+import PastTrips from '../../components/PastTrips'
 import { useTrips } from './queries'
+import { splitTrips } from './status'
 
 export default function FxHome() {
   const { role, familyLinkId: ownLinkId } = useCurrentUser()
@@ -16,6 +18,7 @@ export default function FxHome() {
   // A child's trips hang off their own link; useTrips only knows a parent's children.
   const childTrips = useChildTrips(role === 'Child' ? ownLinkId : undefined)
   const { data: trips, error, isLoading } = role === 'Child' ? childTrips : parentTrips
+  const { active, ended } = splitTrips(trips)
   const hasChildren = (children ?? []).some((c) => c.status === 'Active')
   // Trips are per linked child, so a customer with nobody linked has none to show.
   const nothingLinked = role === 'None' || (role === 'Parent' && children && !hasChildren)
@@ -64,9 +67,10 @@ export default function FxHome() {
       {!nothingLinked && trips?.length === 0 && (
         <div className="card empty">No trip goals yet.</div>
       )}
-      {trips?.map((t) => (
+      {active.map((t) => (
         <TripCard key={t.tripId} trip={t} role={role} />
       ))}
+      <PastTrips trips={ended}>{(t) => <TripCard key={t.tripId} trip={t} role={role} />}</PastTrips>
 
       {role === 'Parent' && hasChildren && (
         <>

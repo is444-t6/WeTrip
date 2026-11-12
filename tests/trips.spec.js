@@ -153,3 +153,19 @@ test.describe('foreignLeft', () => {
     })
   })
 })
+
+test.describe('splitTrips', () => {
+  test('active trips by start date first, ended ones newest first', async () => {
+    const { splitTrips } = await import('../src/features/fx/status.js')
+    const t = (id, status, start) => ({ tripId: id, status, tripStartDate: start })
+    const { active, ended } = splitTrips([
+      t(1, 'Completed', '2027-01-01'),
+      t(2, 'Watching', '2027-05-01'),
+      t(3, 'Cancelled', '2027-03-01'),
+      t(4, 'PartiallyLocked', '2027-04-01'),
+    ])
+    expect(active.map((x) => x.tripId)).toEqual([4, 2])
+    expect(ended.map((x) => x.tripId)).toEqual([3, 1])
+    expect(splitTrips(undefined)).toEqual({ active: [], ended: [] })
+  })
+})
