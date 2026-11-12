@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   formatMoney,
@@ -8,7 +8,10 @@ import {
   planLabel,
 } from './data'
 import { useInsurancePlans, usePurchaseInsurance } from './queries'
+import { newRequestId } from '../trips/api'
+import { useTripMiles } from '../trips/queries'
 import { clearPurchaseResult, getDraft, getTrip, savePurchaseResult, tripIdFor } from './storage'
+import Money from '../../components/Money'
 import InsuranceLayout from './components/InsuranceLayout'
 
 export default function Checkout() {
@@ -18,6 +21,14 @@ export default function Checkout() {
   const purchase = usePurchaseInsurance()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const [useMiles, setUseMiles] = useState(false)
+  // One id per purchase attempt: a repeat of it is a no-op on the server.
+  const requestId = useRef(newRequestId())
+  const tripId = tripIdFor(getTrip(), draft.trip)
+  const { data: tripMiles } = useTripMiles(tripId)
+  // 100 miles = SGD 1.00, so a mile is a cent; at least SGD 0.01 is still charged.
+  const premiumCents = Math.round(Number(draft.quote?.totalPremium) * 100)
+  const redeemMiles = Math.min(Math.floor(Number(tripMiles?.childBalance) || 0), premiumCents - 1)
   const quotedDays = Number(draft.quote?.tripDays)
   const hasQuotedDays = Number.isFinite(quotedDays) && quotedDays > 0
 
@@ -44,7 +55,9 @@ export default function Checkout() {
         CoverageEnd: draft.trip.endDate,
         DestinationCode: draft.trip.destinationCode,
         // Started from a trip page with the same dates: link the policy to that trip.
-        TripId: tripIdFor(getTrip(), draft.trip),
+        TripId: tripId,
+        RedeemMiles: useMiles && redeemMiles > 0 ? redeemMiles : 0,
+        RequestId: requestId.current,
         Travellers: draft.travellers.map((t) => ({
           FullName: t.name,
           DateOfBirth: t.dob,
@@ -53,6 +66,8 @@ export default function Checkout() {
         })),
       })
       if (result?.paymentSuccess !== true) {
+        // A definite decline released any held miles; the next attempt is a new one.
+        requestId.current = newRequestId()
         setError(
           result?.paymentMessage ||
             'Payment was unsuccessful. Your insurance purchase was not confirmed.',
@@ -149,6 +164,18 @@ export default function Checkout() {
             {formatMoney(draft.quote?.totalPremium, draft.quote?.currencyCode || plan.currencyCode)}
           </strong>
         </div>
+        {redeemMiles > 0 && (
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={useMiles}
+              onChange={(e) => setUseMiles(e.target.checked)}
+              style={{ width: 'auto', marginRight: 8 }}
+            />
+            Use {redeemMiles} {redeemMiles === 1 ? 'mile' : 'miles'} (
+            <Money amount={redeemMiles / 100} /> off)
+          </label>
+        )}
         <p className="muted" style={{ marginTop: 12 }}>
           Final price calculated by the insurance service for your trip and selected travellers.
           Confirming sends these details to the insurance service.
