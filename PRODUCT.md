@@ -43,7 +43,7 @@ Implemented capabilities:
 - **Budget:** category budgets, expenses, progress bars and alerts, and a ledger. Budgets are keyed by the SmartFX trip id; categories and sources are fixed in `src/features/budget/constants.js`.
 - **Insurance:** plans, benefits, quote, traveller details, checkout and purchased policies. A purchase started from a trip page carries its `TripId`; policies bought before trip links existed have none, so they show under My policies but not as cover on a trip page.
 - **Scan-to-Pay:** QR scanning, payment preview, PayNow and PayLater (BNPL), and payment history. Payments are user-triggered and never retried automatically.
-- **Trip hub:** a read-only aggregation of the wallet, budget, insurance and payment state for one trip.
+- **Trip hub:** a read-only aggregation of the wallet, budget, insurance and payment state for one trip. Pay later on a trip (`PayLaterOnTrip`, `BnplPlans`) is built in the frontend; the backend is pending.
 
 Constraints and explicitly undecided facts:
 

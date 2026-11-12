@@ -11,7 +11,7 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 | Route            | Screen                                                                                      | Access                   |
 | ---------------- | ------------------------------------------------------------------------------------------- | ------------------------ |
 | `/trips/$tripId` | `TripHub`: Money, Budget, Insurance, Family cards; close for parents; pay link for children | Signed in, family member |
-| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip`                                                            | Signed in child          |
+| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip` or `PayLaterOnTrip`                                        | Signed in child          |
 
 `TripHub` makes one `GetTripOverview` call. It does not use the SmartFX-only `TripDetail` screen; that one is for locks/rates.
 
@@ -71,7 +71,7 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 1. Parent plans the trip (`PlanTrip`); the composite opens the foreign wallet and writes budget rows.
 2. Parent locks through SmartFX `LockNow` on `/fx/trips/$tripId`; see [fx.md](fx.md).
-3. Child scans a merchant QR at `/pay?tripId=`, reviews the preview and pays (`PayOnTrip`).
+3. Child scans a merchant QR at `/pay?tripId=`, reviews the preview and pays from the trip (`PayOnTrip`) or pays later (`PayLaterOnTrip`).
 4. Parent reviews the hub and closes (`CloseTrip`).
 
 ## Domain rules
@@ -84,7 +84,7 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, `TripPayLater` (options and confirmation), `PayLaterCard`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; pay later reuses `PlanOptions` and `PaidLater` from the Scan-to-Pay components.
 
 ## Tests
 
