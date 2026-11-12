@@ -10,6 +10,9 @@ export const TripApi = {
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
+  // A cash receipt: records a budget expense only, moves no money. requestId makes a repeat a no-op.
+  addReceipt: (request) => call('POST', 'AddReceipt', request),
+  getReceipt: (receiptId) => call('GET', `GetReceipt${qs({ ReceiptId: receiptId })}`),
 }
 
 // One id per payment attempt, kept for that attempt's lifetime, so a double tap

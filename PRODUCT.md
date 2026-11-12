@@ -53,7 +53,7 @@ Constraints and explicitly undecided facts:
 - Timer-driven SmartFX locks record the lock in WeTrip tables but do not book an FXForward contract. `OpenFXForwardContract` wiring is still blocked through the Model API.
 - A family link must be accepted by the child before their balance is available; pending links are shown as pending.
 - Budget currency is a fixed `SGD` placeholder until the trip currency is wired through.
-- Not implemented in the current build: loyalty or miles, receipt scanning/OCR, bill splitting or peer transfers, and card/merchant rails. The Budget source list includes a receipt value, but no receipt capture flow exists.
+- Not implemented in the current build: loyalty or miles, receipt scanning/OCR, bill splitting or peer transfers, and card/merchant rails. A child can add a cash receipt to a trip (photo optional, amount typed by hand); it only records a budget expense and moves no money.
 
 ## Brand Commitments
 

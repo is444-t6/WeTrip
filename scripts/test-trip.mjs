@@ -1,5 +1,5 @@
 // Live contract test for WeTrip_Trip_Composite (PlanTrip, GetTripOverview,
-// PayOnTrip, CloseTrip) plus the real FX forward booked by SmartFX LockNow.
+// PayOnTrip, AddReceipt, GetReceipt, CloseTrip) plus the real FX forward booked by SmartFX LockNow.
 //
 //   bun --env-file=.env.local scripts/test-trip.mjs
 //
@@ -16,6 +16,7 @@ import { assert, env, field, http, step, summary } from './_lib.mjs'
 const ORIGIN = 'https://smuedu-dev.outsystemsenterprise.com'
 const TRIP = `${ORIGIN}/WeTrip_Trip_Composite/rest/Trip`
 const SMARTFX = `${ORIGIN}/WeTrip_SmartFX_Composite/rest/SmartFX`
+const BUDGET = `${ORIGIN}/WeTrip_Budget_Composite/rest/BudgetComposite`
 const KEY = env('WETRIP_SERVER_KEY')
 const FX_KEY = KEY
 const PARENT = `${env('PARENT_CUSTOMER_ID', '0000002169')}:${env('PARENT_ACCOUNT_ID', '0000004554')}:TripHarness`
@@ -25,6 +26,10 @@ const FAMILY_LINK_ID = Number(env('FAMILY_LINK_ID', '3'))
 const MERCHANT = env('TRIP_MERCHANT_CODE', 'M001')
 const PAY_JPY = 120 // about 1 SGD
 const FOOD = 6
+const RECEIPT_JPY = 1200
+// A 1x1 PNG, enough to prove the photo round-trips.
+const TINY_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
 
 const day = (offset) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10)
 const as = (token) => (method, path, body) =>
@@ -32,11 +37,19 @@ const as = (token) => (method, path, body) =>
 const parent = as(PARENT)
 const child = as(CHILD)
 const refused = (r) => r.status >= 400 && JSON.stringify(r.json)
+const firstError = (r) => (r.json.Errors ?? r.json.errors)?.[0]
+const dashboard = (token) =>
+  http(BUDGET, 'GET', `GetDashboard?TripId=${field(trip, 'id')}`, {
+    headers: { 'X-Contacts-Key': KEY, 'X-Session-Token': token },
+  })
 
 console.log(`\nTrip composite live test\nBase: ${TRIP}\n`)
 let trip
 let requestId
 let paidForeign = 0
+let receiptRequestId
+let lockedRate
+let receiptId
 
 await step('PlanTrip as the child is refused', async () => {
   const r = await child('POST', 'PlanTrip', planBody())
@@ -79,6 +92,29 @@ await step('GetTripOverview: another customer is refused', async () => {
 await step('PayOnTrip before anything is locked is refused', async () => {
   const r = await child('POST', 'PayOnTrip', payBody(`harness-${Date.now()}-early`, PAY_JPY))
   assert(refused(r), `expected a refusal, got ${r.status} ${JSON.stringify(r.json)}`)
+})
+
+await step(
+  'AddReceipt in JPY before anything is locked is refused with the lock message',
+  async () => {
+    const r = await child(
+      'POST',
+      'AddReceipt',
+      receiptBody(`harness-${Date.now()}-nolock`, 'JPY', 100),
+    )
+    assert(refused(r), `expected a refusal, got ${r.status} ${JSON.stringify(r.json)}`)
+    assert(
+      firstError(r) === 'Lock a rate first so we can convert this receipt',
+      `wrong message: ${firstError(r)}`,
+    )
+  },
+)
+
+await step('AddReceipt in SGD needs no lock and no conversion', async () => {
+  const r = await child('POST', 'AddReceipt', receiptBody(`harness-${Date.now()}-sgd`, 'SGD', 1))
+  assert(r.status === 200, `expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+  assert(field(r.json, 'expenseId') > 0, 'no expense id')
+  assert(Number(field(r.json, 'amountSgd')) === 1, `amountSgd ${field(r.json, 'amountSgd')}`)
 })
 
 await step('LockNow books a real FX forward and records its id', async () => {
@@ -142,6 +178,80 @@ await step('the overview shows the spend, the pot left and the budget expense', 
   assert(Number(field(food, 'spentAmount')) > 0, 'budget expense not recorded')
 })
 
+await step('AddReceipt as the parent is refused', async () => {
+  const r = await parent('POST', 'AddReceipt', receiptBody(`harness-${Date.now()}-p`, 'JPY', 100))
+  assert(refused(r), `expected a refusal, got ${r.status}`)
+  assert(firstError(r) === 'Only the child can add a receipt', `wrong message: ${firstError(r)}`)
+})
+
+await step('AddReceipt from outside the family is refused', async () => {
+  const r = await as(STRANGER)(
+    'POST',
+    'AddReceipt',
+    receiptBody(`harness-${Date.now()}-s`, 'JPY', 100),
+  )
+  assert(refused(r), `expected a refusal, got ${r.status}`)
+})
+
+await step('AddReceipt with a bad amount, category, currency or image is refused', async () => {
+  const bad = [
+    receiptBody(`harness-${Date.now()}-a`, 'JPY', 0),
+    { ...receiptBody(`harness-${Date.now()}-c`, 'JPY', 100), CategoryId: 999 },
+    receiptBody(`harness-${Date.now()}-u`, 'USD', 100),
+    { ...receiptBody(`harness-${Date.now()}-t`, 'JPY', 100), ContentType: 'image/gif' },
+    {
+      ...receiptBody(`harness-${Date.now()}-b`, 'JPY', 100),
+      ImageBase64: Buffer.alloc(1_100_000).toString('base64'),
+    },
+  ]
+  for (const body of bad) {
+    const r = await child('POST', 'AddReceipt', body)
+    assert(refused(r), `expected a refusal for ${body.RequestId}, got ${r.status}`)
+  }
+})
+
+await step(`AddReceipt as the child records JPY ${RECEIPT_JPY} at the locked rate`, async () => {
+  const o = await child('GET', `GetTripOverview?TripId=${field(trip, 'id')}`)
+  lockedRate = Number(field(o.json, 'lockedRate'))
+  assert(lockedRate > 0, 'no locked rate')
+  receiptRequestId = `harness-${Date.now()}-receipt`
+  const r = await child('POST', 'AddReceipt', receiptBody(receiptRequestId, 'JPY', RECEIPT_JPY))
+  assert(r.status === 200, `expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+  assert(field(r.json, 'expenseId') > 0, 'no expense id')
+  assert(
+    Math.abs(Number(field(r.json, 'amountSgd')) - RECEIPT_JPY / lockedRate) < 0.01,
+    `amountSgd ${field(r.json, 'amountSgd')}, expected ${RECEIPT_JPY / lockedRate}`,
+  )
+})
+
+await step('AddReceipt with the same requestId is a no-op: still one expense', async () => {
+  const r = await child('POST', 'AddReceipt', receiptBody(receiptRequestId, 'JPY', RECEIPT_JPY))
+  assert(r.status === 200, `expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+  const rows = receiptExpenses(await dashboard(CHILD))
+  assert(rows.length === 1, `expected one receipt expense, got ${rows.length}`)
+})
+
+await step('the budget shows the receipt as a Food expense with its photo', async () => {
+  const [row] = receiptExpenses(await dashboard(PARENT))
+  assert(row, 'receipt expense missing from the parent dashboard')
+  assert(field(row, 'sourceId') === 3, `sourceId ${field(row, 'sourceId')}`)
+  assert(field(row, 'categoryId') === FOOD, `categoryId ${field(row, 'categoryId')}`)
+  assert(field(row, 'merchantName') === 'Cash receipt', `merchant ${field(row, 'merchantName')}`)
+  assert(field(row, 'receiptId') > 0, 'no receiptId on the expense')
+  receiptId = field(row, 'receiptId')
+})
+
+await step('GetReceipt returns the photo to the family and refuses a stranger', async () => {
+  for (const who of [child, parent]) {
+    const r = await who('GET', `GetReceipt?ReceiptId=${receiptId}`)
+    assert(r.status === 200, `expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+    assert(field(r.json, 'contentType') === 'image/png', 'wrong contentType')
+    assert(field(r.json, 'imageBase64') === TINY_PNG, 'photo changed in storage')
+  }
+  const r = await as(STRANGER)('GET', `GetReceipt?ReceiptId=${receiptId}`)
+  assert(refused(r), `expected a refusal, got ${r.status}`)
+})
+
 await step('CloseTrip as the child is refused', async () => {
   const r = await child('POST', `CloseTrip?TripId=${field(trip, 'id')}`)
   assert(refused(r), `expected a refusal, got ${r.status}`)
@@ -155,6 +265,12 @@ await step('CloseTrip as the parent values the unspent pot at the spot rate', as
   console.log(
     `      unspent ${field(r.json, 'returnedForeign')} JPY, saved vs spot SGD ${field(r.json, 'savedVsSpotSgd')}`,
   )
+})
+
+await step('AddReceipt on a closed trip is refused', async () => {
+  const r = await child('POST', 'AddReceipt', receiptBody(`harness-${Date.now()}-late`, 'JPY', 100))
+  assert(refused(r), `expected a refusal, got ${r.status}`)
+  assert(firstError(r) === 'This trip has ended', `wrong message: ${firstError(r)}`)
 })
 
 await step('closing twice is refused', async () => {
@@ -177,6 +293,24 @@ function planBody() {
     Budgets: [{ CategoryId: FOOD, LimitAmount: 15 }],
   }
 }
+
+function receiptBody(id, currency, amount) {
+  return {
+    TripId: field(trip, 'id'),
+    Amount: amount,
+    Currency: currency,
+    CategoryId: FOOD,
+    RequestId: id,
+    ImageBase64: TINY_PNG,
+    ContentType: 'image/png',
+  }
+}
+
+// The expense the JPY receipt wrote (the SGD one has its own description).
+const receiptExpenses = (r) =>
+  (field(r.json, 'expenses') || []).filter(
+    (e) => field(e, 'description') === `Cash receipt · JPY ${RECEIPT_JPY}.00`,
+  )
 
 function payBody(id, amount) {
   return {

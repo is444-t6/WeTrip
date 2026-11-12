@@ -39,6 +39,24 @@ export function usePayOnTrip(tripId) {
   })
 }
 
+export function useAddReceipt(tripId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: TripApi.addReceipt,
+    retry: false,
+    onSuccess: () => refreshTripViews(qc, tripId),
+  })
+}
+
+// A receipt photo never changes, so it is read once, and only when someone opens it.
+export const useReceipt = (receiptId, enabled) =>
+  useQuery({
+    queryKey: ['receipt', String(receiptId)],
+    queryFn: () => TripApi.getReceipt(receiptId),
+    enabled: isLoggedIn() && enabled,
+    staleTime: Infinity,
+  })
+
 export function useCloseTrip(tripId) {
   const qc = useQueryClient()
   return useMutation({
