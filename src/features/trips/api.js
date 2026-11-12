@@ -9,9 +9,14 @@ export const TripApi = {
   getOverview: (tripId) => call('GET', `GetTripOverview${qs({ TripId: tripId })}`),
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
+  // Ledger write (SourceId 5); requestId makes a repeat a no-op.
+  addFixedCost: (request) => call('POST', 'AddFixedCost', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
   // The caller's miles balance; the customer comes from the session token.
   getMyMiles: () => call('GET', 'GetMyMiles'),
+  // A cash receipt: records a budget expense only, moves no money. requestId makes a repeat a no-op.
+  addReceipt: (request) => call('POST', 'AddReceipt', request),
+  getReceipt: (receiptId) => call('GET', `GetReceipt${qs({ ReceiptId: receiptId })}`),
 }
 
 // One id per payment attempt, kept for that attempt's lifetime, so a double tap
