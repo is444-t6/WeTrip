@@ -31,7 +31,8 @@ Tests, also from `WeTrip/`:
 
 ```bash
 npx playwright install chromium
-npm run test:e2e         # all suites, including the live SmartFX writer; not a default check
+npm run test:e2e         # mocked specs in parallel, then the live specs with one worker
+npm run test:mocked      # every mocked spec, in parallel; never reaches a backend
 npm run test:ui:mocked   # mocked Family UI; never reaches a backend
 npm run test:ui          # Family UI against the live sandbox (read-only)
 npm run test:atomic      # Family_Atomic; writes test rows with synthetic identities
@@ -39,7 +40,7 @@ npm run test:composite   # Family_Composite; moves sandbox money
 npm run test:smartfx     # live contract test; writes a trip, lock, spend and convert-back
 ```
 
-Among the npm scripts, only `test:ui:mocked` is backend-free. Several individual specs are too (`home-mocked`, `login-mocked`, `budget-mobile`, `fx-mobile`, `scantopay`, `trip-hub`, `insurance`, plus the pure unit specs); run one with `npx playwright test tests/<file>.spec.js`. Everything live shares one sandbox, so runs are serialized (`workers: 1`) — do not parallelise them. Use demo accounts for `test:composite`, the UI suites and `test:smartfx`; `test:atomic` deliberately uses its own synthetic `ATOMIC_TEST_*` identities, and pointing it at the demo parent/child creates links with fake accounts that break `GetChildren`. Run write suites only when the change actually touches their contract.
+Among the npm scripts, only `test:ui:mocked` is backend-free. Several individual specs are too (`home-mocked`, `login-mocked`, `budget-mobile`, `fx-mobile`, `scantopay`, `trip-hub`, `insurance`, plus the pure unit specs); run one with `npx playwright test tests/<file>.spec.js`. Everything live shares one sandbox, so the `live` Playwright project (`family.spec.js`, `smartfx-api.spec.js`) runs with one worker — do not parallelise it. The `mocked` project runs fully parallel. Playwright serves a production build through `vite preview`, which uses the same API proxy as dev. Use demo accounts for `test:composite`, the UI suites and `test:smartfx`; `test:atomic` deliberately uses its own synthetic `ATOMIC_TEST_*` identities, and pointing it at the demo parent/child creates links with fake accounts that break `GetChildren`. Run write suites only when the change actually touches their contract.
 
 ## Architecture
 

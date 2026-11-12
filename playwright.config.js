@@ -14,11 +14,16 @@ if (!process.env.WETRIP_SERVER_KEY && fs.existsSync('.env.local')) {
 // writes trips to the sandbox and is serialized with the UI suite.
 const PORT = 5199
 
+// Specs that call the shared live sandbox. Everything else is mocked.
+const LIVE = ['**/family.spec.js', '**/smartfx-api.spec.js']
+
 export default defineConfig({
   testDir: './tests',
-  // The suite talks to one shared live sandbox; parallel workers make the
-  // Family API time out under load.
-  workers: 1,
+  // Mocked specs never leave the browser, so they run in parallel. The two live
+  // specs share one sandbox (parallel calls make the Family API time out, and
+  // smartfx-api writes trips), so npm run test:e2e runs them afterwards with one
+  // worker. See the "live" project below.
+  fullyParallel: true,
   retries: 0,
   reporter: [['list']],
   timeout: 30_000,
@@ -26,11 +31,17 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'mocked', testIgnore: LIVE, use: { ...devices['Desktop Chrome'] } },
+    { name: 'live', testMatch: LIVE, fullyParallel: false, use: { ...devices['Desktop Chrome'] } },
+  ],
   webServer: {
-    command: `npm run dev -- --port ${PORT}`,
+    // A production build served by vite preview: pages load prebuilt bundles
+    // instead of the dev server compiling modules on every fresh page. Preview
+    // uses the same API proxy as dev (preview.proxy defaults to server.proxy).
+    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 })
