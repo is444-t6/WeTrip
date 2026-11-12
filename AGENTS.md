@@ -63,6 +63,7 @@ Every backend path is same-origin, proxied in dev by `vite.config.js` and in pro
 | `/api/fx`        | `WeTrip_SmartFX_Composite/rest/SmartFX`                      |
 | `/api/budget`    | `WeTrip_Budget_Composite/rest/BudgetComposite`               |
 | `/api/insurance` | `WeTrip_Insurance_Composite/rest/InsuranceAPI`               |
+| `/api/trip`      | `WeTrip_Trip_Composite/rest/Trip`                            |
 | `/scantopay`     | `ScanToPay/rest/ScanToPay` (separate OutSystems environment) |
 
 A base URL change means editing `services.js`, `vite.config.js` and `vercel.json` together.
@@ -91,16 +92,17 @@ To add or change a screen:
 - **SmartFX:** base is SGD, quote is the trip currency, and every rate is foreign units per 1 SGD. Higher is better; auto-lock fires at `forwardRate >= targetRate`. Supported currencies: USD, EUR, JPY, GBP, CHF. Tenors: 1M, 3M, 6M, 1Y. Only an Active family link can own a trip; the parent funds locks, the child spends from the pot, and closing converts unused foreign balance back.
 - **Family:** roles are `Parent`, `Child`, `Pending` or `None`; only `Active` links count. Parent sets budgets/allowance, tops up, approves or rejects asks, grants extra budget, and can freeze spending or restrict categories.
 - **Budget:** categories and sources live in `src/features/budget/constants.js`. Budgets are keyed by the SmartFX `tripId`. Responses are camelCase but request bodies and query parameters are PascalCase. Budget amounts are SGD by design (`DEFAULT_CURRENCY`); a trip's foreign money lives in SmartFX.
-- **Insurance:** plans → travellers → checkout → policies. Insurance has no foreign key to a SmartFX trip, so `/trips/$tripId` matches policies by date overlap.
+- **Insurance:** plans → travellers → checkout → policies. A purchase started from a trip page sends that trip's `TripId` (only while the dates still match); older policies have none and are matched by date overlap.
 - **Scan-to-Pay:** preview first, then PayNow or PayLater (BNPL). History is per customer. Payment mutations refresh history even on failure, because the bank may have completed after the request died.
-- **Trip hub:** `/trips/$tripId` is a read-only aggregation. The SmartFX trip id is the shared key across Budget and the trip hub.
+- **Trip hub:** `/trips/$tripId` reads `Trip.GetTripOverview` (trip, locks, spends, pot left, SGD budget, trip-linked policies). The child pays from a trip at `/pay?tripId=` through `Trip.PayOnTrip` (one SGD transfer at the trip's locked rate, a `RequestId` per scan, never retried); the parent closes it with `Trip.CloseTrip` (server spot rate, no money moves). New trips are planned with `Trip.PlanTrip`, which derives the child from the family link and sets the SGD category budgets.
 
 ## OutSystems and tBank context
 
 - The course platform is `SMUtBank` ("tBank"), a training core bank. The provided atomic services WeTrip uses are `MarketData` (spot and benchmark rates), `FXForward` (quote, open and list contracts), `Deposit Account` (accounts and balances) and `Payments` (transfers and beneficiaries).
 - WeTrip composites on `smuedu-dev.outsystemsenterprise.com` orchestrate those atomics and own the WeTrip tables. SmartFX is split into `WeTrip_SmartFX_Atomic` (Trip/TripLock/TripSpend CRUD) and `WeTrip_SmartFX_Composite` (orchestration, session checks, an API key that is sent but not enforced, and the five-minute watcher timer).
 - Backend edits happen in Service Studio or through the Model API. When editing an `.oml`, use the `servicestudio-mcp-oml` skill under `../.agents/skills/servicestudio-mcp-oml`. Publishing can still require a manual step.
-- Known backend gaps: the SmartFX API key is sent but not enforced; header auth is unavailable; locks do not book FXForward contracts (manual or timer-driven), and the timer passes an empty `ParentAccountId`; `OpenFXForwardContract` wiring is blocked through the Model API.
+- Layering: atomics own the tables and expose CRUD REST; composites call only atomics and SMUtBank and own no tables. `WeTrip_Trip_Composite` holds the cross-feature flows.
+- Known backend gaps: the SmartFX composite cannot read headers; a lock books a real FXForward contract only for trips that carry `ParentAccountId` and `ForeignAccountId` (trips made by `PlanTrip` do; older ones don't); sandbox forwards never settle, so the trip pot is a ledger and the only money movement is `PayOnTrip`.
 - Family failures to check before assuming a frontend bug: an empty session user, an empty `Status` on newly created links, and swapped `GetDepositAccountBalance` arguments.
 
 ## Environment and secrets

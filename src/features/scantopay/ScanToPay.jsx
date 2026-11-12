@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react'
+import { useSearch } from '@tanstack/react-router'
 import Banner from '../../components/Banner'
+import { isLoggedIn } from '../auth/session'
+import TripPay from '../trips/TripPay'
 import SignedOutCard from '../../components/SignedOutCard'
 import PayLayout from './components/PayLayout'
 import PaymentPreview from './components/PaymentPreview'
@@ -28,7 +31,14 @@ const responseWasLost = (error) =>
 const isReceipt = (r) =>
   Boolean(r?.transactionId || r?.paymentRecordId || r?.bnplPlanId || r?.bNPLPlanId)
 
+// /pay?tripId=… pays from a trip through the Trip composite instead.
 export default function ScanToPay() {
+  const { tripId } = useSearch({ strict: false })
+  if (tripId && isLoggedIn()) return <TripPay tripId={tripId} />
+  return <WalletPay />
+}
+
+function WalletPay() {
   const customerId = getCustomerId()
   const preview = usePreview()
   const payNow = usePayNow(customerId)

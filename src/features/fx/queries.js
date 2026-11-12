@@ -47,11 +47,6 @@ function useInvalidate() {
     ])
 }
 
-export function useCreateTrip() {
-  const invalidate = useInvalidate()
-  return useMutation({ mutationFn: FxApi.createTrip, onSuccess: () => invalidate() })
-}
-
 export function useCancelTrip() {
   const invalidate = useInvalidate()
   return useMutation({
@@ -64,22 +59,6 @@ export function useLockNow() {
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: FxApi.lockNow,
-    onSuccess: (_d, v) => invalidate(v.tripId),
-  })
-}
-
-export function useTripSpend() {
-  const invalidate = useInvalidate()
-  return useMutation({
-    mutationFn: FxApi.tripSpend,
-    onSuccess: (_d, v) => invalidate(v.tripId),
-  })
-}
-
-export function useCloseTrip() {
-  const invalidate = useInvalidate()
-  return useMutation({
-    mutationFn: FxApi.closeTrip,
     onSuccess: (_d, v) => invalidate(v.tripId),
   })
 }

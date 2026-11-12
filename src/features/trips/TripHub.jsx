@@ -5,21 +5,20 @@ import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import Money from '../../components/Money'
 import SignedOutCard from '../../components/SignedOutCard'
-import { useDashboard } from '../budget/queries'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { useMyInsurance } from '../insurance/queries'
-import { useTrip } from '../fx/queries'
-import { tripStatus } from '../fx/status'
-import { COUNTRY_BY_CURRENCY, day, foreignSpent, policiesCovering } from './trip'
+import { isEnded, tripStatus } from '../fx/status'
+import { useCloseTrip, useTripOverview } from './queries'
+import { COUNTRY_BY_CURRENCY, day, policiesCovering } from './trip'
+import { useState } from 'react'
 
-// One trip, every feature. SmartFX owns the trip, so its trip id is the id every
-// other section looks up: Budget is read with the same id, insurance is matched by
-// the trip's dates, and the child's account comes from the trip's family link.
-// Nothing here writes; each card links on to the feature that owns it.
+// One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
+// trip, its locks and spends, the SGD budget and the policies bought for it. The
+// child pays from here (Pay on this trip) and the parent closes the trip here.
 export default function TripHub() {
   const { tripId } = useParams({ from: '/trips/$tripId' })
-  const { data, error, isLoading } = useTrip(tripId)
+  const { data, error, isLoading } = useTripOverview(tripId)
   const { role } = useCurrentUser()
 
   function signOut() {
@@ -50,28 +49,38 @@ export default function TripHub() {
         </span>
       </div>
 
-      {role === 'Child' && (
-        <Link to="/pay" className="btn" style={{ marginTop: 12 }}>
-          Pay
+      {role === 'Child' && !isEnded(trip.status) && Number(data.remainingForeign) > 0 && (
+        <Link
+          to="/pay"
+          search={{ tripId: Number(tripId) }}
+          className="btn"
+          style={{ marginTop: 12 }}
+        >
+          Pay on this trip
         </Link>
       )}
 
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
-        <MoneyCard tripId={tripId} trip={trip} spends={data.spends || []} />
-        <BudgetCard tripId={tripId} role={role} />
-        <InsuranceCard trip={trip} role={role} />
+        <MoneyCard tripId={tripId} overview={data} />
+        <BudgetCard tripId={tripId} role={role} overview={data} />
+        <InsuranceCard trip={trip} role={role} tripPolicies={data.policies} />
         <FamilyCard trip={trip} role={role} />
       </div>
+
+      {role === 'Parent' && !isEnded(trip.status) && <CloseTripCard tripId={tripId} trip={trip} />}
     </>,
   )
 }
 
-function MoneyCard({ tripId, trip, spends }) {
+function MoneyCard({ tripId, overview }) {
+  const trip = overview.trip
   const target = Number(trip.targetBudgetSgd) || 0
   const locked = Number(trip.lockedSgd) || 0
   const pct = target ? Math.min(100, (locked / target) * 100) : 0
   const foreignLocked = Number(trip.lockedForeign) || 0
-  const spent = foreignSpent(spends)
+  const spent = Number(overview.spentForeign) || 0
+  const left = Number(overview.remainingForeign) || 0
+  const rate = Number(overview.lockedRate) || 0
   return (
     <div className="card" aria-label="Money">
       <div className="card-header">
@@ -91,8 +100,14 @@ function MoneyCard({ tripId, trip, spends }) {
       <p style={{ margin: '10px 0 0' }}>
         {foreignLocked > 0 ? (
           <>
-            <Money amount={foreignLocked} currency={trip.currency} /> locked,{' '}
-            <Money amount={spent} currency={trip.currency} /> spent
+            <Money amount={left} currency={trip.currency} /> left of{' '}
+            <Money amount={foreignLocked} currency={trip.currency} /> (
+            <Money amount={spent} currency={trip.currency} /> spent)
+            {rate > 0 && (
+              <span className="muted" style={{ display: 'block', fontSize: '0.85em' }}>
+                Locked at {rate.toFixed(4)} {trip.currency} per SGD
+              </span>
+            )}
           </>
         ) : (
           <span className="muted">Nothing locked yet.</span>
@@ -110,9 +125,8 @@ function MoneyCard({ tripId, trip, spends }) {
   )
 }
 
-function BudgetCard({ tripId, role }) {
-  const { data, error } = useDashboard(tripId)
-  const summary = data?.summary
+function BudgetCard({ tripId, role, overview }) {
+  const summary = overview.hasBudget ? overview.budget : null
   const lines = summary?.lines ?? []
   const alerts = lines.filter((l) => l.alertLevel && l.alertLevel !== 'OK').length
   return (
@@ -121,9 +135,7 @@ function BudgetCard({ tripId, role }) {
         <h3>Budget</h3>
         {alerts > 0 && <span className="badge removed">{alerts} near or over</span>}
       </div>
-      {error ? (
-        <p className="muted">The budget could not be loaded right now.</p>
-      ) : lines.length > 0 ? (
+      {lines.length > 0 ? (
         <>
           <p style={{ margin: 0 }}>
             <Money amount={summary.totalSpent} currency="SGD" /> spent of{' '}
@@ -151,14 +163,17 @@ function BudgetCard({ tripId, role }) {
   )
 }
 
-function InsuranceCard({ trip, role }) {
+function InsuranceCard({ trip, role, tripPolicies }) {
   const navigate = useNavigate()
   const { data, error } = useMyInsurance()
-  const covering = policiesCovering(data, trip)
+  // Policies bought for this trip carry its id; older ones are matched by dates.
+  const linked = (tripPolicies ?? []).filter((p) => p.status !== 'Cancelled')
+  const covering = linked.length > 0 ? linked : policiesCovering(data, trip)
 
   // Start the insurance flow with this trip's destination and dates already filled in.
   function getCover() {
     saveTrip({
+      tripId: trip.id,
       destination: trip.destination,
       destinationCode: COUNTRY_BY_CURRENCY[trip.currency] || '',
       startDate: day(trip.tripStartDate),
@@ -175,9 +190,8 @@ function InsuranceCard({ trip, role }) {
       </div>
       {covering.length > 0 ? (
         <p style={{ margin: 0 }}>
-          {covering.length === 1 ? '1 policy covers' : `${covering.length} policies cover`} these
-          dates, for {covering.reduce((n, p) => n + (p.coveredTravellers?.length ?? 0), 0)}{' '}
-          traveller(s).
+          {covering.length === 1 ? '1 policy covers' : `${covering.length} policies cover`} this
+          trip.
         </p>
       ) : (
         <p className="muted">
@@ -245,6 +259,49 @@ function FamilyCard({ trip, role }) {
         >
           {parentView ? 'Manage in Family' : 'Open Family'}
         </Link>
+      )}
+    </div>
+  )
+}
+
+// Closing values whatever foreign money is left at today's server spot rate and
+// marks the trip Completed. No money moves; the confirm step says so.
+function CloseTripCard({ tripId, trip }) {
+  const close = useCloseTrip(tripId)
+  const [confirming, setConfirming] = useState(false)
+  const result = close.data
+  return (
+    <div className="card" aria-label="Close trip" style={{ marginTop: 16 }}>
+      <div className="card-header">
+        <h3>Close &amp; convert back</h3>
+      </div>
+      <Banner>{close.error?.message}</Banner>
+      {result ? (
+        <p style={{ margin: 0 }}>
+          Trip closed. <Money amount={result.returnedForeign} currency={trip.currency} /> unspent,
+          worth <Money amount={result.returnedSgd} /> today.{' '}
+          {Number(result.savedVsSpotSgd) >= 0 ? 'Locking saved ' : 'Locking cost '}
+          <Money amount={Math.abs(Number(result.savedVsSpotSgd) || 0)} /> versus today's rate.
+        </p>
+      ) : confirming ? (
+        <>
+          <p style={{ margin: '0 0 12px' }}>
+            Close the trip and value the unspent {trip.currency} at today's rate? This cannot be
+            undone.
+          </p>
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" disabled={close.isPending} onClick={() => close.mutate()}>
+              {close.isPending ? 'Closing…' : 'Close trip'}
+            </button>
+            <button type="button" className="secondary" onClick={() => setConfirming(false)}>
+              Keep it open
+            </button>
+          </div>
+        </>
+      ) : (
+        <button type="button" className="secondary" onClick={() => setConfirming(true)}>
+          Close trip
+        </button>
       )}
     </div>
   )

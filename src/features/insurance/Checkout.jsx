@@ -8,7 +8,7 @@ import {
   planLabel,
 } from './data'
 import { useInsurancePlans, usePurchaseInsurance } from './queries'
-import { clearPurchaseResult, getDraft, savePurchaseResult } from './storage'
+import { clearPurchaseResult, getDraft, getTrip, savePurchaseResult, tripIdFor } from './storage'
 import InsuranceLayout from './components/InsuranceLayout'
 
 export default function Checkout() {
@@ -43,6 +43,8 @@ export default function Checkout() {
         CoverageStart: draft.trip.startDate,
         CoverageEnd: draft.trip.endDate,
         DestinationCode: draft.trip.destinationCode,
+        // Started from a trip page with the same dates: link the policy to that trip.
+        TripId: tripIdFor(getTrip(), draft.trip),
         Travellers: draft.travellers.map((t) => ({
           FullName: t.name,
           DateOfBirth: t.dob,

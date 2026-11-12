@@ -26,6 +26,11 @@ export default defineConfig({
         rewrite: (path) =>
           path.replace(/^\/api\/budget/, '/WeTrip_Budget_Composite/rest/BudgetComposite'),
       },
+      '/api/trip': {
+        target: 'https://smuedu-dev.outsystemsenterprise.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/trip/, '/WeTrip_Trip_Composite/rest/Trip'),
+      },
       '/api/insurance': {
         target: 'https://smuedu-dev.outsystemsenterprise.com',
         changeOrigin: true,

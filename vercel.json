@@ -13,6 +13,10 @@
       "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Budget_Composite/rest/BudgetComposite/:path*"
     },
     {
+      "source": "/api/trip/:path*",
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Trip_Composite/rest/Trip/:path*"
+    },
+    {
       "source": "/api/insurance/:path*",
       "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Insurance_Composite/rest/InsuranceAPI/:path*"
     },

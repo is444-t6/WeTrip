@@ -103,7 +103,7 @@ test.describe('parent view', () => {
     await page.getByRole('button', { name: 'New trip goal' }).click()
     await expect(page.getByRole('heading', { name: 'New trip goal' })).toBeVisible()
     await expect(page.getByPlaceholder('Tokyo')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create trip goal' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Plan trip' })).toBeVisible()
   })
 })
 

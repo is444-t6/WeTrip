@@ -36,6 +36,12 @@ export const SERVICES = {
     apiKey: env.VITE_INSURANCE_API_KEY || familyKey,
     normalize: true,
   },
+  // Cross-feature trip flows (plan, overview, pay on a trip, close). Same key as Family.
+  trip: {
+    base: env.VITE_TRIP_API_BASE || '/api/trip',
+    apiKey: env.VITE_TRIP_API_KEY || familyKey,
+    normalize: true,
+  },
   // Scan to Pay lives in a separate OutSystems environment, with its own key.
   scantopay: {
     base: env.VITE_SCANTOPAY_API_BASE || '/scantopay',
