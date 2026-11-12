@@ -1,38 +1,74 @@
 import { test, expect } from '@playwright/test'
 
-async function seedValidCheckout(page) {
-  await page.addInitScript(() => {
-    const start = new Date()
-    start.setDate(start.getDate() + 1)
-    const end = new Date(start)
-    end.setDate(end.getDate() + 1)
-    const formatDate = (date) => {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
+// tripId links the checkout to a trip page; premium is the quoted SGD total.
+async function seedValidCheckout(page, { tripId, premium = 12.5 } = {}) {
+  await page.addInitScript(
+    ({ tripId, premium }) => {
+      const start = new Date()
+      start.setDate(start.getDate() + 1)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 1)
+      const formatDate = (date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
 
-    sessionStorage.setItem('wetrip_session', 'parent:account:Parent')
-    sessionStorage.setItem(
-      'wetrip.insurance.draft',
-      JSON.stringify({
-        insurancePlanId: 1,
-        planId: '1',
-        planName: 'Test plan',
-        coverType: 'individual',
-        travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
-        email: 'taylor@example.com',
-        trip: {
-          destination: 'Tokyo',
-          destinationCode: 'JP',
-          startDate: formatDate(start),
-          endDate: formatDate(end),
-        },
-        quote: { totalPremium: 12.5, currencyCode: 'SGD', tripDays: 2 },
-      }),
-    )
+      sessionStorage.setItem('wetrip_session', 'parent:account:Parent')
+      sessionStorage.setItem(
+        'wetrip.insurance.draft',
+        JSON.stringify({
+          insurancePlanId: 1,
+          planId: '1',
+          planName: 'Test plan',
+          coverType: 'individual',
+          travellers: [{ name: 'Taylor Example', dob: '2000-01-01', nationalityCode: 'SG' }],
+          email: 'taylor@example.com',
+          trip: {
+            destination: 'Tokyo',
+            destinationCode: 'JP',
+            startDate: formatDate(start),
+            endDate: formatDate(end),
+          },
+          quote: { totalPremium: premium, currencyCode: 'SGD', tripDays: 2 },
+        }),
+      )
+      if (tripId) {
+        sessionStorage.setItem(
+          'wetrip.insurance.trip',
+          JSON.stringify({ tripId, startDate: formatDate(start), endDate: formatDate(end) }),
+        )
+      }
+    },
+    { tripId, premium },
+  )
+}
+
+// Mocks the plan, the child's miles balance and a purchase; returns what the app sent.
+async function mockMilesCheckout(page, { balance }) {
+  const seen = { milesRequests: [], purchases: [] }
+  await page.route('**/api/insurance/Plans', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{ Id: 1, Name: 'Test plan', CurrencyCode: 'SGD', IsActive: true }]),
+    }),
+  )
+  await page.route('**/api/trip/GetTripMiles*', (route) => {
+    seen.milesRequests.push(new URL(route.request().url()).searchParams.get('TripId'))
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ ChildBalance: balance }),
+    })
   })
+  await page.route('**/api/insurance/Purchase', (route) => {
+    seen.purchases.push(route.request().postDataJSON())
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ PaymentSuccess: true, PolicyNumber: 'POL-1', Status: 'Confirmed' }),
+    })
+  })
+  return seen
 }
 
 test('destination details lead to a separate insurance plan selection step', async ({ page }) => {
@@ -497,6 +533,97 @@ test('unsuccessful insurance payment stays at checkout and displays the bank err
   await expect(page.getByText('MUST-NOT-BE-SHOWN')).toHaveCount(0)
   await page.waitForTimeout(300)
   expect(purchaseRequests).toBe(1)
+})
+
+test('checkout offers the trip child miles, unchecked, and sends them on purchase', async ({
+  page,
+}) => {
+  await seedValidCheckout(page, { tripId: 7, premium: 30 })
+  const seen = await mockMilesCheckout(page, { balance: 1250 })
+
+  await page.goto('/insurance/checkout')
+  const offer = page.getByRole('checkbox', { name: 'Use 1250 miles (SGD 12.50 off)' })
+  await expect(offer).toBeVisible()
+  await expect(offer).not.toBeChecked()
+  expect(seen.milesRequests).toEqual(['7'])
+
+  await offer.check()
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+  await expect(page).toHaveURL(/\/insurance\/confirmation$/)
+  expect(seen.purchases).toHaveLength(1)
+  expect(seen.purchases[0].TripId).toBe(7)
+  expect(seen.purchases[0].RedeemMiles).toBe(1250)
+  expect(seen.purchases[0].RequestId).toMatch(/\S+/)
+})
+
+test('checkout redeems nothing unless the box is ticked', async ({ page }) => {
+  await seedValidCheckout(page, { tripId: 7, premium: 30 })
+  const seen = await mockMilesCheckout(page, { balance: 1250 })
+
+  await page.goto('/insurance/checkout')
+  await expect(page.getByRole('checkbox', { name: /Use 1250 miles/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+  await expect(page).toHaveURL(/\/insurance\/confirmation$/)
+  expect(seen.purchases[0].RedeemMiles).toBe(0)
+})
+
+test('the miles offer is capped so SGD 0.01 is still charged', async ({ page }) => {
+  await seedValidCheckout(page, { tripId: 7, premium: 10 })
+  await mockMilesCheckout(page, { balance: 5000 })
+
+  await page.goto('/insurance/checkout')
+  await expect(page.getByRole('checkbox', { name: 'Use 999 miles (SGD 9.99 off)' })).toBeVisible()
+})
+
+test('a declined purchase gets a new RequestId for the next attempt', async ({ page }) => {
+  await seedValidCheckout(page, { tripId: 7, premium: 30 })
+  const seen = await mockMilesCheckout(page, { balance: 1250 })
+  await page.route('**/api/insurance/Purchase', (route) => {
+    seen.purchases.push(route.request().postDataJSON())
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ PaymentSuccess: false, PaymentMessage: 'Declined.' }),
+    })
+  })
+
+  await page.goto('/insurance/checkout')
+  await page.getByRole('checkbox', { name: /Use 1250 miles/ }).check()
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+  await expect(page.getByRole('alert')).toHaveText('Declined.')
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+  await expect.poll(() => seen.purchases.length).toBe(2)
+  expect(seen.purchases[1].RedeemMiles).toBe(1250)
+  expect(seen.purchases[1].RequestId).not.toBe(seen.purchases[0].RequestId)
+})
+
+test('no miles option when the child has 0 miles or the balance call fails', async ({ page }) => {
+  const checkbox = page.getByRole('checkbox')
+  await seedValidCheckout(page, { tripId: 7, premium: 30 })
+  const seen = await mockMilesCheckout(page, { balance: 0 })
+
+  await page.goto('/insurance/checkout')
+  await expect.poll(() => seen.milesRequests.length).toBe(1)
+  await expect(page.getByRole('button', { name: 'Confirm purchase' })).toBeVisible()
+  await expect(checkbox).toHaveCount(0)
+
+  await page.route('**/api/trip/GetTripMiles*', (route) =>
+    route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }),
+  )
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Confirm purchase' })).toBeVisible()
+  await page.waitForTimeout(300)
+  await expect(checkbox).toHaveCount(0)
+})
+
+test('no miles option, and no balance lookup, when the purchase has no trip', async ({ page }) => {
+  await seedValidCheckout(page, { premium: 30 })
+  const seen = await mockMilesCheckout(page, { balance: 1250 })
+
+  await page.goto('/insurance/checkout')
+  await expect(page.getByRole('button', { name: 'Confirm purchase' })).toBeVisible()
+  await page.waitForTimeout(300)
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
+  expect(seen.milesRequests).toHaveLength(0)
 })
 
 test('expired insurance policies use the red status badge', async ({ page }) => {

@@ -30,6 +30,7 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                                         |
 | GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                       |
 | GET    | `GetCloseOptions?TripId=` | Parent-only, open trip: leftover at spot vs the locked cost; read-only                                                    |
+| GET    | `GetTripMiles?TripId=`    | `{ChildBalance}`: the trip child's miles (Loyalty ledger), readable by the parent (insurance checkout)                    |
 
 ### `PlanTrip`
 

@@ -34,7 +34,9 @@ Bodies are PascalCase; responses are `decap`ed.
 | POST   | `Purchase`                  | Charge the wallet and issue a policy                                                                       |
 | GET    | `MyInsurance`               | Purchased policies and travellers                                                                          |
 
-`Purchase` body: `InsurancePlanId`, `CoverageStart`, `CoverageEnd`, `DestinationCode`, `TripId`, `Travellers[]` of `{FullName, DateOfBirth, Email, NationalityCode}`.
+`Purchase` body: `InsurancePlanId`, `CoverageStart`, `CoverageEnd`, `DestinationCode`, `TripId`, `RedeemMiles`, `RequestId`, `Travellers[]` of `{FullName, DateOfBirth, Email, NationalityCode}`.
+
+Miles (#39): when the purchase has a `TripId`, checkout reads `Trip.GetTripMiles?TripId=` → `{ChildBalance}` and offers an opt-in "Use N miles (SGD x off)" box. 100 miles = SGD 1.00, capped so SGD 0.01 is still charged (`N = min(balance, premium cents - 1)`). `RedeemMiles` is `N` when ticked, else `0`. `RequestId` is one id per attempt, replaced only after a declined payment. No `TripId`, 0 miles or a failed lookup shows no option.
 
 It returns `paymentSuccess`, `paymentMessage`, `policyNumber`, `purchaseId`, `totalPremium`, `paymentFee`, `currencyCode`, `status`. A declined payment is a **200 response** with `paymentSuccess: false`, not a thrown error.
 
