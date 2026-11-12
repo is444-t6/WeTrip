@@ -5,9 +5,9 @@
 export const ORIGIN = 'https://smuedu-dev.outsystemsenterprise.com'
 
 // Every WeTrip module accepts one shared key, WETRIP_SERVER_KEY (each module's
-// WETRIP_SERVER_KEY site property holds it). VITE_FAMILY_API_KEY is accepted as a
-// fallback name for environments that still use it; it holds the same value.
-const KEY = ['WETRIP_SERVER_KEY', 'VITE_FAMILY_API_KEY']
+// WETRIP_SERVER_KEY site property holds it). It has no VITE_ prefix on purpose:
+// it is read only here, on the server, and must never reach the browser bundle.
+const KEY = ['WETRIP_SERVER_KEY']
 // keyIn: 'header' sends X-Contacts-Key; 'query' appends apiKey (the SmartFX
 // composite cannot read request headers).
 export const SERVICES = {
