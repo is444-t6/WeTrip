@@ -4,6 +4,7 @@ import { TripApi } from './api'
 
 export const tripKeys = {
   overview: (tripId) => ['trip', 'overview', String(tripId)],
+  closeOptions: (tripId) => ['trip', 'closeOptions', String(tripId)],
   // Under ['trip'], so every trip mutation (PayOnTrip earns) refreshes it too.
   miles: () => ['trip', 'miles'],
 }
@@ -13,6 +14,16 @@ export const useTripOverview = (tripId) =>
     queryKey: tripKeys.overview(tripId),
     queryFn: () => TripApi.getOverview(tripId),
     enabled: isLoggedIn() && Boolean(tripId),
+  })
+
+// Parent only and refused once the trip has ended: the caller mounts it only for
+// a parent on an open trip. A failed read just leaves the plain close card.
+export const useCloseOptions = (tripId) =>
+  useQuery({
+    queryKey: tripKeys.closeOptions(tripId),
+    queryFn: () => TripApi.getCloseOptions(tripId),
+    enabled: isLoggedIn() && Boolean(tripId),
+    retry: false,
   })
 
 export const useMyMiles = (enabled) =>

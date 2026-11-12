@@ -12,6 +12,8 @@ export const TripApi = {
   // Ledger write (SourceId 5); requestId makes a repeat a no-op.
   addFixedCost: (request) => call('POST', 'AddFixedCost', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
+  // Read-only, parent only: leftover foreign money at today's rate vs the locked cost.
+  getCloseOptions: (tripId) => call('GET', `GetCloseOptions${qs({ TripId: tripId })}`),
   // The caller's miles balance; the customer comes from the session token.
   getMyMiles: () => call('GET', 'GetMyMiles'),
   // A cash receipt: records a budget expense only, moves no money. requestId makes a repeat a no-op.

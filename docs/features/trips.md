@@ -29,6 +29,7 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                                     |
 | GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                                         |
 | GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                       |
+| GET    | `GetCloseOptions?TripId=` | Parent-only, open trip: leftover at spot vs the locked cost; read-only                                                    |
 
 ### `PlanTrip`
 
@@ -73,11 +74,18 @@ There is no OCR: the child types the amount. `ReceiptForm` (child, trip not Comp
 
 No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The reply carries top-level `ReturnedForeign`, `ReturnedSgd`, `SpotRate`, `SavedVsSpotSgd` and sets `Trip.Status = 'Completed'`. No money moves because sandbox forwards never settle. A second close is refused.
 
+### `GetCloseOptions`
+
+`?TripId=`, read-only, parent only, refused once the trip has ended. Returns `UnspentForeign`, `Currency`, `SpotRate`, `LockedRate`, `ValueAtSpotSgd`, `CostAtLockedSgd` (both rounded to cents) and `Better` (`Spot`, `Locked` or `Equal`). Rates are foreign per 1 SGD and SGD = foreign ÷ rate; spot includes `DemoRateShiftPct`, as `CloseTrip` does.
+
+`CloseTripCard` shows the two SGD values and, unless `Better` is `Equal`, one comparison line before the parent closes. Nothing shows when `UnspentForeign` is 0 or the call fails. The `CloseTrip` reply stays authoritative because spot is re-read at confirm. Backend: not published yet (#35).
+
 ## Query keys
 
 | Key                                                              | Data                                              |
 | ---------------------------------------------------------------- | ------------------------------------------------- |
 | `['trip','overview', String(tripId)]`                            | `GetTripOverview`                                 |
+| `['trip','closeOptions', String(tripId)]`                        | `GetCloseOptions` (parent, open trip only)        |
 | `['fx']`, `['family']`, `['budget','dashboard', String(tripId)]` | Cross-feature data refreshed after trip mutations |
 
 `AddReceipt` invalidates the same keys on success; a receipt photo is cached under `['receipt', String(receiptId)]`. `PlanTrip` and `CloseTrip` invalidate trip, FX, family and the trip budget on success. `PayOnTrip` invalidates them in `onSettled`, so a failed or lost call still refreshes what the bank may have changed.
