@@ -71,11 +71,11 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 - The parent funds; the child spends. Role checks are server-side (`PlanTrip`/`CloseTrip` refuse children, `PayOnTrip` refuses parents, strangers are refused by the overview).
 - The pot is a ledger: `remainingForeign = LockedForeign − Σ TripSpend.Amount`.
 - `Amount` is in the trip currency; the bank transfer is SGD at the trip's blended locked rate.
-- Insurance policies appear in the overview when linked by `TripId`; older policies are matched by date overlap in `trip.js`.
+- Insurance policies appear in the overview when linked by `TripId`; older policies without one do not count as cover on the trip page.
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `policiesCovering`, `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
 
 ## Tests
 
