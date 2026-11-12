@@ -80,7 +80,7 @@ With `CarryToTripId` the leftover moves to that trip instead (a WeTrip ledger mo
 
 `?TripId=`, read-only, parent only, refused once the trip has ended. Returns `UnspentForeign`, `Currency`, `SpotRate`, `LockedRate`, `ValueAtSpotSgd`, `CostAtLockedSgd` (both rounded to cents) and `Better` (`Spot`, `Locked` or `Equal`). Rates are foreign per 1 SGD and SGD = foreign ÷ rate; spot includes `DemoRateShiftPct`, as `CloseTrip` does.
 
-`CloseTripCard` shows the two SGD values and, unless `Better` is `Equal`, one comparison line before the parent closes. Nothing shows when `UnspentForeign` is 0 or the call fails. The `CloseTrip` reply stays authoritative because spot is re-read at confirm. Backend: not published yet (#35).
+`CloseTripCard` shows the two SGD values and, unless `Better` is `Equal`, one comparison line before the parent closes. Nothing shows when `UnspentForeign` is 0 or the call fails. The `CloseTrip` reply stays authoritative because spot is re-read at confirm.
 
 It also returns `EligibleTrips[]` (`TripId`, `Destination`, `TripStartDate`, `TripEndDate`): same family link, not this trip, same currency, Watching or PartiallyLocked, with room for the leftover. On the confirm step, "Keep for my next trip" shows when `UnspentForeign` > 0; ticking it shows a select of those trips and sends `CarryToTripId` on confirm. With none eligible it says "No Watching or Partly locked JPY trip has room for this yet." and confirm is disabled. A refused close reloads the options.
 
@@ -117,7 +117,7 @@ A carried trip's close card reads "Trip closed. JPY 1094.00 carried to <destinat
 
 ## Tests
 
-- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state, the Budget card's fixed line.
+- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, carry-over (Keep for my next trip), role handling, signed-out state, the Budget card's fixed line.
 - `tests/new-trip.spec.js` — the new-trip form: fixed-cost rows, the over-limit rules, the `PlanTrip` body, the "not saved" notice on the trip page.
 - `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR, miles on the Paid card.
 - `tests/trip-receipt.spec.js` — receipt form (fields, photo resize, validation, lock message, double submit), receipt rows and photo in the budget.
