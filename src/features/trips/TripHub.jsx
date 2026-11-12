@@ -8,6 +8,7 @@ import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
+import PayLaterCard from './PayLaterCard'
 import { useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day } from './trip'
 import { useState } from 'react'
@@ -65,6 +66,7 @@ export default function TripHub() {
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} overview={data} />
         <BudgetCard tripId={tripId} role={role} overview={data} />
+        <PayLaterCard plans={data.bnplPlans} currency={trip.currency} />
         <InsuranceCard trip={trip} role={role} tripPolicies={data.policies} />
         <FamilyCard trip={trip} role={role} />
       </div>

@@ -9,6 +9,8 @@ export const TripApi = {
   getOverview: (tripId) => call('GET', `GetTripOverview${qs({ TripId: tripId })}`),
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
+  // Also moves money (the bank bills it later); same rules as payOnTrip.
+  payLaterOnTrip: (request) => call('POST', 'PayLaterOnTrip', request),
   closeTrip: (tripId) => call('POST', `CloseTrip${qs({ TripId: tripId })}`),
 }
 

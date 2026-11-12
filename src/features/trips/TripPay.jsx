@@ -5,9 +5,12 @@ import Money from '../../components/Money'
 import { CATEGORIES } from '../budget/constants'
 import PayLayout from '../scantopay/components/PayLayout'
 import QrScanner from '../scantopay/components/QrScanner'
+import { getCustomerId } from '../scantopay/customer'
+import { usePreview } from '../scantopay/queries'
 import { newRequestId } from './api'
+import TripPayLater, { PayLaterDone } from './TripPayLater'
 import { parseMerchantQr } from './trip'
-import { usePayOnTrip, useTripOverview } from './queries'
+import { usePayLaterOnTrip, usePayOnTrip, useTripOverview } from './queries'
 
 // Paying on a trip: the child scans the merchant's QR and the Trip composite pays
 // it from the trip at the locked rate (one SGD transfer), records the trip spend
@@ -16,7 +19,10 @@ import { usePayOnTrip, useTripOverview } from './queries'
 export default function TripPay({ tripId }) {
   const overview = useTripOverview(tripId)
   const pay = usePayOnTrip(tripId)
+  const later = usePayLaterOnTrip(tripId)
+  const preview = usePreview()
   const [qr, setQr] = useState(null)
+  const [qrText, setQrText] = useState('')
   const [badQr, setBadQr] = useState(false)
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState(CATEGORIES[0].id)
@@ -33,29 +39,38 @@ export default function TripPay({ tripId }) {
     setBadQr(!parsed)
     if (!parsed) return
     pay.reset()
+    later.reset()
+    preview.reset()
     requestId.current = newRequestId()
     setQr(parsed)
+    setQrText(text)
     setAmount('')
+    // Only fills in the pay-later options; Pay from trip never waits on it. An open
+    // amount has nothing to preview yet, so it offers Pay from trip only.
+    if (parsed.amount > 0) preview.mutate({ customerId: getCustomerId(), qrText: text })
   }
 
-  function submit() {
+  // months set = pay later (billed by the bank); otherwise pay from the trip pot.
+  function submit(months) {
     if (paying.current || !qr) return
     paying.current = true
-    pay.mutate(
-      {
-        TripId: Number(tripId),
-        MerchantCode: qr.merchantCode,
-        Amount: amountValue,
-        CategoryId: Number(categoryId),
-        RequestId: requestId.current,
-        Narrative: '',
-      },
-      { onSettled: () => (paying.current = false) },
-    )
+    pay.reset()
+    later.reset()
+    const common = {
+      TripId: Number(tripId),
+      Amount: amountValue,
+      CategoryId: Number(categoryId),
+      RequestId: requestId.current,
+    }
+    const settle = { onSettled: () => (paying.current = false) }
+    if (months) later.mutate({ ...common, QrText: qrText, NumberOfMonths: months }, settle)
+    else pay.mutate({ ...common, MerchantCode: qr.merchantCode, Narrative: '' }, settle)
   }
 
   function again() {
     pay.reset()
+    later.reset()
+    preview.reset()
     setQr(null)
     setPasted('')
   }
@@ -112,14 +127,23 @@ export default function TripPay({ tripId }) {
     )
   }
 
+  if (later.data?.numberOfMonths) {
+    return (
+      <PayLayout title={title}>
+        <PayLaterDone result={later.data} tripId={tripId} onAgain={again} />
+      </PayLayout>
+    )
+  }
+
   if (qr) {
     // A lost response may still have paid; never offer a blind retry.
-    const lost =
-      pay.error && (pay.error instanceof TypeError || [502, 503, 504].includes(pay.error.status))
+    const error = pay.error ?? later.error
+    const lost = error && (error instanceof TypeError || [502, 503, 504].includes(error.status))
+    const busy = pay.isPending || later.isPending
     return (
       <PayLayout title={title}>
         {back}
-        <Banner>{result?.status === 'Declined' ? result.message : pay.error?.message}</Banner>
+        <Banner>{result?.status === 'Declined' ? result.message : error?.message}</Banner>
         {lost && (
           <p className="muted" role="alert">
             We lost the bank's reply. Check the trip before paying again: this payment may have gone
@@ -130,7 +154,7 @@ export default function TripPay({ tripId }) {
           className="card"
           onSubmit={(e) => {
             e.preventDefault()
-            submit()
+            submit(0)
           }}
         >
           <p style={{ marginTop: 0 }}>
@@ -175,14 +199,20 @@ export default function TripPay({ tripId }) {
             </select>
           </div>
           <div className="scantopay-actions">
-            <button type="submit" disabled={pay.isPending || lost || amountValue <= 0}>
+            <button type="submit" disabled={busy || lost || amountValue <= 0}>
               {pay.isPending ? 'Paying…' : 'Pay from trip'}
             </button>
-            <button type="button" className="secondary" disabled={pay.isPending} onClick={again}>
+            <button type="button" className="secondary" disabled={busy} onClick={again}>
               Cancel
             </button>
           </div>
         </form>
+        <TripPayLater
+          preview={preview.data}
+          pending={later.isPending}
+          disabled={busy || lost || amountValue <= 0}
+          onConfirm={submit}
+        />
       </PayLayout>
     )
   }

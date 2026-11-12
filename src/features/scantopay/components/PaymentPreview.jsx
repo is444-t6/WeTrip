@@ -4,6 +4,34 @@ import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
 import DetailRow from './DetailRow'
 
+// One radio per BNPL tenor; shared with the trip pay screen.
+export function PlanOptions({ plans, currency, months, disabled, onChange }) {
+  return (
+    <div className="scantopay-plans">
+      {plans.map((plan) => (
+        <label className="scantopay-plan" key={plan.numberOfMonths}>
+          <input
+            type="radio"
+            name="scantopay-plan"
+            disabled={disabled}
+            checked={months === plan.numberOfMonths}
+            onChange={() => onChange(plan.numberOfMonths)}
+          />
+          <span>
+            {plan.numberOfMonths} months ·{' '}
+            <Money amount={plan.monthlyInstallment} currency={currency} />
+            /month
+            <small>
+              Interest <Money amount={plan.totalInterest} currency={currency} /> · ends{' '}
+              {String(plan.maturityDate).slice(0, 10)}
+            </small>
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 export default function PaymentPreview({
   preview,
   paying,
@@ -63,28 +91,13 @@ export default function PaymentPreview({
         <>
           <h2 className="section-title">Or split it</h2>
           <div className="card">
-            <div className="scantopay-plans">
-              {plans.map((plan) => (
-                <label className="scantopay-plan" key={plan.numberOfMonths}>
-                  <input
-                    type="radio"
-                    name="scantopay-plan"
-                    disabled={busy}
-                    checked={months === plan.numberOfMonths}
-                    onChange={() => setMonths(plan.numberOfMonths)}
-                  />
-                  <span>
-                    {plan.numberOfMonths} months ·{' '}
-                    <Money amount={plan.monthlyInstallment} currency={currency} />
-                    /month
-                    <small>
-                      Interest <Money amount={plan.totalInterest} currency={currency} /> · ends{' '}
-                      {String(plan.maturityDate).slice(0, 10)}
-                    </small>
-                  </span>
-                </label>
-              ))}
-            </div>
+            <PlanOptions
+              plans={plans}
+              currency={currency}
+              months={months}
+              disabled={busy}
+              onChange={setMonths}
+            />
             <div className="scantopay-actions">
               <button type="button" disabled={busy || !months} onClick={() => onPayLater(months)}>
                 {paying === 'later' ? 'Setting up plan…' : 'Pay later'}

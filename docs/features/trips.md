@@ -24,6 +24,7 @@ Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-sid
 | POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                  |
 | GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, CallerRole}` |
 | POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
+| POST   | `PayLaterOnTrip`          | Child-only: BNPL plan billed by the bank; not from the trip pot (proposed contract, issue #34)               |
 | POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
 
 ### `PlanTrip`
@@ -44,6 +45,14 @@ Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`,
 - One SGD transfer at the trip's locked rate; writes `TripSpend` and a Budget expense.
 - `ledgerPending` may be true even when `Paid`.
 - Never retried. `retry: false`; a lost reply is treated as "may have completed".
+
+### `PayLaterOnTrip`
+
+Proposed contract (frontend built against it, backend pending). Request: `TripId`, `QrText` (the scanned string as-is), `Amount`, `NumberOfMonths`, `CategoryId`, `RequestId`. Returns `Status`, `Principal`, `Currency`, `NumberOfMonths`, `MonthlyInstallment`, `TotalInterest`, `FirstRepaymentDate`, `MaturityDate`, `LedgerPending`.
+
+- `TripPay` previews the QR with Scan-to-Pay `PreviewPayment` (`CustomerId` = session customer) for `bnplEligible` / `bnplOptions[]`. The preview never blocks Pay from trip; a failed preview just shows no options. Open-amount QRs are not previewed.
+- Creates no `TripSpend`, leaves `remainingForeign` unchanged. A 4xx `Errors[0]` shows in a banner and the form stays.
+- Same `retry: false` and lost-reply lockout as `PayOnTrip`. `GetTripOverview` may carry `BnplPlans[]` (`MerchantName`, `NumberOfMonths`, `MonthlyInstallment`, `FirstRepaymentDate`, `MaturityDate`, optional `Currency`), listed in the hub's "Pay later" card.
 
 ### `CloseTrip`
 
@@ -79,8 +88,8 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Tests
 
-- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state.
-- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
+- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state, Pay later plans card.
+- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR; pay later (options, ineligible, preview failure, confirmation, 4xx, lost reply). Mocks `/scantopay/` too.
 - `tests/trips.spec.js` — pure date/trip helpers.
 - `bun run test:trip` — live Trip composite contract; moves sandbox money.
 
