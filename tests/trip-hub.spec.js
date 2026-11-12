@@ -113,6 +113,22 @@ test('the trip header and all four sections show their own data', async ({ page 
   await expect(section(page, 'Family')).toContainText('SGD 50.00 spent of SGD 200.00 this period')
 })
 
+test('the Money card shows the miles earned on the trip, and nothing when none', async ({
+  page,
+}) => {
+  await as(page, CHILD)
+  const child = { GetMyFamilyRole: () => ({ role: 'Child', FamilyLinkId: 3 }) }
+  let earned = 30
+  await mockApi(page, { ...child, GetTripOverview: () => overview({ MilesEarned: earned }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toContainText('30 miles earned on this trip')
+
+  earned = 0
+  await page.reload()
+  await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
+  await expect(section(page, 'Money')).not.toContainText('miles')
+})
+
 test('the overview is read with the trip id from the URL', async ({ page }) => {
   await as(page, PARENT)
   const seen = []

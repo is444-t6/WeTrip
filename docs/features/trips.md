@@ -19,15 +19,16 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 
 Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-side.
 
-| Method | Endpoint                  | Purpose                                                                                                      |
-| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                  |
-| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, CallerRole}` |
-| POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                      |
-| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                              |
-| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                |
-| POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                        |
-| GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                            |
+| Method | Endpoint                  | Purpose                                                                                                                   |
+| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                               |
+| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, MilesEarned, CallerRole}` |
+| POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                                   |
+| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                                           |
+| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                             |
+| POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                                     |
+| GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                                         |
+| GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                       |
 
 ### `PlanTrip`
 
@@ -45,14 +46,19 @@ A fixed cost is a Budget expense with `SourceId` 5, so it uses up its category's
 
 Request: `TripId`, `MerchantCode`, `Amount` (trip currency), `CategoryId`, `RequestId`, `Narrative`.
 
-Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`, `currency`, `sgdCharged`, `remainingForeign`, `ledgerPending`, message.
+Returns `status` (`Paid` / `Declined` / `Duplicate`), `transactionId`, `amount`, `currency`, `sgdCharged`, `remainingForeign`, `ledgerPending`, `milesEarned`, message.
 
 - Requires a locked pot.
 - **Idempotent by `RequestId`**; a repeat returns `Duplicate` and the UI shows "Already paid".
 - An oversized amount returns `Declined`; no payment is attempted.
 - One SGD transfer at the trip's locked rate; writes `TripSpend` and a Budget expense.
 - `ledgerPending` may be true even when `Paid`.
+- Earns miles: `milesEarned = floor(round2(sgdCharged) × 10)`, 0 for `Duplicate` and `Declined`. The Paid card shows "+N miles" when it is above 0.
 - Never retried. `retry: false`; a lost reply is treated as "may have completed".
+
+### `GetMyMiles`
+
+Child's miles balance, derived on the server from their trip spends (10 miles per SGD charged). `TripHub`'s Money card shows the overview's `MilesEarned` ("N miles earned on this trip") when it is above 0. Home's `MilesCard` reads `GetMyMiles` for children only (`['trip','miles']`, so `PayOnTrip` refreshes it); a failed read hides the card.
 
 ### `AddReceipt` and `GetReceipt`
 
@@ -93,13 +99,13 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, `ReceiptForm`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, `ReceiptForm`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `milesLabel`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
 
 ## Tests
 
 - `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state, the Budget card's fixed line.
 - `tests/new-trip.spec.js` — the new-trip form: fixed-cost rows, the over-limit rules, the `PlanTrip` body, the "not saved" notice on the trip page.
-- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
+- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR, miles on the Paid card.
 - `tests/trip-receipt.spec.js` — receipt form (fields, photo resize, validation, lock message, double submit), receipt rows and photo in the budget.
 - `tests/trips.spec.js` — pure date/trip helpers.
 - `bun run test:trip` — live Trip composite contract (including `AddReceipt` / `GetReceipt`); moves sandbox money.
