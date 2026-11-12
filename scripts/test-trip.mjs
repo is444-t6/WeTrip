@@ -1,7 +1,7 @@
 // Live contract test for WeTrip_Trip_Composite (PlanTrip, GetTripOverview,
 // PayOnTrip, CloseTrip) plus the real FX forward booked by SmartFX LockNow.
 //
-//   node --env-file=.env.local scripts/test-trip.mjs
+//   bun --env-file=.env.local scripts/test-trip.mjs
 //
 // WARNING: this MOVES SANDBOX MONEY. One PayOnTrip sends about 1 SGD (plus the
 // bank's fee) from the demo child's SGD account to merchant M001, and LockNow

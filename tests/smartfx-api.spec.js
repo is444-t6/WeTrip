@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
 // planned and closed through the Trip composite, which owns those flows; nothing
 // here pays. Sandbox only.
 //
-// Run: npm run test:smartfx
+// Run: bun run test:smartfx
 
 const BASE =
   process.env.SMARTFX_BASE ??

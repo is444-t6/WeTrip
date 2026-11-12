@@ -1,10 +1,10 @@
 // Demo-day switch: moves the FX market for ONE trip so a presentation can show
 // auto-lock firing and a lock paying off, whatever the real rates are today.
 //
-//   npm run demo:market -- <tripId>            show the trip's shift and rates
-//   npm run demo:market -- <tripId> +3         SGD buys 3% more foreign (target hit)
-//   npm run demo:market -- <tripId> -4         SGD buys 4% less (locking paid off)
-//   npm run demo:market -- <tripId> off        back to the real market
+//   bun run demo:market -- <tripId>            show the trip's shift and rates
+//   bun run demo:market -- <tripId> +3         SGD buys 3% more foreign (target hit)
+//   bun run demo:market -- <tripId> -4         SGD buys 4% less (locking paid off)
+//   bun run demo:market -- <tripId> off        back to the real market
 //
 // The shift is stored on the trip (SmartFX_Atomic Trip.DemoRateShiftPct) and
 // applied by SmartFX (quotes for auto-lock, LockNow) and Trip CloseTrip. Other
@@ -15,14 +15,14 @@
 //   1. Parent plans a trip in the UI, auto-lock ON, target rate about 2% above
 //      the live forward (press "Use forward", then add 2%). Budget ~S$1000:
 //      locking moves no money, only paying does.
-//   2. npm run demo:market -- <tripId> +3   then "Check now" on Manage FX & locks:
+//   2. bun run demo:market -- <tripId> +3   then "Check now" on Manage FX & locks:
 //      the target is hit and SmartFX auto-locks the whole budget.
 //      ("Check now" runs the same all-trips check as the 5-minute timer.)
 //   3. Child pays a small QR on the trip (real ~S$1, once).
-//   4. npm run demo:market -- <tripId> -4   then parent closes the trip:
+//   4. bun run demo:market -- <tripId> -4   then parent closes the trip:
 //      "Locking saved S$X versus today's rate" (about 5% of the pot at today's
 //      rates; the script prints the exact figure before you close).
-//   5. npm run demo:market -- <tripId> off
+//   5. bun run demo:market -- <tripId> off
 import { env } from './_lib.mjs'
 
 const ORIGIN = 'https://smuedu-dev.outsystemsenterprise.com'
@@ -32,7 +32,7 @@ const SMARTFX = `${ORIGIN}/WeTrip_SmartFX_Composite/rest/SmartFX`
 const [tripArg, shiftArg] = process.argv.slice(2)
 const tripId = Number(tripArg)
 if (!tripId) {
-  console.error('usage: npm run demo:market -- <tripId> [+N | -N | off]')
+  console.error('usage: bun run demo:market -- <tripId> [+N | -N | off]')
   process.exit(1)
 }
 

@@ -39,7 +39,7 @@ Response shapes:
 
 The client parses the QR as JSON: `{"merchantCode":"M001","amount":1200,"currency":"JPY"}`. `amount: 0` means an open amount, which the user types before preview. Invalid JSON is rejected with a friendly message.
 
-The camera uses `html5-qrcode` with the rear camera. It requires HTTPS or localhost; `npm run dev:https` exists for phone testing.
+The camera uses `html5-qrcode` with the rear camera. It requires HTTPS or localhost; `bun run dev:https` exists for phone testing.
 
 ## Query keys
 

@@ -2,7 +2,7 @@
 // the build guide's Task 20.3 Postman table, run directly against OutSystems.
 //
 // Usage:
-//   node --env-file=.env.local scripts/test-composite.mjs
+//   bun --env-file=.env.local scripts/test-composite.mjs
 //
 // WARNING: unlike test-atomic.mjs, this one calls real SMUtBank endpoints
 // through Family_Composite — TopUp, SetupAllowance and ChildSpend move real

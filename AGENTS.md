@@ -15,32 +15,32 @@ WeTrip is a React SPA for a student travel-fintech concept: family accounts, Sma
 
 ## Commands
 
-Run from `WeTrip/`:
+Bun 1.4+ installs dependencies and runs the tooling. Playwright is the exception and runs on Node.js, so keep Node 22 available for the test suites. Run from `WeTrip/`:
 
 ```bash
-npm install
-npm run dev          # Vite dev server; proxies every API, so no CORS locally
-npm run dev:https    # HTTPS + LAN URL for the phone camera (Scan-to-Pay)
-npm run build
-npm run lint         # oxlint
-npm run format       # oxfmt: no semicolons, single quotes
-npm run format:check
+bun install
+bun run dev          # Vite dev server; proxies every API, so no CORS locally
+bun run dev:https    # HTTPS + LAN URL for the phone camera (Scan-to-Pay)
+bun run build
+bun run lint         # oxlint
+bun run format       # oxfmt: no semicolons, single quotes
+bun run format:check
 ```
 
 Tests, also from `WeTrip/`:
 
 ```bash
 npx playwright install chromium
-npm run test:e2e         # mocked specs in parallel, then the live specs with one worker
-npm run test:mocked      # every mocked spec, in parallel; never reaches a backend
-npm run test:ui:mocked   # mocked Family UI; never reaches a backend
-npm run test:ui          # Family UI against the live sandbox (read-only)
-npm run test:atomic      # Family_Atomic; writes test rows with synthetic identities
-npm run test:composite   # Family_Composite; moves sandbox money
-npm run test:smartfx     # live contract test; writes a trip, lock, spend and convert-back
+bun run test:e2e         # mocked specs in parallel, then the live specs with one worker
+bun run test:mocked      # every mocked spec, in parallel; never reaches a backend
+bun run test:ui:mocked   # mocked Family UI; never reaches a backend
+bun run test:ui          # Family UI against the live sandbox (read-only)
+bun run test:atomic      # Family_Atomic; writes test rows with synthetic identities
+bun run test:composite   # Family_Composite; moves sandbox money
+bun run test:smartfx     # live contract test; writes a trip, lock, spend and convert-back
 ```
 
-Among the npm scripts, only `test:ui:mocked` is backend-free. Several individual specs are too (`home-mocked`, `login-mocked`, `budget-mobile`, `fx-mobile`, `scantopay`, `trip-hub`, `insurance`, plus the pure unit specs); run one with `npx playwright test tests/<file>.spec.js`. Everything live shares one sandbox, so the `live` Playwright project (`family.spec.js`, `smartfx-api.spec.js`) runs with one worker — do not parallelise it. The `mocked` project runs fully parallel. Playwright serves a production build through `vite preview`, which uses the same API proxy as dev. Use demo accounts for `test:composite`, the UI suites and `test:smartfx`; `test:atomic` deliberately uses its own synthetic `ATOMIC_TEST_*` identities, and pointing it at the demo parent/child creates links with fake accounts that break `GetChildren`. Run write suites only when the change actually touches their contract.
+Among the package scripts, only `test:ui:mocked` is backend-free. Several individual specs are too (`home-mocked`, `login-mocked`, `budget-mobile`, `fx-mobile`, `scantopay`, `trip-hub`, `insurance`, plus the pure unit specs); run one with `npx playwright test tests/<file>.spec.js`. Everything live shares one sandbox, so the `live` Playwright project (`family.spec.js`, `smartfx-api.spec.js`) runs with one worker — do not parallelise it. The `mocked` project runs fully parallel. Playwright serves a production build through `vite preview`, which uses the same API proxy as dev. Use demo accounts for `test:composite`, the UI suites and `test:smartfx`; `test:atomic` deliberately uses its own synthetic `ATOMIC_TEST_*` identities, and pointing it at the demo parent/child creates links with fake accounts that break `GetChildren`. Run write suites only when the change actually touches their contract.
 
 ## Architecture
 
@@ -116,4 +116,4 @@ To add or change a screen:
 
 ## Done
 
-Run `npm run format:check`, `npm run lint` and `npm run build`. Run the mocked UI suites for interface changes and the relevant API suite for contract changes. Update `README.md` or `docs/DESIGN.md` when behaviour they describe changes. Let the router plugin write `src/routeTree.gen.ts`; never hand-edit it.
+Run `bun run format:check`, `bun run lint` and `bun run build`. Run the mocked UI suites for interface changes and the relevant API suite for contract changes. Update `README.md` or `docs/DESIGN.md` when behaviour they describe changes. Let the router plugin write `src/routeTree.gen.ts`; never hand-edit it.

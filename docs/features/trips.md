@@ -82,7 +82,7 @@ No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The re
 - `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, role handling, signed-out state.
 - `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR.
 - `tests/trips.spec.js` — pure date/trip helpers.
-- `npm run test:trip` — live Trip composite contract; moves sandbox money.
+- `bun run test:trip` — live Trip composite contract; moves sandbox money.
 
 ## Known issues
 
