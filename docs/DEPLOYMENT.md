@@ -207,7 +207,7 @@ Steps:
 Properties:
 
 - Builds happen on the GitHub runner; Vercel receives prebuilt output. Vercel's own build infrastructure is not used for CD.
-- The freshness check prevents an older CI run from rolling production back after a newer push.
+- The freshness check prevents an older CI run from rolling production back after a newer push. Docs-only commits after the tested SHA are allowed through, because CI is skipped for them and they cannot change the deployed bundle.
 - Only production is deployed; there is no approval gate, canary, staging promotion or post-deploy smoke test.
 - `concurrency: production` with `cancel-in-progress: false` serializes deploys.
 - Environment-variable changes do not redeploy by themselves; the next deploy picks them up.
@@ -341,7 +341,7 @@ Vercel keeps immutable deployments. To roll back:
 1. Open the Vercel project → Deployments.
 2. Promote a previous deployment to Production (or `vercel rollback` from the CLI).
 
-Do **not** try to re-run CD for an older commit: the freshness guard fails if `origin/main` has moved. A revert commit on `main` is the Git-based route.
+Do **not** try to re-run CD for an older commit: the freshness guard fails if `origin/main` has moved, unless the only newer commits are docs-only. A revert commit on `main` is the Git-based route.
 
 A frontend rollback does not revert OutSystems publishes, database rows, site properties or Vercel env changes.
 
