@@ -8,7 +8,7 @@ import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
 import { saveTrip } from '../insurance/storage'
 import { useMyInsurance } from '../insurance/queries'
-import { isEnded, tripStatus } from '../fx/status'
+import { demoLabel, isEnded, tripStatus } from '../fx/status'
 import { useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day, policiesCovering } from './trip'
 import { useState } from 'react'
@@ -44,8 +44,11 @@ export default function TripHub() {
             {day(trip.tripStartDate)} → {day(trip.tripEndDate)}
           </span>
         </div>
-        <span className={`badge ${tripStatus(trip.status).tone}`}>
-          {tripStatus(trip.status).label}
+        <span className="row" style={{ gap: 6 }}>
+          {demoLabel(trip) && <span className="badge pending">{demoLabel(trip)}</span>}
+          <span className={`badge ${tripStatus(trip.status).tone}`}>
+            {tripStatus(trip.status).label}
+          </span>
         </span>
       </div>
 
@@ -67,7 +70,9 @@ export default function TripHub() {
         <FamilyCard trip={trip} role={role} />
       </div>
 
-      {role === 'Parent' && !isEnded(trip.status) && <CloseTripCard tripId={tripId} trip={trip} />}
+      {((role === 'Parent' && !isEnded(trip.status)) || trip.status === 'Completed') && (
+        <CloseTripCard tripId={tripId} trip={trip} />
+      )}
     </>,
   )
 }
@@ -269,7 +274,22 @@ function FamilyCard({ trip, role }) {
 function CloseTripCard({ tripId, trip }) {
   const close = useCloseTrip(tripId)
   const [confirming, setConfirming] = useState(false)
-  const result = close.data
+  // After the refetch the trip reads Completed; keep showing what closing found,
+  // rebuilt from the stored close for anyone opening the trip later.
+  const lockedForeign = Number(trip.lockedForeign) || 0
+  const returnRate = Number(trip.returnRate) || 0
+  const result =
+    close.data ??
+    (trip.status === 'Completed'
+      ? {
+          returnedForeign: trip.returnedForeign,
+          returnedSgd: trip.returnedSgd,
+          savedVsSpotSgd:
+            returnRate > 0 && lockedForeign > 0
+              ? lockedForeign / returnRate - (Number(trip.lockedSgd) || 0)
+              : 0,
+        }
+      : null)
   return (
     <div className="card" aria-label="Close trip" style={{ marginTop: 16 }}>
       <div className="card-header">

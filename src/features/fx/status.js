@@ -22,3 +22,13 @@ export function splitTrips(trips) {
     ended: list.filter((t) => isEnded(t.status)).sort((a, b) => byStart(b, a)),
   }
 }
+
+// Demo-day switch (scripts/demo-market.mjs): a per-trip percent the server moves
+// the market by. Pages apply it to live quotes so they match what SmartFX uses.
+export const demoShift = (trip) => Number(trip?.demoRateShiftPct) || 0
+export const demoRate = (rate, trip) =>
+  rate == null ? rate : Number(rate) * (1 + demoShift(trip) / 100)
+export const demoLabel = (trip) => {
+  const s = demoShift(trip)
+  return s ? `Demo market ${s > 0 ? '+' : ''}${s}%` : ''
+}

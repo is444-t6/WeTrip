@@ -9,9 +9,9 @@ import Money from '../../components/Money'
 import BalanceHero from '../../components/BalanceHero'
 import RateGauge from './components/RateGauge'
 import { tenorFor } from './api'
-import { isEnded, tripStatus } from './status'
+import { demoLabel, demoRate, isEnded, tripStatus } from './status'
 import { useCloseTrip } from '../trips/queries'
-import { useCancelTrip, useLockNow, useRate, useTrip } from './queries'
+import { useCancelTrip, useCheckRates, useLockNow, useRate, useTrip } from './queries'
 
 export default function TripDetail() {
   const { tripId } = useParams({ from: '/fx/trips/$tripId' })
@@ -20,6 +20,8 @@ export default function TripDetail() {
 
   const trip = data?.trip
   const quote = useRate(trip?.currency, tenorFor(trip?.tripStartDate))
+  const checkRates = useCheckRates()
+  const forward = demoRate(quote.data?.forwardRate, trip)
   const locks = data?.locks || []
   const spends = data?.spends || []
 
@@ -62,6 +64,11 @@ export default function TripDetail() {
         {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
         {statusLabel}
         {trip.childNickname ? ` · ${trip.childNickname}` : ''}
+        {demoLabel(trip) && (
+          <span className="badge pending" style={{ marginLeft: 8 }}>
+            {demoLabel(trip)}
+          </span>
+        )}
       </p>
 
       <BalanceHero
@@ -79,19 +86,16 @@ export default function TripDetail() {
         }
       />
 
-      <RateGauge
-        current={quote.data?.forwardRate}
-        target={trip.targetRate}
-        currency={trip.currency}
-      />
+      <RateGauge current={forward} target={trip.targetRate} currency={trip.currency} />
 
       {role === 'Parent' && (
         <ParentActions
           trip={trip}
           remainingSgd={remainingSgd}
-          currentRate={quote.data?.forwardRate}
-          onCheck={quote.refetch}
-          checking={quote.isFetching}
+          currentRate={forward}
+          // Runs the same check as the 5-minute timer, so an auto-lock fires now.
+          onCheck={() => checkRates.mutate(undefined, { onSettled: () => quote.refetch() })}
+          checking={checkRates.isPending || quote.isFetching}
         />
       )}
       {role === 'Child' && remainingForeign > 0 && <PayOnTripCard trip={trip} />}

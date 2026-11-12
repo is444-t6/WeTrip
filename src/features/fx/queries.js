@@ -67,6 +67,10 @@ export function useCheckRates() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: FxApi.checkRatesNow,
-    onSuccess: () => qc.invalidateQueries({ queryKey: fxKeys.trips }),
+    // An auto-lock changes the trip everywhere it is shown.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fx'] })
+      qc.invalidateQueries({ queryKey: ['trip'] })
+    },
   })
 }
