@@ -16,13 +16,13 @@ export const useTripOverview = (tripId) =>
     enabled: isLoggedIn() && Boolean(tripId),
   })
 
-// Parent only and refused once the trip has ended: the caller mounts it only for
-// a parent on an open trip. A failed read just leaves the plain close card.
-export const useCloseOptions = (tripId) =>
+// Parent only and refused once the trip has ended: the caller turns it off for an
+// ended trip. A failed read just leaves the plain close card.
+export const useCloseOptions = (tripId, enabled) =>
   useQuery({
     queryKey: tripKeys.closeOptions(tripId),
     queryFn: () => TripApi.getCloseOptions(tripId),
-    enabled: isLoggedIn() && Boolean(tripId),
+    enabled: isLoggedIn() && Boolean(tripId) && enabled,
     retry: false,
   })
 
@@ -89,7 +89,9 @@ export const useReceipt = (receiptId, enabled) =>
 export function useCloseTrip(tripId) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => TripApi.closeTrip(tripId),
+    mutationFn: (carryToTripId) => TripApi.closeTrip(tripId, carryToTripId),
     onSuccess: () => refreshTripViews(qc, tripId),
+    // A refused carry-over usually means the eligible list went stale; reload it.
+    onError: () => qc.invalidateQueries({ queryKey: tripKeys.closeOptions(tripId) }),
   })
 }

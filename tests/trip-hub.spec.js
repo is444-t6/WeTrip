@@ -501,6 +501,170 @@ test('an ended trip shows its stored result, not a fresh comparison', async ({ p
   expect(calls).toBe(0)
 })
 
+// Keep for my next trip: GetCloseOptions lists EligibleTrips, and CloseTrip takes
+// CarryToTripId. A carried trip is Completed with CarriedForeign and CarriedToTripId.
+const OSAKA = {
+  TripId: 21,
+  Destination: 'Osaka',
+  TripStartDate: '2027-05-01',
+  TripEndDate: '2027-05-10',
+}
+const TOKYO = {
+  TripId: 22,
+  Destination: 'Tokyo',
+  TripStartDate: '2027-06-01',
+  TripEndDate: '2027-06-09',
+}
+const LEFTOVER = { ...OPTIONS, UnspentForeign: 1094, EligibleTrips: [OSAKA, TOKYO] }
+const CARRIED = {
+  ...TRIP,
+  Status: 'Completed',
+  ReturnedForeign: 0,
+  CarriedForeign: 1094,
+  CarriedToTripId: 22,
+}
+const FAMILY_TRIPS = [
+  { ...TRIP, Id: 21, Destination: 'Osaka' },
+  { ...TRIP, Id: 22, Destination: 'Tokyo' },
+]
+const confirmClose = async (card) => {
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await card.getByLabel('Keep for my next trip').check()
+}
+
+test('keeping the money lists the eligible trips and closes with the one picked', async ({
+  page,
+}) => {
+  await as(page, PARENT)
+  const calls = []
+  await mockApi(page, {
+    GetCloseOptions: () => LEFTOVER,
+    GetTrips: () => FAMILY_TRIPS,
+    GetTripOverview: () => overview(calls.length ? { Trip: CARRIED } : {}),
+    CloseTrip: (route) => {
+      calls.push(Object.fromEntries(new URL(route.request().url()).searchParams))
+      return { Trip: CARRIED, ReturnedForeign: 0, ReturnedSgd: 0, SavedVsSpotSgd: 0 }
+    },
+  })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await confirmClose(card)
+  const next = card.getByLabel('Which trip')
+  await expect(next.locator('option')).toHaveText([
+    'Osaka, 2027-05-01 → 2027-05-10',
+    'Tokyo, 2027-06-01 → 2027-06-09',
+  ])
+  await next.selectOption('22')
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await expect(card).toContainText('Trip closed. JPY 1094.00 carried to Tokyo.')
+  expect(calls).toEqual([{ TripId: '12', CarryToTripId: '22' }])
+  await expect(card).not.toContainText('worth')
+  await expect(card).not.toContainText('Locking')
+})
+
+test('converting back still sends no CarryToTripId when trips are eligible', async ({ page }) => {
+  await as(page, PARENT)
+  const calls = []
+  await mockApi(page, {
+    GetCloseOptions: () => LEFTOVER,
+    CloseTrip: (route) => {
+      calls.push(new URL(route.request().url()).searchParams.has('CarryToTripId'))
+      return { Trip: { ...TRIP, Status: 'Completed' }, ReturnedForeign: 1094, ReturnedSgd: 9.17 }
+    },
+  })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await expect(card).toContainText('Trip closed. JPY 1094.00 unspent')
+  expect(calls).toEqual([false])
+})
+
+test('with no eligible trip, keeping the money cannot be confirmed', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, { GetCloseOptions: () => ({ ...LEFTOVER, EligibleTrips: [] }) })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await confirmClose(card)
+  await expect(card).toContainText('No Watching or Partly locked JPY trip has room for this yet')
+  await expect(card.getByRole('button', { name: 'Close trip' })).toBeDisabled()
+  await card.getByLabel('Keep for my next trip').uncheck()
+  await expect(card.getByRole('button', { name: 'Close trip' })).toBeEnabled()
+})
+
+test('a refused carry-over shows the reason and leaves the trip open', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetCloseOptions: () => LEFTOVER,
+    CloseTrip: () => ({
+      __status: 400,
+      body: { Errors: ["That trip can't take the carry-over"] },
+    }),
+  })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await confirmClose(card)
+  await card.getByRole('button', { name: 'Close trip' }).click()
+  await expect(page.getByRole('alert')).toHaveText("That trip can't take the carry-over")
+  await expect(card.getByRole('button', { name: 'Close trip' })).toBeEnabled()
+  await expect(card).not.toContainText('Trip closed.')
+})
+
+test('a carried trip opened later says where the money went', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTrips: () => FAMILY_TRIPS,
+    GetTripOverview: () => overview({ Trip: CARRIED }),
+  })
+  await page.goto('/trips/12')
+  const card = section(page, 'Close trip')
+  await expect(card).toContainText('Trip closed. JPY 1094.00 carried to Tokyo.')
+  await expect(card).not.toContainText('worth')
+  await expect(card).not.toContainText('Locking')
+})
+
+test('a carried trip says "your next trip" while its destination is unknown', async ({ page }) => {
+  await as(page, PARENT)
+  // GetTrips is not mocked, so the list never loads.
+  await mockApi(page, { GetTripOverview: () => overview({ Trip: CARRIED }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Close trip')).toContainText(
+    'Trip closed. JPY 1094.00 carried to your next trip.',
+  )
+})
+
+test('the trip that received a carry-over shows where it came from', async ({ page }) => {
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTrips: () => FAMILY_TRIPS,
+    GetTripOverview: () =>
+      overview({
+        Locks: [
+          {
+            Id: 90,
+            TripId: 12,
+            Source: 'CarryOver',
+            ForeignAmount: 1094,
+            SgdAmount: 9.01,
+            ReferenceNumber: 'carry:21',
+          },
+        ],
+      }),
+  })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toContainText('Carried JPY 1094.00 from Osaka')
+})
+
+test('a trip with no carry-over lock does not read the trip list', async ({ page }) => {
+  await as(page, PARENT)
+  let calls = 0
+  await mockApi(page, { GetTrips: () => (calls++, FAMILY_TRIPS) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
+  await expect(section(page, 'Money')).not.toContainText('Carried')
+  expect(calls).toBe(0)
+})
+
 test('a trip in demo market mode says so', async ({ page }) => {
   await as(page, PARENT)
   await mockApi(page, {

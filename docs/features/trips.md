@@ -72,13 +72,19 @@ There is no OCR: the child types the amount. `ReceiptForm` (child, trip not Comp
 
 ### `CloseTrip`
 
-No body; `?TripId=`. Values leftover foreign at the **server** spot rate. The reply carries top-level `ReturnedForeign`, `ReturnedSgd`, `SpotRate`, `SavedVsSpotSgd` and sets `Trip.Status = 'Completed'`. No money moves because sandbox forwards never settle. A second close is refused.
+No body; `?TripId=` and optionally `&CarryToTripId=` (0 or absent = convert back). Values leftover foreign at the **server** spot rate. The reply carries top-level `ReturnedForeign`, `ReturnedSgd`, `SpotRate`, `SavedVsSpotSgd` and sets `Trip.Status = 'Completed'`. No money moves because sandbox forwards never settle. A second close is refused.
+
+With `CarryToTripId` the leftover moves to that trip instead (a WeTrip ledger move, not a bank transfer, #38). The closed trip is `Completed` with `ReturnedForeign` 0, `CarriedForeign` = the amount and `CarriedToTripId`; the receiving trip gets a `TripLock` with `Source` `CarryOver` and `ReferenceNumber` `carry:<closed trip id>`, which `GetTripOverview` lists in `Locks`. A trip that can no longer take it is refused with 4xx "That trip can't take the carry-over" and the closed trip stays open.
 
 ### `GetCloseOptions`
 
 `?TripId=`, read-only, parent only, refused once the trip has ended. Returns `UnspentForeign`, `Currency`, `SpotRate`, `LockedRate`, `ValueAtSpotSgd`, `CostAtLockedSgd` (both rounded to cents) and `Better` (`Spot`, `Locked` or `Equal`). Rates are foreign per 1 SGD and SGD = foreign ÷ rate; spot includes `DemoRateShiftPct`, as `CloseTrip` does.
 
 `CloseTripCard` shows the two SGD values and, unless `Better` is `Equal`, one comparison line before the parent closes. Nothing shows when `UnspentForeign` is 0 or the call fails. The `CloseTrip` reply stays authoritative because spot is re-read at confirm. Backend: not published yet (#35).
+
+It also returns `EligibleTrips[]` (`TripId`, `Destination`, `TripStartDate`, `TripEndDate`): same family link, not this trip, same currency, Watching or PartiallyLocked, with room for the leftover. On the confirm step, "Keep for my next trip" shows when `UnspentForeign` > 0; ticking it shows a select of those trips and sends `CarryToTripId` on confirm. With none eligible it says "No Watching or Partly locked JPY trip has room for this yet." and confirm is disabled. A refused close reloads the options.
+
+A carried trip's close card reads "Trip closed. JPY 1094.00 carried to <destination>." with no saved/cost line, and the receiving trip's Money card reads "Carried JPY 1094.00 from <destination>" for each `CarryOver` lock. Destinations come from `GetTrips` for the trip's family link, read only when a carry exists; until it loads the cards say "your next trip" / "an earlier trip".
 
 ## Query keys
 
