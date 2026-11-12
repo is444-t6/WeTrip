@@ -107,6 +107,7 @@ To add or change a screen:
 
 ## Environment and secrets
 
+- One key, `WETRIP_SERVER_KEY`, is accepted by every WeTrip module (each module's key site property holds the same value) and is added by the proxy; the older `VITE_*_KEY` names are fallbacks.
 - `.env.local` is gitignored and holds real composite API keys. Only server-side code reads them (`vite.config.js`, `api/proxy.js`, the test scripts); never echo, copy or commit its contents.
 - `.env.example` covers the app's `VITE_*` variables (it omits `VITE_INSURANCE_API_KEY`, which `services.js` reads). `test:atomic` and `test:composite` read their own variables from `.env.local`; see the headers of `scripts/test-atomic.mjs` and `scripts/test-composite.mjs`. `.env.test.example` is out of date.
 - Playwright takes `SMARTFX_API_KEY` from the environment, else maps `VITE_FX_API_KEY` from the environment or `.env.local`.

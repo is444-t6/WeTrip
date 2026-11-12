@@ -42,6 +42,13 @@ test('a service without its own key falls back to the Family key; unknown servic
   ])
 })
 
+test('WETRIP_SERVER_KEY is the one key for every service when it is set', () => {
+  const env = { ...ENV, WETRIP_SERVER_KEY: 'one' }
+  for (const s of ['family', 'budget', 'insurance', 'trip', 'scantopay'])
+    expect(upstream(s, 'x', '', env).headers['X-Contacts-Key']).toBe('one')
+  expect(new URL(upstream('fx', 'x', '', env).url).searchParams.get('apiKey')).toBe('one')
+})
+
 test('the Vercel handler forwards method, body and session, and adds the key', async () => {
   const seen = []
   const realFetch = globalThis.fetch
