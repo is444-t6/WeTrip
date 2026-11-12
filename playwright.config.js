@@ -13,7 +13,9 @@ if (!process.env.WETRIP_SERVER_KEY && fs.existsSync('.env.local')) {
 // live sandbox — so the tests read real data. tests/family.spec.js is read-only;
 // tests/smartfx-api.spec.js writes trips to the sandbox and is serialized with
 // the UI suite.
-const PORT = 5199
+// PW_PORT lets parallel worktrees each serve their own build (reuseExistingServer
+// would otherwise test whichever build already holds the port).
+const PORT = Number(process.env.PW_PORT) || 5199
 
 // Specs that call the shared live sandbox. Everything else is mocked.
 const LIVE = ['**/family.spec.js', '**/smartfx-api.spec.js']
