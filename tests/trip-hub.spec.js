@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 // The one-trip overview (/trips/:id), against a faked backend. The trip, its
 // money, budget and trip-linked policies come from one call, Trip.GetTripOverview;
-// Family and Insurance (for older, date-matched policies) are read as before.
+// Family is read as before. Only policies linked by TripId count as cover.
 const PARENT = '0000002169:0000004554:'
 const CHILD = '0000002828:0000006064:'
 const as = (page, v) => page.addInitScript((x) => sessionStorage.setItem('wetrip_session', x), v)
@@ -86,7 +86,8 @@ const section = (page, name) => page.getByLabel(name, { exact: true })
 
 test('the trip header and all four sections show their own data', async ({ page }) => {
   await as(page, PARENT)
-  await mockApi(page)
+  // Two date-overlapping policies bought for nothing in particular must not add to the count.
+  await mockApi(page, { MyInsurance: () => [DATED_POLICY, { ...DATED_POLICY, PurchaseId: 6 }] })
   await page.goto('/trips/12')
 
   await expect(page.getByRole('heading', { name: 'Kyoto' })).toBeVisible()
@@ -107,6 +108,7 @@ test('the trip header and all four sections show their own data', async ({ page 
   )
   await expect(page.getByRole('link', { name: 'Pay on this trip' })).toHaveCount(0)
   await expect(section(page, 'Insurance')).toContainText('1 policy covers this trip')
+  await expect(section(page, 'Insurance').getByText('Covered', { exact: true })).toBeVisible()
   await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
   await expect(section(page, 'Family')).toContainText('SGD 50.00 spent of SGD 200.00 this period')
 })
@@ -134,14 +136,20 @@ test('a trip with no budget offers to set one', async ({ page }) => {
   await expect(page).toHaveURL(/\/budget\/12$/)
 })
 
-test('older policies without a trip id still count when their dates overlap', async ({ page }) => {
+test('policies that overlap the dates but are not linked to this trip do not count', async ({
+  page,
+}) => {
   await as(page, PARENT)
   await mockApi(page, {
     GetTripOverview: () => overview({ Policies: [] }),
-    MyInsurance: () => [DATED_POLICY],
+    MyInsurance: () => [
+      { ...DATED_POLICY, TripId: 0 },
+      { ...DATED_POLICY, PurchaseId: 6, TripId: 99 },
+    ],
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Insurance')).toContainText('1 policy covers this trip')
+  await expect(section(page, 'Insurance')).toContainText('No policy covers this trip yet')
+  await expect(section(page, 'Insurance').getByText('Covered', { exact: true })).toHaveCount(0)
 })
 
 test('a policy that does not overlap the trip dates does not count as cover', async ({ page }) => {
@@ -153,7 +161,73 @@ test('a policy that does not overlap the trip dates does not count as cover', as
     ],
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Insurance')).toContainText('No policy covers these dates yet')
+  await expect(section(page, 'Insurance')).toContainText('No policy covers this trip yet')
+})
+
+test('the Family card says Loading… until the children arrive, not that none is linked', async ({
+  page,
+}) => {
+  await as(page, PARENT)
+  await mockApi(page)
+  // Registered after mockApi, so they win; never fulfilling keeps the queries loading.
+  await page.route('**/GetChildren*', () => {})
+  await page.route('**/MyInsurance*', () => {})
+  await page.goto('/trips/12')
+  await expect(section(page, 'Family')).toContainText('Loading…')
+  await expect(section(page, 'Family')).not.toContainText('No child account')
+  // The Insurance card reads only the overview, so it never flashes an empty state.
+  await expect(section(page, 'Insurance')).toContainText('1 policy covers this trip')
+})
+
+// Starts "Get cover for this trip" on trip 12 and buys the plan, returning the Purchase body.
+// `newEndInDays` edits the return date on the first insurance step.
+async function buyCoverFromTrip(page, newEndInDays) {
+  const inDays = (n) => {
+    const d = new Date()
+    d.setDate(d.getDate() + n)
+    return d.toLocaleDateString('sv')
+  }
+  let body
+  await as(page, PARENT)
+  await mockApi(page, {
+    GetTripOverview: () =>
+      overview({
+        Policies: [],
+        Trip: { ...TRIP, TripStartDate: inDays(30), TripEndDate: inDays(37) },
+      }),
+    Plans: () => [
+      { Id: 1, Name: 'Essential', MaxTravellers: 1, CurrencyCode: 'SGD', IsActive: true },
+    ],
+    Benefits: () => [],
+    Quote: () => ({ TotalPremium: 24, CurrencyCode: 'SGD', TripDays: 8 }),
+    Purchase: (route) => {
+      body = route.request().postDataJSON()
+      return { PaymentSuccess: true, PurchaseId: 77, PolicyNumber: 'POL-1', Status: 'Confirmed' }
+    },
+    GetMe: () => ({ DisplayName: 'Parent', CustomerId: '0000002169', Balance: 100 }),
+  })
+  await page.goto('/trips/12')
+  await section(page, 'Insurance').getByRole('button', { name: 'Get cover for this trip' }).click()
+  if (newEndInDays) await page.getByLabel('Return').fill(inDays(newEndInDays))
+  await page.getByRole('button', { name: 'Continue to insurance plans' }).click()
+  await page.getByRole('button', { name: 'Choose plan' }).click()
+  await page.getByRole('button', { name: 'Choose this plan' }).click()
+  await page.getByLabel('Full name').fill('Jamie Example')
+  await page.getByLabel('Date of birth').fill('2000-01-01')
+  await page.getByLabel('Nationality code').fill('SG')
+  await page.getByLabel('Contact email').fill('jamie@example.com')
+  await page.getByRole('button', { name: 'Get quote and review' }).click()
+  await page.getByRole('button', { name: 'Confirm purchase' }).click()
+  await expect(page).toHaveURL(/\/insurance\/confirmation$/)
+  return body
+}
+
+test('cover bought from the trip page is sent with that trip id', async ({ page }) => {
+  expect(await buyCoverFromTrip(page)).toMatchObject({ TripId: 12 })
+})
+
+test('changing the dates on the first insurance step drops the trip link', async ({ page }) => {
+  expect(await buyCoverFromTrip(page, 38)).toMatchObject({ TripId: 0 })
 })
 
 test('getting cover starts the insurance flow with this trip filled in', async ({ page }) => {
