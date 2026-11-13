@@ -6,11 +6,14 @@ import Banner from '../../components/Banner'
 import Money from '../../components/Money'
 import SignedOutCard from '../../components/SignedOutCard'
 import { useChildren, useChildDashboard } from '../family/queries'
+import { useChildTrips } from '../family/tripQueries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
 import PayLaterCard from './PayLaterCard'
-import { useCloseTrip, useTripOverview } from './queries'
-import { COUNTRY_BY_CURRENCY, day } from './trip'
+import FixedCostsNotice from './FixedCostsNotice'
+import ReceiptForm from './ReceiptForm'
+import { useCloseOptions, useCloseTrip, useTripOverview } from './queries'
+import { COUNTRY_BY_CURRENCY, day, milesLabel } from './trip'
 import { useState } from 'react'
 
 // One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
@@ -37,6 +40,7 @@ export default function TripHub() {
       <Link to="/fx" className="back-link">
         &larr; All trips
       </Link>
+      <FixedCostsNotice />
       <div className="row-between trip-head" style={{ marginBottom: 4 }}>
         <div className="stack">
           <h1 style={{ margin: 0 }}>{trip.destination}</h1>
@@ -63,6 +67,8 @@ export default function TripHub() {
         </Link>
       )}
 
+      {role === 'Child' && !isEnded(trip.status) && <ReceiptForm trip={trip} />}
+
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} overview={data} />
         <BudgetCard tripId={tripId} role={role} overview={data} />
@@ -78,8 +84,18 @@ export default function TripHub() {
   )
 }
 
+// Another trip's destination from this family's SmartFX list; undefined until it loads.
+// Reads the list only when `enabled`, so ordinary trips cost no extra call.
+function useDestinationOf(familyLinkId, enabled) {
+  const { data } = useChildTrips(enabled ? familyLinkId : undefined)
+  return (id) => data?.find((t) => Number(t.tripId) === Number(id))?.destination
+}
+
 function MoneyCard({ tripId, overview }) {
   const trip = overview.trip
+  // Money other trips handed over on closing (lock Source "CarryOver", reference "carry:<trip id>").
+  const carries = (overview.locks ?? []).filter((l) => l.source === 'CarryOver')
+  const destinationOf = useDestinationOf(trip.familyLinkId, carries.length > 0)
   const target = Number(trip.targetBudgetSgd) || 0
   const locked = Number(trip.lockedSgd) || 0
   const pct = target ? Math.min(100, (locked / target) * 100) : 0
@@ -87,6 +103,7 @@ function MoneyCard({ tripId, overview }) {
   const spent = Number(overview.spentForeign) || 0
   const left = Number(overview.remainingForeign) || 0
   const rate = Number(overview.lockedRate) || 0
+  const miles = Number(overview.milesEarned) || 0
   return (
     <div className="card" aria-label="Money">
       <div className="card-header">
@@ -119,6 +136,13 @@ function MoneyCard({ tripId, overview }) {
           <span className="muted">Nothing locked yet.</span>
         )}
       </p>
+      {carries.map((l) => (
+        <p key={l.referenceNumber} style={{ margin: '6px 0 0' }}>
+          Carried <Money amount={l.foreignAmount} currency={trip.currency} /> from{' '}
+          {destinationOf(String(l.referenceNumber).replace('carry:', '')) || 'an earlier trip'}
+        </p>
+      ))}
+      {miles > 0 && <p style={{ margin: '6px 0 0' }}>{milesLabel(miles)} earned on this trip</p>}
       <Link
         to="/fx/trips/$tripId"
         params={{ tripId: String(tripId) }}
@@ -155,6 +179,11 @@ function BudgetCard({ tripId, role, overview }) {
         <p className="muted">
           No category budget yet.
           {role === 'Parent' ? ' Split the trip money by category.' : ''}
+        </p>
+      )}
+      {Number(summary?.fixedSgd) > 0 && (
+        <p className="muted" style={{ margin: '4px 0 0' }}>
+          <Money amount={summary.fixedSgd} currency="SGD" /> fixed
         </p>
       )}
       <Link
@@ -270,15 +299,52 @@ function FamilyCard({ trip, role }) {
   )
 }
 
+const BETTER_LINE = {
+  Spot: 'Converting now beats your locked cost',
+  Locked: "Your locked cost beats today's rate",
+}
+
+// Before closing: what the leftover is worth at today's rate against what it cost
+// at the locked rate. Preview only; the CloseTrip reply stays authoritative.
+// Shows nothing when there is nothing unspent or GetCloseOptions fails.
+function CloseOptions({ data }) {
+  if (!(Number(data?.unspentForeign) > 0)) return null
+  return (
+    <div style={{ margin: '0 0 12px' }}>
+      <p style={{ margin: 0 }}>
+        Value in SGD at today's rate: <Money amount={data.valueAtSpotSgd} />
+      </p>
+      <p style={{ margin: '4px 0 0' }}>
+        What it cost you at your locked rate: <Money amount={data.costAtLockedSgd} />
+      </p>
+      {BETTER_LINE[data.better] && (
+        <p style={{ margin: '4px 0 0' }}>
+          <strong>{BETTER_LINE[data.better]}</strong>
+        </p>
+      )}
+      <p className="muted" style={{ margin: '4px 0 0' }}>
+        No money moves when you close.
+      </p>
+    </div>
+  )
+}
+
 // Closing values whatever foreign money is left at today's server spot rate and
-// marks the trip Completed. No money moves; the confirm step says so.
+// marks the trip Completed. No money moves; the confirm step says so. Instead, the
+// parent can keep the leftover for another eligible trip: a WeTrip ledger move.
 function CloseTripCard({ tripId, trip }) {
   const close = useCloseTrip(tripId)
   const [confirming, setConfirming] = useState(false)
+  const [keep, setKeep] = useState(false)
+  const [pick, setPick] = useState('')
   // After the refetch the trip reads Completed; keep showing what closing found,
   // rebuilt from the stored close for anyone opening the trip later.
   const lockedForeign = Number(trip.lockedForeign) || 0
   const returnRate = Number(trip.returnRate) || 0
+  // The CloseTrip reply's trip is newer than the prop until the overview refetches.
+  const closed = close.data?.trip ?? trip
+  const carriedTo = Number(closed.carriedToTripId) || 0
+  const destinationOf = useDestinationOf(trip.familyLinkId, carriedTo > 0)
   const result =
     close.data ??
     (trip.status === 'Completed'
@@ -291,13 +357,22 @@ function CloseTripCard({ tripId, trip }) {
               : 0,
         }
       : null)
+  const options = useCloseOptions(tripId, !result).data
+  const eligible = options?.eligibleTrips ?? []
+  const next = keep ? (eligible.find((t) => String(t.tripId) === pick) ?? eligible[0]) : null
   return (
     <div className="card" aria-label="Close trip" style={{ marginTop: 16 }}>
       <div className="card-header">
         <h3>Close &amp; convert back</h3>
       </div>
       <Banner>{close.error?.message}</Banner>
-      {result ? (
+      {!result && <CloseOptions data={options} />}
+      {carriedTo > 0 ? (
+        <p style={{ margin: 0 }}>
+          Trip closed. <Money amount={closed.carriedForeign} currency={trip.currency} /> carried to{' '}
+          {destinationOf(carriedTo) || 'your next trip'}.
+        </p>
+      ) : result ? (
         <p style={{ margin: 0 }}>
           Trip closed. <Money amount={result.returnedForeign} currency={trip.currency} /> unspent,
           worth <Money amount={result.returnedSgd} /> today.{' '}
@@ -306,12 +381,43 @@ function CloseTripCard({ tripId, trip }) {
         </p>
       ) : confirming ? (
         <>
+          {Number(options?.unspentForeign) > 0 && (
+            <div className="field">
+              <label className="row" style={{ gap: 8 }}>
+                <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+                Keep for my next trip
+              </label>
+              {keep &&
+                (next ? (
+                  <select
+                    aria-label="Which trip"
+                    value={next.tripId}
+                    onChange={(e) => setPick(e.target.value)}
+                  >
+                    {eligible.map((t) => (
+                      <option key={t.tripId} value={t.tripId}>
+                        {t.destination}, {day(t.tripStartDate)} → {day(t.tripEndDate)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="muted" style={{ margin: '8px 0 0' }}>
+                    No Watching or Partly locked {trip.currency} trip has room for this yet.
+                  </p>
+                ))}
+            </div>
+          )}
           <p style={{ margin: '0 0 12px' }}>
-            Close the trip and value the unspent {trip.currency} at today's rate? This cannot be
-            undone.
+            {keep
+              ? `Close the trip and move the unspent ${trip.currency} to ${next?.destination ?? 'your next trip'}? This is a WeTrip ledger move, not a bank transfer. This cannot be undone.`
+              : `Close the trip and value the unspent ${trip.currency} at today's rate? This cannot be undone.`}
           </p>
           <div className="row" style={{ gap: 8 }}>
-            <button type="button" disabled={close.isPending} onClick={() => close.mutate()}>
+            <button
+              type="button"
+              disabled={close.isPending || (keep && !next)}
+              onClick={() => close.mutate(next?.tripId)}
+            >
               {close.isPending ? 'Closing…' : 'Close trip'}
             </button>
             <button type="button" className="secondary" onClick={() => setConfirming(false)}>

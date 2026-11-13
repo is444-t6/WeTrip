@@ -9,7 +9,7 @@ import { getCustomerId } from '../scantopay/customer'
 import { usePreview } from '../scantopay/queries'
 import { newRequestId } from './api'
 import TripPayLater, { PayLaterDone } from './TripPayLater'
-import { parseMerchantQr } from './trip'
+import { milesLabel, parseMerchantQr } from './trip'
 import { usePayLaterOnTrip, usePayOnTrip, useTripOverview } from './queries'
 
 // Paying on a trip: the child scans the merchant's QR and the Trip composite pays
@@ -63,7 +63,11 @@ export default function TripPay({ tripId }) {
       RequestId: requestId.current,
     }
     const settle = { onSettled: () => (paying.current = false) }
-    if (months) later.mutate({ ...common, QrText: qrText, NumberOfMonths: months }, settle)
+    if (months)
+      later.mutate(
+        { ...common, MerchantCode: qr.merchantCode, QrText: qrText, NumberOfMonths: months },
+        settle,
+      )
     else pay.mutate({ ...common, MerchantCode: qr.merchantCode, Narrative: '' }, settle)
   }
 
@@ -108,6 +112,9 @@ export default function TripPay({ tripId }) {
               <Money amount={result.remainingForeign} currency={result.currency} /> left on this
               trip.
             </p>
+          )}
+          {Number(result.milesEarned) > 0 && (
+            <p style={{ margin: '6px 0 0' }}>+{milesLabel(Number(result.milesEarned))}</p>
           )}
           {result.ledgerPending && (
             <p className="muted" style={{ margin: '6px 0 0' }}>

@@ -39,11 +39,11 @@ Implemented capabilities:
 
 - **Home and access:** signed-out card, dev sign-in, role-aware home with available balance, family overview, trip wallets, recent payments and product entry points.
 - **Family:** parent links a child, sets budget and allowance, tops up, approves or rejects requests, grants extra budget, freezes spending or restricts categories. The child sees a dashboard, spends, views insights, and asks for more.
-- **SmartFX:** trip goals, live forward quotes, target rate and auto-lock, multiple locks per trip, child spending from the pot, and convert-back on close. Rates are foreign units per 1 SGD; supported currencies are USD, EUR, JPY, GBP and CHF; tenors are 1M, 3M, 6M and 1Y. Only a parent can own a trip, and only for an Active family link.
+- **SmartFX:** trip goals, live forward quotes, target rate and auto-lock, multiple locks per trip, child spending from the pot, and convert-back on close, with today's value shown against the locked cost first, or keeping the leftover for another trip in the same currency (a ledger move, no bank transfer). Rates are foreign units per 1 SGD; supported currencies are USD, EUR, JPY, GBP and CHF; tenors are 1M, 3M, 6M and 1Y. Only a parent can own a trip, and only for an Active family link.
 - **Budget:** category budgets, expenses, progress bars and alerts, and a ledger. Budgets are keyed by the SmartFX trip id; categories and sources are fixed in `src/features/budget/constants.js`.
 - **Insurance:** plans, benefits, quote, traveller details, checkout and purchased policies. A purchase started from a trip page carries its `TripId`; policies bought before trip links existed have none, so they show under My policies but not as cover on a trip page.
 - **Scan-to-Pay:** QR scanning, payment preview, PayNow and PayLater (BNPL), and payment history. Payments are user-triggered and never retried automatically.
-- **Trip hub:** a read-only aggregation of the wallet, budget, insurance and payment state for one trip. Pay later on a trip (`PayLaterOnTrip`, `BnplPlans`) is built in the frontend; the backend is pending.
+- **Trip hub:** a read-only aggregation of the wallet, budget, insurance and payment state for one trip. A child can also pay later on a trip (`PayLaterOnTrip`): the bank bills monthly instalments, the trip pot is untouched, and the trip page lists the plans.
 
 Constraints and explicitly undecided facts:
 
@@ -53,7 +53,7 @@ Constraints and explicitly undecided facts:
 - Timer-driven SmartFX locks record the lock in WeTrip tables but do not book an FXForward contract. `OpenFXForwardContract` wiring is still blocked through the Model API.
 - A family link must be accepted by the child before their balance is available; pending links are shown as pending.
 - Budget currency is a fixed `SGD` placeholder until the trip currency is wired through.
-- Not implemented in the current build: loyalty or miles, receipt scanning/OCR, bill splitting or peer transfers, and card/merchant rails. The Budget source list includes a receipt value, but no receipt capture flow exists.
+- Not implemented in the current build: miles redemption (children earn miles on trip payments, but cannot spend them), receipt scanning/OCR, bill splitting or peer transfers, card/merchant rails, and editing or removing fixed trip costs (they can be added, not changed; there is no "paid" flag, every fixed cost counts as spent). A child can add a cash receipt to a trip (photo optional, amount typed by hand); it only records a budget expense and moves no money.
 
 ## Brand Commitments
 
