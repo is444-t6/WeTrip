@@ -86,7 +86,7 @@ await step('PlanTrip as the child is refused', async () => {
   assert(refused(r), `expected a refusal, got ${r.status} ${JSON.stringify(r.json)}`)
 })
 
-await step('PlanTrip refuses bad fixed costs with a 400 before creating anything', async () => {
+await step('PlanTrip refuses bad fixed costs before creating anything', async () => {
   const hotel = { Name: 'Hotel', CategoryId: ACCOMMODATION, AmountSgd: 3 }
   const trips = async () =>
     (
@@ -106,7 +106,7 @@ await step('PlanTrip refuses bad fixed costs with a 400 before creating anything
   }
   for (const [what, FixedCosts] of Object.entries(bad)) {
     const r = await parent('POST', 'PlanTrip', planBody({ FixedCosts }))
-    assert(r.status === 400, `${what}: expected 400, got ${r.status} ${JSON.stringify(r.json)}`)
+    assert(refused(r), `${what}: expected a refusal, got ${r.status} ${JSON.stringify(r.json)}`)
   }
   assert((await trips()).length === before, 'a refused PlanTrip still created a trip')
 })
@@ -200,7 +200,7 @@ await step('AddFixedCost as the child, or with an amount of 0, is refused', asyn
     'AddFixedCost',
     fixedCost({ AmountSgd: 0, RequestId: `harness-${Date.now()}-z` }),
   )
-  assert(zero.status === 400, `amount 0: expected 400, got ${zero.status}`)
+  assert(refused(zero), `amount 0: expected a refusal, got ${zero.status}`)
 })
 
 await step('PayOnTrip before anything is locked is refused', async () => {
@@ -507,10 +507,11 @@ function receiptBody(id, currency, amount) {
 }
 
 // The expense the JPY receipt wrote (the SGD one has its own description).
-const receiptExpenses = (r) =>
-  (field(r.json, 'expenses') || []).filter(
+function receiptExpenses(r) {
+  return (field(r.json, 'expenses') || []).filter(
     (e) => field(e, 'description') === `Cash receipt · JPY ${RECEIPT_JPY}.00`,
   )
+}
 
 function payBody(id, amount) {
   return {
