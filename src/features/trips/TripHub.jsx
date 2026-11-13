@@ -9,6 +9,7 @@ import { useChildren, useChildDashboard } from '../family/queries'
 import { useChildTrips } from '../family/tripQueries'
 import { saveTrip } from '../insurance/storage'
 import { demoLabel, isEnded, tripStatus } from '../fx/status'
+import PayLaterCard from './PayLaterCard'
 import FixedCostsNotice from './FixedCostsNotice'
 import ReceiptForm from './ReceiptForm'
 import { useCloseOptions, useCloseTrip, useTripOverview } from './queries'
@@ -71,6 +72,7 @@ export default function TripHub() {
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
         <MoneyCard tripId={tripId} overview={data} />
         <BudgetCard tripId={tripId} role={role} overview={data} />
+        <PayLaterCard plans={data.bnplPlans} currency={trip.currency} />
         <InsuranceCard trip={trip} role={role} tripPolicies={data.policies} />
         <FamilyCard trip={trip} role={role} />
       </div>

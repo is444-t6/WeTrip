@@ -11,7 +11,7 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 | Route            | Screen                                                                                                        | Access                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `/trips/$tripId` | `TripHub`: Money, Budget, Insurance, Family cards; close for parents; pay link and Add a receipt for children | Signed in, family member |
-| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip`                                                                              | Signed in child          |
+| `/pay/?tripId=`  | `TripPay`: QR scan → `PayOnTrip` or `PayLaterOnTrip`                                                          | Signed in child          |
 
 `TripHub` makes one `GetTripOverview` call. It does not use the SmartFX-only `TripDetail` screen; that one is for locks/rates.
 
@@ -19,18 +19,19 @@ The unified trip view: plan a trip, see its money, budget, insurance and family 
 
 Headers: `X-Contacts-Key` + `X-Session-Token`. Caller role is derived server-side.
 
-| Method | Endpoint                  | Purpose                                                                                                                   |
-| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                               |
-| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, MilesEarned, CallerRole}` |
-| POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                                   |
-| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                                           |
-| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                             |
-| POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                                     |
-| GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                                         |
-| GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                       |
-| GET    | `GetCloseOptions?TripId=` | Parent-only, open trip: leftover at spot vs the locked cost; read-only                                                    |
-| GET    | `GetTripMiles?TripId=`    | `{ChildBalance}`: the trip child's miles (Loyalty ledger), readable by the parent (insurance checkout)                    |
+| Method | Endpoint                  | Purpose                                                                                                                              |
+| ------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| POST   | `PlanTrip`                | Parent-only: derive child from link, open foreign wallet, create trip, set category budgets                                          |
+| GET    | `GetTripOverview?TripId=` | `{Trip, Locks, Spends, SpentForeign, RemainingForeign, LockedRate, HasBudget, Budget, Policies, MilesEarned, BnplPlans, CallerRole}` |
+| POST   | `AddFixedCost`            | Parent-only, open trip: one fixed cost as a Budget expense (SourceId 5)                                                              |
+| POST   | `PayOnTrip`               | Child-only: one SGD transfer at the locked rate                                                                                      |
+| POST   | `PayLaterOnTrip`          | Child-only: BNPL plan billed by the bank to the child's wallet; not from the trip pot                                                |
+| POST   | `CloseTrip?TripId=`       | Parent-only: spot valuation, mark `Completed`                                                                                        |
+| POST   | `AddReceipt`              | Child-only: record a cash receipt as a budget expense; moves no money                                                                |
+| GET    | `GetReceipt?ReceiptId=`   | `{ContentType, ImageBase64}`; family members only                                                                                    |
+| GET    | `GetMyMiles`              | No parameters; the customer comes from `X-Session-Token`. Returns `{Balance}` (int)                                                  |
+| GET    | `GetCloseOptions?TripId=` | Parent-only, open trip: leftover at spot vs the locked cost; read-only                                                               |
+| GET    | `GetTripMiles?TripId=`    | `{ChildBalance}`: the trip child's miles (Loyalty ledger), readable by the parent (insurance checkout)                               |
 
 ### `PlanTrip`
 
@@ -71,6 +72,17 @@ There is no OCR: the child types the amount. `ReceiptForm` (child, trip not Comp
 - A receipt creates no `TripSpend`, leaves the pot unchanged and earns no miles. Non-SGD amounts convert at the trip's locked rate; with nothing locked the server answers 400 "Lock a rate first so we can convert this receipt".
 - Budget expenses carry `SourceId` 3 and `ReceiptId`; `GetReceipt` serves the photo.
 
+### `PayLaterOnTrip`
+
+Request: `TripId`, `MerchantCode` (from the QR), `QrText` (the scanned string, unused by the server), `Amount`, `NumberOfMonths`, `CategoryId`, `RequestId`. Returns `Status` (`Paid`, `Duplicate` or `Declined`), `Message`, `BnplPlanId`, `MerchantName`, `SgdBudgeted`, `Principal`, `Currency`, `NumberOfMonths`, `MonthlyInstallment`, `TotalInterest`, `FirstRepaymentDate`, `MaturityDate`, `LedgerPending`.
+
+- `TripPay` previews the QR with Scan-to-Pay `PreviewPayment` (`CustomerId` = session customer) for `bnplEligible` / `bnplOptions[]`. The preview never blocks Pay from trip; a failed preview just shows no options. Open-amount QRs are not previewed.
+- Creates no `TripSpend`, leaves `remainingForeign` unchanged. A 4xx `Errors[0]` shows in a banner and the form stays.
+- Same `retry: false` and lost-reply lockout as `PayOnTrip`. `GetTripOverview` may carry `BnplPlans[]` (`MerchantName`, `NumberOfMonths`, `MonthlyInstallment`, `FirstRepaymentDate`, `MaturityDate`, optional `Currency`), listed in the hub's "Pay later" card.
+- Server: mirrors Scan-to-Pay `PayLater`. The BNPL pool pays the merchant; a monthly standing instruction bills the child's wallet in the trip currency (that wallet must cover the first instalment). The plan is stored in the Scan-to-Pay atomic with `TripId` and `RequestId`; a repeated `RequestId` returns `Duplicate` with the stored plan.
+- Budget: one expense, `SourceId` 2, amount = principal ÷ locked rate (SGD, interest not budgeted), dedupe key `bnpl:<RequestId>`. If a ledger write fails after the pool paid, the reply is `Paid` with `LedgerPending: true`.
+- Limits: 3, 6 or 12 months; SGD 20 to 3000 at the locked rate (site properties copied from the Scan-to-Pay composite).
+
 ### `CloseTrip`
 
 No body; `?TripId=` and optionally `&CarryToTripId=` (0 or absent = convert back). Values leftover foreign at the **server** spot rate. The reply carries top-level `ReturnedForeign`, `ReturnedSgd`, `SpotRate`, `SavedVsSpotSgd` and sets `Trip.Status = 'Completed'`. No money moves because sandbox forwards never settle. A second close is refused.
@@ -101,7 +113,7 @@ A carried trip's close card reads "Trip closed. JPY 1094.00 carried to <destinat
 
 1. Parent plans the trip (`PlanTrip`); the composite opens the foreign wallet and writes budget rows.
 2. Parent locks through SmartFX `LockNow` on `/fx/trips/$tripId`; see [fx.md](fx.md).
-3. Child scans a merchant QR at `/pay?tripId=`, reviews the preview and pays (`PayOnTrip`).
+3. Child scans a merchant QR at `/pay?tripId=`, reviews the preview and pays from the trip (`PayOnTrip`) or pays later (`PayLaterOnTrip`).
 4. Parent reviews the hub and closes (`CloseTrip`).
 
 ## Domain rules
@@ -114,13 +126,13 @@ A carried trip's close card reads "Trip closed. JPY 1094.00 carried to <destinat
 
 ## Components and helpers
 
-`TripHub`, `TripPay`, `ReceiptForm`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `milesLabel`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own.
+`TripHub`, `TripPay`, `TripPayLater` (options and confirmation), `PayLaterCard`, `ReceiptForm`, and pure helpers in `trip.js`: `parseMerchantQr` (JSON `{merchantCode, amount, currency}`), `foreignSpent`, `milesLabel`, `COUNTRY_BY_CURRENCY`. `TripPay` reuses `PayLayout` and `QrScanner` from Scan-to-Pay; its preview and result panels are its own; pay later reuses `PlanOptions` and `PaidLater` from the Scan-to-Pay components.
 
 ## Tests
 
-- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, carry-over (Keep for my next trip), role handling, signed-out state, the Budget card's fixed line.
+- `tests/trip-hub.spec.js` — overview read by trip id, sections, policies, close confirmation, carry-over (Keep for my next trip), role handling, signed-out state, the Budget card's fixed line, Pay later plans card.
 - `tests/new-trip.spec.js` — the new-trip form: fixed-cost rows, the over-limit rules, the `PlanTrip` body, the "not saved" notice on the trip page.
-- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR, miles on the Paid card.
+- `tests/trip-pay.spec.js` — payload with one `RequestId`, open amount, decline form, invalid QR, miles on the Paid card; pay later (options, ineligible, preview failure, confirmation, 4xx, lost reply). Mocks `/scantopay/` too.
 - `tests/trip-receipt.spec.js` — receipt form (fields, photo resize, validation, lock message, double submit), receipt rows and photo in the budget.
 - `tests/trips.spec.js` — pure date/trip helpers.
 - `bun run test:trip` — live Trip composite contract (including `AddReceipt` / `GetReceipt`); moves sandbox money.

@@ -1,11 +1,14 @@
 // Live contract test for WeTrip_Trip_Composite (PlanTrip, GetTripOverview,
-// PayOnTrip, AddReceipt, GetReceipt, GetMyMiles, CloseTrip, fixed costs) plus the real FX forward booked by SmartFX LockNow.
+// PayOnTrip, PayLaterOnTrip, AddReceipt, GetReceipt, GetMyMiles, CloseTrip, fixed costs) plus the real FX forward booked by SmartFX LockNow.
 //
 //   bun --env-file=.env.local scripts/test-trip.mjs
 //
 // WARNING: this MOVES SANDBOX MONEY. One PayOnTrip sends about 1 SGD (plus the
 // bank's fee) from the demo child's SGD account to merchant M001, and LockNow
 // books a real FX forward contract (no money moves at booking in this sandbox).
+// PayLaterOnTrip has the BNPL pool pay the merchant about JPY 2600 and sets up a
+// 3-month standing instruction on the demo child's JPY wallet (it must exist and
+// cover the first instalment, or that step fails with the server's message).
 // Run it only against the demo accounts, one run at a time, by hand.
 //
 // Each run plans its own trip ("Trip harness <time>") with auto-lock off, so it
@@ -25,6 +28,7 @@ const STRANGER = '0000009999:0000009999:Stranger'
 const FAMILY_LINK_ID = Number(env('FAMILY_LINK_ID', '3'))
 const MERCHANT = env('TRIP_MERCHANT_CODE', 'M001')
 const PAY_JPY = 120 // about 1 SGD
+const LATER_JPY = 2600 // over the SGD 20 pay-later minimum
 const FOOD = 6
 const RECEIPT_JPY = 1200
 // A 1x1 PNG, enough to prove the photo round-trips.
@@ -75,6 +79,7 @@ let milesEarned = 0
 let receiptRequestId
 let lockedRate
 let receiptId
+let laterRequestId
 
 await step('PlanTrip as the child is refused', async () => {
   const r = await child('POST', 'PlanTrip', planBody())
@@ -312,6 +317,57 @@ await step('the overview shows the spend, the pot left and the budget expense', 
   )
 })
 
+await step('PayLaterOnTrip as the parent, or for 4 months, is refused', async () => {
+  const p = await parent('POST', 'PayLaterOnTrip', laterBody(`harness-${Date.now()}-lp`, 3))
+  assert(refused(p), `parent: expected a refusal, got ${p.status}`)
+  const c = await child('POST', 'PayLaterOnTrip', laterBody(`harness-${Date.now()}-l4`, 4))
+  assert(refused(c), `4 months: expected a refusal, got ${c.status}`)
+  assert(firstError(c) === 'Choose 3, 6 or 12 months', `wrong message: ${firstError(c)}`)
+})
+
+await step(`PayLaterOnTrip as the child spreads JPY ${LATER_JPY} over 3 months`, async () => {
+  const before = await child('GET', `GetTripOverview?TripId=${field(trip, 'id')}`)
+  laterRequestId = `harness-${Date.now()}-later`
+  const r = await child('POST', 'PayLaterOnTrip', laterBody(laterRequestId, 3))
+  assert(r.status === 200, `expected 200, got ${r.status}: ${JSON.stringify(r.json)}`)
+  assert(field(r.json, 'status') === 'Paid', `expected Paid, got ${JSON.stringify(r.json)}`)
+  assert(Number(field(r.json, 'principal')) === LATER_JPY, 'wrong principal')
+  assert(Number(field(r.json, 'monthlyInstallment')) > 0, 'no instalment')
+  assert(field(r.json, 'firstRepaymentDate'), 'no first repayment date')
+  assert(!field(r.json, 'ledgerPending'), 'ledger pending')
+  const rate = Number(field(before.json, 'lockedRate'))
+  const sgd = Math.round((LATER_JPY / rate) * 100) / 100
+  assert(
+    Math.abs(Number(field(r.json, 'sgdBudgeted')) - sgd) <= 0.01,
+    `budgeted ${field(r.json, 'sgdBudgeted')}, expected ${sgd}`,
+  )
+  const after = await child('GET', `GetTripOverview?TripId=${field(trip, 'id')}`)
+  assert(
+    Number(field(after.json, 'remainingForeign')) ===
+      Number(field(before.json, 'remainingForeign')),
+    'pay later changed the trip pot',
+  )
+  console.log(
+    `      3 x JPY ${field(r.json, 'monthlyInstallment')}, interest JPY ${field(r.json, 'totalInterest')}, SGD ${sgd} budgeted`,
+  )
+})
+
+await step('PayLaterOnTrip with the same requestId is a no-op: one plan, one expense', async () => {
+  const r = await child('POST', 'PayLaterOnTrip', laterBody(laterRequestId, 3))
+  assert(
+    field(r.json, 'status') === 'Duplicate',
+    `expected Duplicate, got ${JSON.stringify(r.json)}`,
+  )
+  const rows = (field((await dashboardAs(CHILD)).json, 'expenses') || []).filter(
+    (e) => field(e, 'sourceId') === 2 && String(field(e, 'description')).includes('pay later'),
+  )
+  assert(rows.length === 1, `expected one pay-later expense, got ${rows.length}`)
+  assert(field(rows[0], 'categoryId') === FOOD, `categoryId ${field(rows[0], 'categoryId')}`)
+  const o = await parent('GET', `GetTripOverview?TripId=${field(trip, 'id')}`)
+  const plans = field(o.json, 'bnplPlans') || []
+  assert(plans.length === 1, `expected one plan on the overview, got ${plans.length}`)
+})
+
 await step('AddReceipt as the parent is refused', async () => {
   const r = await parent('POST', 'AddReceipt', receiptBody(`harness-${Date.now()}-p`, 'JPY', 100))
   assert(refused(r), `expected a refusal, got ${r.status}`)
@@ -464,5 +520,16 @@ function payBody(id, amount) {
     CategoryId: FOOD,
     RequestId: id,
     Narrative: 'harness',
+  }
+}
+
+function laterBody(id, months) {
+  return {
+    TripId: field(trip, 'id'),
+    MerchantCode: MERCHANT,
+    Amount: LATER_JPY,
+    NumberOfMonths: months,
+    CategoryId: FOOD,
+    RequestId: id,
   }
 }

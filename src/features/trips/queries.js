@@ -67,6 +67,15 @@ export function usePayOnTrip(tripId) {
   })
 }
 
+export function usePayLaterOnTrip(tripId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: TripApi.payLaterOnTrip,
+    retry: false,
+    onSettled: () => refreshTripViews(qc, tripId),
+  })
+}
+
 export function useAddFixedCost(tripId) {
   const qc = useQueryClient()
   return useMutation({

@@ -9,6 +9,8 @@ export const TripApi = {
   getOverview: (tripId) => call('GET', `GetTripOverview${qs({ TripId: tripId })}`),
   // Moves money. User-triggered only, never retried; requestId makes a repeat a no-op.
   payOnTrip: (request) => call('POST', 'PayOnTrip', request),
+  // Also moves money (the bank bills it later); same rules as payOnTrip.
+  payLaterOnTrip: (request) => call('POST', 'PayLaterOnTrip', request),
   // The trip's child's miles, readable by the parent buying cover: { ChildBalance }.
   getTripMiles: (tripId) => call('GET', `GetTripMiles${qs({ TripId: tripId })}`),
   // Ledger write (SourceId 5); requestId makes a repeat a no-op.

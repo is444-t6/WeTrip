@@ -704,3 +704,34 @@ test('foreign amounts keep their cents', async ({ page }) => {
     'JPY 76674.88 left of JPY 96675.38 (JPY 20000.50 spent)',
   )
 })
+
+test('a Pay later card lists the trip instalment plans', async ({ page }) => {
+  await as(page, CHILD)
+  await mockApi(page, {
+    GetTripOverview: () =>
+      overview({
+        CallerRole: 'Child',
+        BnplPlans: [
+          {
+            MerchantName: 'Universal Studios Japan',
+            NumberOfMonths: 3,
+            MonthlyInstallment: 1506.5,
+            FirstRepaymentDate: '2027-04-07T00:00:00',
+            MaturityDate: '2027-06-07',
+          },
+        ],
+      }),
+  })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Pay later')).toContainText(
+    'Universal Studios Japan · 3 × JPY 1506.50 · first 2027-04-07 · ends 2027-06-07',
+  )
+})
+
+test('a trip with no instalment plans has no Pay later card', async ({ page }) => {
+  await as(page, CHILD)
+  await mockApi(page, { GetTripOverview: () => overview({ BnplPlans: [] }) })
+  await page.goto('/trips/12')
+  await expect(section(page, 'Money')).toBeVisible()
+  await expect(section(page, 'Pay later')).toHaveCount(0)
+})
