@@ -175,6 +175,7 @@ test.describe('parent home page', () => {
       ['SmartFX', '/fx'],
       ['Insurance', '/insurance'],
       ['Budget', '/budget'],
+      ['Miles', '/miles'],
     ]) {
       await expect(quick.getByRole('link', { name })).toHaveAttribute('href', href)
     }
@@ -227,11 +228,14 @@ test.describe('parent home page', () => {
     expect(calls.find((c) => c.name === 'GetHistory').query.CustomerId).toBe('0000002169')
   })
 
-  test('product tiles link to insurance, SmartFX, budget and Scan to Pay', async ({ page }) => {
+  test('product tiles link to insurance, SmartFX, budget, Scan to Pay and Miles', async ({
+    page,
+  }) => {
     await mockApi(page)
     await page.goto('/')
     const tiles = page.locator('.explore-card')
-    await expect(tiles).toHaveCount(4)
+    await expect(tiles).toHaveCount(5)
+    await expect(page.getByRole('link', { name: /WeTrip Miles/ })).toHaveAttribute('href', '/miles')
     await expect(page.getByRole('link', { name: /Travel insurance/ })).toHaveAttribute(
       'href',
       '/insurance',

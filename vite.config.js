@@ -32,6 +32,11 @@ export default defineConfig({
         rewrite: (path) =>
           path.replace(/^\/api\/insurance/, '/WeTrip_Insurance_Composite/rest/InsuranceAPI'),
       },
+      '/api/miles': {
+        target: 'https://smuedu-dev.outsystemsenterprise.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/miles/, '/WeTrip_Loyalty_Composite/rest/Loyalty'),
+      },
       '/scantopay': {
         target: 'https://smuedu-dev.outsystemsenterprise.com',
         changeOrigin: true,

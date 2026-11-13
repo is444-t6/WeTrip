@@ -17,6 +17,10 @@
       "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Insurance_Composite/rest/InsuranceAPI/:path*"
     },
     {
+      "source": "/api/miles/:path*",
+      "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_Loyalty_Composite/rest/Loyalty/:path*"
+    },
+    {
       "source": "/scantopay/:path*",
       "destination": "https://smuedu-dev.outsystemsenterprise.com/WeTrip_ScanToPay_Composite/rest/ScanToPay/:path*"
     },

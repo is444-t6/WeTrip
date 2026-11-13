@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChartIcon, GlobeIcon, ScanIcon, ShieldIcon } from './Icons'
+import { ChartIcon, GlobeIcon, MilesIcon, ScanIcon, ShieldIcon } from './Icons'
 
 const PRODUCTS = [
   {
@@ -25,6 +25,12 @@ const PRODUCTS = [
     icon: <ScanIcon />,
     title: 'Scan to Pay',
     text: 'Pay any QR code now, or spread it over months.',
+  },
+  {
+    to: '/miles',
+    icon: <MilesIcon />,
+    title: 'WeTrip Miles',
+    text: 'Earn miles on every dollar you spend and trade them for cashback.',
   },
 ]
 

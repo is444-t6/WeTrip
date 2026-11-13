@@ -43,6 +43,12 @@ export const ChartIcon = () => (
   </Svg>
 )
 
+export const MilesIcon = () => (
+  <Svg>
+    <path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8L12 3z" />
+  </Svg>
+)
+
 export const EyeIcon = ({ off }) => (
   <Svg>
     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />

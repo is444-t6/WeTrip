@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { ChartIcon, FamilyIcon, GlobeIcon, ScanIcon, ShieldIcon } from './Icons'
+import { ChartIcon, FamilyIcon, GlobeIcon, MilesIcon, ScanIcon, ShieldIcon } from './Icons'
 
-// The five things people open the app to do. A red dot on Family flags
+// The six things people open the app to do. A red dot on Family flags
 // requests waiting for a parent.
 export default function QuickActions({ pendingApprovals = 0 }) {
   const items = [
@@ -10,6 +10,7 @@ export default function QuickActions({ pendingApprovals = 0 }) {
     { to: '/fx', label: 'SmartFX', icon: <GlobeIcon /> },
     { to: '/insurance', label: 'Insurance', icon: <ShieldIcon /> },
     { to: '/budget', label: 'Budget', icon: <ChartIcon /> },
+    { to: '/miles', label: 'Miles', icon: <MilesIcon /> },
   ]
   return (
     <nav className="card quick" aria-label="Quick actions">

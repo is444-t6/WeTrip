@@ -42,6 +42,12 @@ export const SERVICES = {
     apiKey: env.VITE_SCANTOPAY_KEY,
     normalize: true,
   },
+  // WeTrip_Loyalty_Composite: miles balance, sync from SMUtBank history, rewards.
+  miles: {
+    base: env.VITE_MILES_API_BASE || '/api/miles',
+    apiKey: env.VITE_MILES_API_KEY,
+    normalize: true,
+  },
 }
 
 // A client for one service. `overrides` is for the odd call that needs a different
