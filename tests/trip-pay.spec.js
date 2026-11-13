@@ -283,6 +283,25 @@ test('a rejected pay-later shows why, keeps the form and Pay from trip', async (
   await expect(page.getByRole('radio', { name: /^6 months/ })).toBeVisible()
 })
 
+test('a pay-later the bank declines shows its message and keeps the form', async ({ page }) => {
+  await as(page, CHILD)
+  await mockApi(
+    page,
+    {},
+    {
+      preview: BNPL_PREVIEW,
+      later: (route) =>
+        route.fulfill(json({ Status: 'Declined', Message: 'The bank did not accept the payment' })),
+    },
+  )
+  await page.goto('/pay?tripId=12')
+  await scan(page, USJ_QR)
+  await page.getByRole('radio', { name: /^3 months/ }).check()
+  await page.getByRole('button', { name: 'Pay later' }).click()
+  await expect(page.getByRole('alert')).toHaveText('The bank did not accept the payment')
+  await expect(page.getByRole('button', { name: 'Pay from trip' })).toBeEnabled()
+})
+
 test('a lost pay-later reply locks both buttons and is never resent', async ({ page }) => {
   await as(page, CHILD)
   const calls = []

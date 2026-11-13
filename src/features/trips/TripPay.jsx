@@ -147,10 +147,11 @@ export default function TripPay({ tripId }) {
     const error = pay.error ?? later.error
     const lost = error && (error instanceof TypeError || [502, 503, 504].includes(error.status))
     const busy = pay.isPending || later.isPending
+    const declined = [result, later.data].find((d) => d?.status === 'Declined')
     return (
       <PayLayout title={title}>
         {back}
-        <Banner>{result?.status === 'Declined' ? result.message : error?.message}</Banner>
+        <Banner>{declined ? declined.message : error?.message}</Banner>
         {lost && (
           <p className="muted" role="alert">
             We lost the bank's reply. Check the trip before paying again: this payment may have gone
