@@ -334,7 +334,7 @@ await step(`PayLaterOnTrip as the child spreads JPY ${LATER_JPY} over 3 months`,
   assert(Number(field(r.json, 'principal')) === LATER_JPY, 'wrong principal')
   assert(Number(field(r.json, 'monthlyInstallment')) > 0, 'no instalment')
   assert(field(r.json, 'firstRepaymentDate'), 'no first repayment date')
-  assert(!field(r.json, 'ledgerPending'), 'ledger pending')
+  assert(!field(r.json, 'ledgerPending'), `ledger pending: ${field(r.json, 'message')}`)
   const rate = Number(field(before.json, 'lockedRate'))
   const sgd = Math.round((LATER_JPY / rate) * 100) / 100
   assert(
