@@ -2,9 +2,12 @@ import { Link } from '@tanstack/react-router'
 import { tenorFor } from '../../fx/api'
 import { useRate } from '../../fx/queries'
 import { useChildTrips } from '../tripQueries'
+import { tripStatus } from '../../fx/status'
 import { lockMessage, lockSummary, statusBadge, tripTiming } from '../trips'
 import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
+import PastTrips from '../../../components/PastTrips'
+import { splitTrips } from '../../fx/status'
 
 const day = (value) => String(value).slice(0, 10)
 
@@ -28,7 +31,7 @@ function TripRow({ trip }) {
             {day(trip.tripStartDate)} → {day(trip.tripEndDate)} · {tripTiming(trip)}
           </span>
         </div>
-        <span className={`badge ${statusBadge(trip.status)}`}>{trip.status}</span>
+        <span className={`badge ${statusBadge(trip.status)}`}>{tripStatus(trip.status).label}</span>
       </div>
 
       <div className="progress" style={{ marginTop: 14 }}>
@@ -66,10 +69,21 @@ function TripRow({ trip }) {
         </p>
       )}
 
-      <Link to="/fx/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
-        <button className="secondary" style={{ width: '100%', marginTop: 14 }}>
-          Open trip
-        </button>
+      <Link
+        to="/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="btn secondary"
+        style={{ width: '100%', marginTop: 14 }}
+      >
+        Open trip
+      </Link>
+      <Link
+        to="/fx/trips/$tripId"
+        params={{ tripId: String(trip.tripId) }}
+        className="muted"
+        style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
+      >
+        Manage FX &amp; locks
       </Link>
     </div>
   )
@@ -78,6 +92,7 @@ function TripRow({ trip }) {
 // Everything SmartFX knows about this child's trips, on the child's Family page.
 export default function TripsPanel({ familyLinkId }) {
   const { data: trips, error, isLoading } = useChildTrips(Number(familyLinkId))
+  const { active, ended } = splitTrips(trips)
 
   return (
     <>
@@ -88,9 +103,10 @@ export default function TripsPanel({ familyLinkId }) {
           No trips planned yet. Set one up under <Link to="/fx">SmartFX</Link>.
         </div>
       )}
-      {trips?.map((t) => (
+      {active.map((t) => (
         <TripRow key={t.tripId} trip={t} />
       ))}
+      <PastTrips trips={ended}>{(t) => <TripRow key={t.tripId} trip={t} />}</PastTrips>
     </>
   )
 }

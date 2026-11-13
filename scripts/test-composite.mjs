@@ -2,7 +2,7 @@
 // the build guide's Task 20.3 Postman table, run directly against OutSystems.
 //
 // Usage:
-//   node --env-file=.env.local scripts/test-composite.mjs
+//   bun --env-file=.env.local scripts/test-composite.mjs
 //
 // WARNING: unlike test-atomic.mjs, this one calls real SMUtBank endpoints
 // through Family_Composite — TopUp, SetupAllowance and ChildSpend move real
@@ -41,7 +41,7 @@ import { assert, env, field, http, step, summary } from './_lib.mjs'
 const GRANT_HOURS = 1
 
 const BASE = env('COMPOSITE_BASE')
-const API_KEY = env('VITE_FAMILY_API_KEY') // the same key the app uses
+const API_KEY = env('WETRIP_SERVER_KEY') // the one WeTrip key
 
 const PARENT_CUSTOMER_ID = env('PARENT_CUSTOMER_ID')
 const PARENT_ACCOUNT_ID = env('PARENT_ACCOUNT_ID')

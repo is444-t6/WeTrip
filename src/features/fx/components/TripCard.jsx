@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import Money from '../../../components/Money'
+import { tripStatus } from '../status'
 
 const badge = {
   Watching: 'pending',
@@ -10,7 +11,7 @@ const badge = {
   Cancelled: 'removed',
 }
 
-export default function TripCard({ trip }) {
+export default function TripCard({ trip, role }) {
   const target = Number(trip.targetBudgetSgd) || 0
   const locked = Number(trip.lockedSgd) || 0
   const pct = target ? Math.min(100, (locked / target) * 100) : 0
@@ -26,7 +27,9 @@ export default function TripCard({ trip }) {
             {trip.childNickname ? ` · ${trip.childNickname}` : ''}
           </span>
         </div>
-        <span className={`badge ${badge[trip.status] || 'pending'}`}>{trip.status}</span>
+        <span className={`badge ${badge[trip.status] || 'pending'}`}>
+          {tripStatus(trip.status).label}
+        </span>
       </div>
 
       <div className="progress" style={{ marginTop: 16 }}>
@@ -51,21 +54,23 @@ export default function TripCard({ trip }) {
       </div>
 
       <Link
-        to="/fx/trips/$tripId"
+        to="/trips/$tripId"
         params={{ tripId: String(trip.tripId) }}
         className="btn secondary"
         style={{ width: '100%', marginTop: 14 }}
       >
         Open trip
       </Link>
-      <Link
-        to="/trips/$tripId"
-        params={{ tripId: String(trip.tripId) }}
-        className="muted"
-        style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
-      >
-        See budget, cover and family for this trip
-      </Link>
+      {role === 'Parent' && (
+        <Link
+          to="/fx/trips/$tripId"
+          params={{ tripId: String(trip.tripId) }}
+          className="muted"
+          style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
+        >
+          Manage FX &amp; locks
+        </Link>
+      )}
     </div>
   )
 }

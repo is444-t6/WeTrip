@@ -1,0 +1,53 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="c4-context" name="C4 Context">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="&lt;b&gt;WeTrip — System Context (C4 Level 1)&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#251b40;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Student travel-fintech prototype: family accounts, SmartFX trip forwards, budgets, insurance and Scan-to-Pay." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#6b6280;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="40" y="64" width="820" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="parent" value="&lt;b&gt;Parent&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Person]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;Funds the family wallet, sets budgets,&lt;br&gt;approves asks, plans trips&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="230" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="child" value="&lt;b&gt;Child&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Person]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;Spends from the trip pot,&lt;br&gt;pays by QR, asks for more&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dffbf2;strokeColor=#10dbac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="340" width="230" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="wetrip" value="&lt;b&gt;WeTrip&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Software System]&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;React single-page app plus the&lt;br&gt;OutSystems composite services that&lt;br&gt;own family, FX, budget, insurance,&lt;br&gt;trip and payment behaviour.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#531e8f;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=10;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="220" width="320" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="outsystems" value="&lt;b&gt;OutSystems Platform&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Software System]&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;Hosts the six WeTrip composite&lt;br&gt;modules and the atomic modules&lt;br&gt;that own the WeTrip tables.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6f1fb;strokeColor=#6d37ac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="940" y="120" width="300" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tbank" value="&lt;b&gt;SMUtBank sandbox (tBank)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[External System]&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;Training core bank: market data,&lt;br&gt;FX forward contracts, deposit&lt;br&gt;accounts and payments.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#8c8c8c;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="940" y="380" width="300" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-parent" value="Uses / pays&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;HTTPS: family, trips, budgets&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#7041f2;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.25;" edge="1" parent="1" source="parent" target="wetrip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-child" value="Uses&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;HTTPS: trip wallet, Scan-to-Pay&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#10dbac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.75;" edge="1" parent="1" source="child" target="wetrip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-sys" value="Calls same-origin /api/* and /scantopay/*&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;REST / JSON over HTTPS; server adds the shared key&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#531e8f;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="wetrip" target="outsystems">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-bank" value="Orchestrates&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;REST atomics + SMUtBank gateway&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#8c8c8c;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="outsystems" target="tbank">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note" value="&lt;b&gt;Trust boundary&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6b6280&quot;&gt;Only the serverless proxy holds the composite key; the browser bundle never sees it.&lt;br&gt;Sessions are an unsigned customerId:accountId:name stub — demo-grade, not production auth.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2d3;strokeColor=#e0b85c;dashed=1;fontColor=#251b40;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="560" width="640" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

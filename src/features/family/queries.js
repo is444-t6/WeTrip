@@ -16,6 +16,9 @@ export const keys = {
   myRequests: ['family', 'myRequests'],
   expenses: (id, from, to) => ['family', 'expenses', id, from, to],
   trend: (id, months) => ['family', 'trend', id, months],
+  // Prefixes of the two keys above, for invalidating every child and range at once.
+  allExpenses: ['family', 'expenses'],
+  allTrends: ['family', 'trend'],
 }
 
 const authed = () => ({ enabled: isLoggedIn() })
@@ -114,7 +117,8 @@ export function useDecideRequest() {
   return useMutation({
     mutationFn: ({ requestId, approve, ...grant }) =>
       FamilyApi.decideRequest(requestId, approve, grant),
-    onSuccess: () => invalidate('requests', 'children', 'me', 'myRequests'),
+    onSuccess: () =>
+      invalidate('requests', 'children', 'me', 'myRequests', 'allExpenses', 'allTrends'),
   })
 }
 
@@ -128,8 +132,10 @@ export function useGrantBudget() {
 }
 
 export function useSetSpendingRules() {
+  const invalidate = useInvalidate()
   return useMutation({
     mutationFn: ({ familyLinkId, ...rules }) => FamilyApi.setSpendingRules(familyLinkId, rules),
+    onSuccess: () => invalidate('dash'),
   })
 }
 
@@ -172,7 +178,7 @@ export function useTopUp() {
   return useMutation({
     mutationFn: ({ familyLinkId, amount, narrative }) =>
       FamilyApi.topUp(familyLinkId, amount, narrative),
-    onSuccess: () => invalidate('children', 'me'),
+    onSuccess: () => invalidate('children', 'me', 'allExpenses', 'allTrends'),
   })
 }
 
@@ -181,6 +187,6 @@ export function useChildSpend() {
   return useMutation({
     mutationFn: ({ merchantAccountId, amount, category, narrative }) =>
       FamilyApi.childSpend(merchantAccountId, amount, category, narrative),
-    onSuccess: () => invalidate('dash', 'myRequests'),
+    onSuccess: () => invalidate('dash', 'myRequests', 'children'),
   })
 }

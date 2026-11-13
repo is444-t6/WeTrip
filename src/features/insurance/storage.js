@@ -19,8 +19,11 @@ export function saveDraft(draft) {
 export function getTrip() {
   return read(TRIP_KEY, {})
 }
+// An edit keeps the stored tripId only while its dates still match; an explicit
+// trip.tripId (from the trip page) always wins.
 export function saveTrip(trip) {
-  sessionStorage.setItem(TRIP_KEY, JSON.stringify(trip))
+  const tripId = trip.tripId ?? tripIdFor(getTrip(), trip)
+  sessionStorage.setItem(TRIP_KEY, JSON.stringify({ ...trip, tripId: tripId || undefined }))
 }
 export function getPurchaseResult() {
   return read(PURCHASE_KEY)
@@ -30,4 +33,13 @@ export function savePurchaseResult(result) {
 }
 export function clearPurchaseResult() {
   sessionStorage.removeItem(PURCHASE_KEY)
+}
+
+// The trip page stores { tripId, startDate, endDate } before opening insurance. Only
+// trust it when the checkout still covers exactly those dates.
+export function tripIdFor(stored, trip) {
+  if (!stored?.tripId || !trip) return 0
+  return stored.startDate === trip.startDate && stored.endDate === trip.endDate
+    ? Number(stored.tripId)
+    : 0
 }

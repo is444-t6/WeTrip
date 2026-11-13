@@ -32,7 +32,7 @@ export default function Confirmation() {
   const currencyCode = purchase.currencyCode || draft.quote?.currencyCode || 'SGD'
   const premium = purchase.totalPremium ?? purchase.premium ?? draft.quote?.totalPremium
   const paymentFee = Number(purchase.paymentFee)
-  const totalDeducted = Number(purchase.totalPremium) + Number(purchase.paymentFee)
+  const totalDeducted = Number(premium) + (paymentFee || 0)
 
   return (
     <InsuranceLayout>

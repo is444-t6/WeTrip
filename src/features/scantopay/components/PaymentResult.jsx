@@ -20,7 +20,7 @@ function PaidNow({ result }) {
   )
 }
 
-function PaidLater({ result }) {
+export function PaidLater({ result }) {
   return (
     <>
       <DetailRow label="Amount">

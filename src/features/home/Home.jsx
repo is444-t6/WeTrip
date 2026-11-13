@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { usePendingRequests } from '../family/queries'
 import { useCurrentUser } from '../auth/useCurrentUser'
-import { clearSession } from '../auth/session'
+import { clearSession, getSessionDisplayName } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import { firstName, maskAccount } from './homeData'
@@ -10,6 +10,7 @@ import FamilyOverview from './components/FamilyOverview'
 import { EyeIcon } from './components/Icons'
 import QuickActions from './components/QuickActions'
 import RecentPayments from './components/RecentPayments'
+import MilesCard from './components/MilesCard'
 import TripWallets from './components/TripWallets'
 
 const HIDE_KEY = 'wetrip_hide_balance'
@@ -55,7 +56,9 @@ export default function Home() {
 
       <div className="hero">
         <div className="row-between">
-          <h1 className="hero-greeting">Hi, {firstName(user?.displayName)}!</h1>
+          <h1 className="hero-greeting">
+            Hi, {firstName(user?.displayName || getSessionDisplayName())}!
+          </h1>
           <button
             type="button"
             className="eye-btn"
@@ -87,6 +90,7 @@ export default function Home() {
       <h2 className="section-title">Your accounts</h2>
       <FamilyOverview role={role} pendingApprovals={pendingApprovals} />
       <TripWallets role={role} />
+      {role === 'Child' && <MilesCard />}
 
       <h2 className="section-title">Recent activity</h2>
       <RecentPayments />

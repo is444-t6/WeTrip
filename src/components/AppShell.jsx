@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 
 // The WeTrip logo. Decorative beside the wordmark; give it an alt when it stands alone.
 export function BrandMark({ alt = '', size, style }) {
@@ -38,6 +38,11 @@ function InsuranceMenu({ secondaryNav }) {
 }
 
 export default function AppShell({ onSignOut, secondaryNav, children }) {
+  // Trips covers the trip list, one trip's hub and its budget, so it stays lit on all of them.
+  const onTrips = useRouterState({
+    select: (s) => /^\/(fx|trips|budget)(\/|$)/.test(s.location.pathname),
+  })
+
   // Each page mounts its own shell, so this focuses the new page's main
   // landmark after a route change (and after signing in or out).
   useEffect(() => {
@@ -62,41 +67,27 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               Home
             </Link>
             <Link
+              to="/fx"
+              className={onTrips ? 'nav-link active' : 'nav-link'}
+              aria-current={onTrips ? 'page' : undefined}
+            >
+              Trips
+            </Link>
+            <Link
               to="/family"
               className="nav-link"
               activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
             >
               Family
             </Link>
-            <Link
-              to="/fx"
-              className="nav-link"
-              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
-            >
-              SmartFX
-            </Link>
-            <Link
-              to="/budget"
-              className="nav-link"
-              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
-            >
-              Budget
-            </Link>
-            <InsuranceMenu secondaryNav={secondaryNav} />
+            {/* Insurance is reached from a trip or Home; its tab only appears on its own screens. */}
+            {secondaryNav && <InsuranceMenu secondaryNav={secondaryNav} />}
             <Link
               to="/pay"
               className="nav-link"
-              activeOptions={{ exact: true }}
               activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
             >
-              Scan to Pay
-            </Link>
-            <Link
-              to="/pay/history"
-              className="nav-link"
-              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
-            >
-              My Payments
+              Pay
             </Link>
           </nav>
           {onSignOut && (

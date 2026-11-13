@@ -78,6 +78,7 @@ async function mockApi(page, over = {}) {
     GetMyAccounts: () => [
       { AccountId: '0000004554', ProductName: 'CASA', Currency: 'SGD', Balance: 1000 },
     ],
+    GetMyMiles: () => ({ Balance: 1250 }),
     ...over,
   }
   const serve = (route) => {
@@ -94,6 +95,7 @@ async function mockApi(page, over = {}) {
   }
   await page.route('**/api/family/**', serve)
   await page.route('**/api/fx/**', serve)
+  await page.route('**/api/trip/**', serve)
   // Only the API path: a glob would also catch the app's own
   // /src/features/scantopay/ modules and break the page.
   await page.route((url) => url.pathname.startsWith('/scantopay/'), serve)
@@ -165,6 +167,14 @@ test.describe('parent home page', () => {
     await expect(page.getByText('Deposit account ····4554')).toBeVisible()
   })
 
+  test('a parent has no Miles card and never asks for miles', async ({ page }) => {
+    const calls = await mockApi(page)
+    await page.goto('/')
+    await expect(page.getByText('Second kid')).toBeVisible()
+    await expect(page.getByLabel('Miles', { exact: true })).toHaveCount(0)
+    expect(calls.filter((c) => c.name === 'GetMyMiles')).toHaveLength(0)
+  })
+
   test('quick actions go to each product', async ({ page }) => {
     await mockApi(page)
     await page.goto('/')
@@ -205,7 +215,23 @@ test.describe('parent home page', () => {
     await expect(chip).toContainText('JPY')
     await expect(chip).toContainText('96675.38')
     await expect(chip).toContainText('Kyoto')
-    await expect(chip).toHaveAttribute('href', '/fx/trips/12')
+    // Every trip tile opens the trip hub, which links on to FX, budget and cover.
+    await expect(chip).toHaveAttribute('href', '/trips/12')
+  })
+
+  test('the top nav is Home, Trips, Family and Pay only', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/')
+    const nav = page.getByRole('navigation', { name: 'WeTrip', exact: true })
+    await expect(nav.getByRole('link')).toHaveText(['Home', 'Trips', 'Family', 'Pay'])
+    await expect(nav.getByRole('link', { name: 'Trips', exact: true })).toHaveAttribute(
+      'href',
+      '/fx',
+    )
+    await expect(nav.getByRole('link', { name: 'Pay', exact: true })).toHaveAttribute(
+      'href',
+      '/pay',
+    )
   })
 
   test('recent payments: the newest three, with pay-later marked', async ({ page }) => {
@@ -310,14 +336,48 @@ test.describe('child home page', () => {
     await expect(budget).toContainText('left this week')
     await expect(budget).toContainText('SGD 50.00 of SGD 200.00 spent')
     await expect(page.locator('.wallet-chip')).toContainText('Kyoto')
+    await expect(page.locator('.wallet-chip')).toHaveAttribute('href', '/trips/12')
     expect(calls.filter((c) => c.name === 'GetPendingRequests')).toHaveLength(0)
     await expect(page.locator('.banner.warn')).toHaveCount(0)
+  })
+
+  const miles = (page) => page.getByLabel('Miles', { exact: true })
+
+  test('the Miles card reads the balance, singular for one', async ({ page }) => {
+    let balance = 1250
+    await mockApi(page, { ...child, GetMyMiles: () => ({ Balance: balance }) })
+    await page.goto('/')
+    await expect(miles(page).locator('p')).toHaveText('1250 miles')
+
+    balance = 1
+    await page.reload()
+    await expect(miles(page).locator('p')).toHaveText('1 mile')
+  })
+
+  test('with no miles yet the card points at paying on a trip', async ({ page }) => {
+    await mockApi(page, { ...child, GetMyMiles: () => ({ Balance: 0 }) })
+    await page.goto('/')
+    await expect(miles(page).locator('p').first()).toHaveText('0 miles')
+    await expect(miles(page)).toContainText('Pay on a trip to earn miles.')
+  })
+
+  test('a miles outage hides the card and leaves the rest of Home alone', async ({ page }) => {
+    const calls = await mockApi(page, {
+      ...child,
+      GetMyMiles: () => ({ __status: 500, body: { Errors: ['down'] } }),
+    })
+    await page.goto('/')
+    await expect.poll(() => calls.some((c) => c.name === 'GetMyMiles')).toBe(true)
+    await expect(page.locator('.hero-amount')).toHaveText('SGD 1000.00')
+    await expect(page.locator('.wallet-chip')).toHaveCount(1)
+    await expect(miles(page)).toHaveCount(0)
+    await expect(page.locator('.banner.error')).toHaveCount(0)
   })
 
   test('a child whose parent has not set a budget is told so', async ({ page }) => {
     await mockApi(page, { ...child, GetChildDashboard: () => ({ HasBudget: false, Balance: 10 }) })
     await page.goto('/')
-    await expect(page.getByText("Your parent hasn't set a budget yet.")).toBeVisible()
+    await expect(page.getByText("Your parent hasn't set a spending limit yet.")).toBeVisible()
   })
 })
 

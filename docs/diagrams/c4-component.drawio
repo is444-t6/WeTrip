@@ -1,0 +1,117 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="c4-component" name="C4 Component">
+    <mxGraphModel dx="1800" dy="1100" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1800" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="&lt;b&gt;WeTrip — Component Diagram (C4 Level 3)&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#251b40;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="720" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Inside the React SPA and the serverless proxy. Feature modules own screens plus their api.js / queries.js; all HTTP funnels through one client." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#6b6280;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="40" y="58" width="980" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="spa-boundary" value="&lt;b&gt;WeTrip SPA — browser&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#531e8f;dashed=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontColor=#531e8f;fontStyle=1;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="960" height="820" as="geometry" />
+        </mxCell>
+
+        <mxCell id="router" value="&lt;b&gt;TanStack Router&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;20 thin file routes + routeTree.gen.ts;&lt;br&gt;per-screen isLoggedIn() guard, no loaders&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="150" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="shell" value="&lt;b&gt;AppShell + shared kit&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;navbar, Money, Banner,&lt;br&gt;BalanceHero, SignedOutCard&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="380" y="150" width="250" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="design" value="&lt;b&gt;Design system&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;src/index.css tokens + classes,&lt;br&gt;Poppins, no UI kit&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="660" y="150" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="features-boundary" value="&lt;b&gt;Feature modules — src/features/&amp;lt;name&amp;gt;/&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#faf8fd;strokeColor=#b9a7d4;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontColor=#6d37ac;fontStyle=1;fontFamily=Helvetica;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="290" width="900" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="f-family" value="&lt;b&gt;Family&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;dashboards, child detail,&lt;br&gt;approvals, insights&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="90" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-fx" value="&lt;b&gt;SmartFX&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;trip goals, rate,&lt;br&gt;locks, cancel&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="235" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-trip" value="&lt;b&gt;Trips&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;trip hub, pay on trip,&lt;br&gt;close&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-budget" value="&lt;b&gt;Budget&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;category bars, add&lt;br&gt;expense, limits&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="525" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-ins" value="&lt;b&gt;Insurance&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;plan → travellers →&lt;br&gt;quote → purchase&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="670" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-pay" value="&lt;b&gt;Scan-to-Pay&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;QR preview, PayNow /&lt;br&gt;PayLater, history&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#efe7ff;strokeColor=#7041f2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="815" y="330" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-note" value="&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;Each module keeps its screen(s), an api.js bound to serviceClient(), and a queries.js of TanStack Query keys + invalidation. Home and Auth sit alongside them.&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;fontColor=#6b6280;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="90" y="425" width="560" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="auth" value="&lt;b&gt;Auth / session&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;session.js token in sessionStorage,&lt;br&gt;accounts.js lookup, useCurrentUser&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="540" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="query" value="&lt;b&gt;TanStack Query cache&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;retry 1, staleTime 15 s, no focus refetch;&lt;br&gt;keys ['family'|'fx'|'budget'|'trip'|…]&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="540" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="services" value="&lt;b&gt;services.js registry&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;base path, auth style, normalize;&lt;br&gt;serviceClient(name, overrides)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="670" y="540" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="http" value="&lt;b&gt;http.js client&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;createClient / call / qs; decap() response casing;&lt;br&gt;friendlyError(); X-Session-Token or ?sessionToken=; no timeout&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dffbf2;strokeColor=#10dbac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="680" width="590" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proxy-boundary" value="&lt;b&gt;api/proxy.js — Vercel function&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6d37ac;dashed=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontColor=#6d37ac;fontStyle=1;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="260" width="380" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="handler" value="&lt;b&gt;handler(req, res)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;reads ?service &amp;amp; ?path, forwards&lt;br&gt;method / body / Content-Type /&lt;br&gt;X-Session-Token, returns upstream bytes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="320" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="upstream" value="&lt;b&gt;_services.js upstream()&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[Component]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;ORIGIN + six service paths;&lt;br&gt;injects WETRIP_SERVER_KEY as&lt;br&gt;X-Contacts-Key or apiKey query&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6d37ac;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="480" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="env" value="&lt;b&gt;WETRIP_SERVER_KEY&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;Vercel project environment,&lt;br&gt;server-side only — never in the bundle&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2d3;strokeColor=#e0b85c;dashed=1;fontColor=#251b40;fontFamily=Helvetica;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="630" width="320" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="outsystems" value="&lt;b&gt;OutSystems composites&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;[External System]&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#6b6280&quot;&gt;Family · SmartFX · Trip ·&lt;br&gt;Budget · Insurance · ScanToPay&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f6f1fb;strokeColor=#6d37ac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;verticalAlign=top;align=center;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="1540" y="400" width="230" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-router" value="renders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#b9a7d4;strokeWidth=1.5;fontColor=#6b6280;fontFamily=Helvetica;fontSize=10;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="1" source="router" target="features-boundary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-shell" value="wraps screens" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#b9a7d4;strokeWidth=1.5;fontColor=#6b6280;fontFamily=Helvetica;fontSize=10;exitX=0.5;exitY=1;entryX=0.62;entryY=0;" edge="1" parent="1" source="shell" target="features-boundary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-query" value="useQuery / useMutation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#6d37ac;strokeWidth=1.5;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="features-boundary" target="query">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-services" value="serviceClient()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#6d37ac;strokeWidth=1.5;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="features-boundary" target="services">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-http" value="call(method, path, body)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#10dbac;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="services" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-auth" value="session token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#7041f2;strokeWidth=1.5;dashed=1;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;exitX=0.5;exitY=1;entryX=0;entryY=0.8;" edge="1" parent="1" source="auth" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fetch" value="fetch, same origin" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#531e8f;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="http" target="handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-upstream" value="upstream(service, path, query, env)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#6d37ac;strokeWidth=1.5;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="handler" target="upstream">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-env" value="reads key" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#e0b85c;strokeWidth=1.5;dashed=1;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="upstream" target="env">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-out" value="REST / JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#8c8c8c;strokeWidth=2;fontColor=#251b40;fontFamily=Helvetica;fontSize=10;" edge="1" parent="1" source="upstream" target="outsystems">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

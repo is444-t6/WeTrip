@@ -151,9 +151,9 @@ test.describe('signed out / login', () => {
     await page.getByPlaceholder('0000003018').fill('0000002169')
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/$/)
-    // The name is no longer asked for, so the token ends after the account.
+    // The name is not asked for; it is whatever GetMe knows.
     expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBe(
-      '0000002169:0000004554:',
+      '0000002169:0000004554:Parent Demo',
     )
     await expect(page.getByText('Hi, Parent!')).toBeVisible()
     await expect(page.getByText('Available balance')).toBeVisible()
@@ -359,7 +359,9 @@ test.describe('child dashboard', () => {
     await expect(page.locator('.hero-amount')).toContainText('SGD 250.50')
     await expect(page.locator('.hero-sub')).toContainText('1 SGD = 123.52 JPY')
     await expect(page.getByText('150.00 remaining')).toBeVisible()
-    await expect(page.locator('.card', { hasText: 'Budget this' }).getByText('Food')).toBeVisible()
+    await expect(
+      page.locator('.card', { hasText: 'Spending limit this' }).getByText('Food'),
+    ).toBeVisible()
   })
 
   test('paying within budget confirms; over budget is declined, not held', async ({ page }) => {
@@ -372,7 +374,7 @@ test.describe('child dashboard', () => {
     await field(page, 'Merchant account id').fill('0000006718')
     await field(page, 'Amount').fill('10')
     await page.getByRole('button', { name: 'Pay', exact: true }).click()
-    await expect(page.getByText('Paid! Remaining this period: 140')).toBeVisible()
+    await expect(page.getByText('Paid! Remaining this period: SGD 140.00')).toBeVisible()
     expect(last(calls, 'ChildSpend').body).toMatchObject({
       merchantAccountId: '0000006718',
       amount: 10,
@@ -690,7 +692,8 @@ test.describe('SmartFX trips in the family screens', () => {
     await page.goto('/family/child/3')
     const trip = page.locator('.card', { hasText: 'Kyoto' })
     await expect(trip).toContainText('2027-04-01 → 2027-04-14 · in 144 days')
-    await expect(trip).toContainText('PartiallyLocked')
+    await expect(trip).toContainText('Partly locked')
+    await expect(trip).not.toContainText('PartiallyLocked')
     await expect(trip).toContainText('SGD 800.00 locked')
     await expect(trip).toContainText('120.8236 JPY')
     await expect(trip).toContainText("Today's 6M forward")
@@ -699,7 +702,8 @@ test.describe('SmartFX trips in the family screens', () => {
       "Locked JPY 96675.38 for SGD 800.00 (average rate 120.8442). At today's 6M forward of 121.0494 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
     )
     expect(last(calls, 'GetRate').query).toMatchObject({ currency: 'JPY', period: '6M' })
-    await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute(
+    await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute('href', '/trips/12')
+    await expect(trip.getByRole('link', { name: 'Manage FX & locks' })).toHaveAttribute(
       'href',
       '/fx/trips/12',
     )
@@ -825,7 +829,7 @@ test.describe('child detail (parent)', () => {
     await expect(field(c, 'Amount (SGD)')).toHaveValue('200')
     await expect(field(c, 'Period')).toHaveValue('Weekly')
     await c.getByRole('button', { name: 'Save budget' }).click()
-    await expect(page.getByText('Budget saved.')).toBeVisible()
+    await expect(page.getByText('Spending limit saved.')).toBeVisible()
     expect(last(calls, 'SetBudget').body).toEqual({
       familyLinkId: 3,
       period: 'Weekly',
@@ -1192,7 +1196,7 @@ test.describe('child pay flow', () => {
   test('the budget card shows a daily amount to stay on track', async ({ page }) => {
     await mockApi(page, child)
     await page.goto('/family')
-    const budget = page.locator('.card', { hasText: 'Budget this week' })
+    const budget = page.locator('.card', { hasText: 'Spending limit this week' })
     await expect(budget).toContainText('SGD 150.00 remaining')
     await expect(budget).toContainText('about SGD 30.00 a day for 5 days')
     await expect(budget.locator('.pace-tick')).toHaveCount(1)

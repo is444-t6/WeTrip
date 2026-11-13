@@ -15,6 +15,7 @@ import {
 import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
+import SignedOutCard from '../../components/SignedOutCard'
 import ChildOverview from './components/ChildOverview'
 import Money from '../../components/Money'
 import SpendingInsights from './components/SpendingInsights'
@@ -37,18 +38,7 @@ export default function ChildDetail() {
   const { data: children, error } = useChildren()
   const [tab, setTab] = useState('overview')
 
-  if (!isLoggedIn()) {
-    return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/login">
-            <button style={{ width: '100%' }}>Sign in</button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip Family" />
 
   function signOut() {
     clearSession()
@@ -84,7 +74,7 @@ export default function ChildDetail() {
 
           {tab === 'manage' && (
             <div role="tabpanel" id="panel-manage" aria-labelledby="tab-manage">
-              <h2 className="section-title">Budget</h2>
+              <h2 className="section-title">Spending limit</h2>
               <BudgetCard child={child} />
               <div className="section-title">Spending rules</div>
               <RulesCard familyLinkId={familyLinkId} />
@@ -125,7 +115,7 @@ function BudgetCard({ child }) {
     setOk('')
     setBudget.mutate(
       { familyLinkId: Number(familyLinkId), period, amount: Number(amount) },
-      { onSuccess: () => setOk('Budget saved.') },
+      { onSuccess: () => setOk('Spending limit saved.') },
     )
   }
 

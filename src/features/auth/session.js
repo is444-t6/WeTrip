@@ -16,6 +16,10 @@ export function getSessionAccountId() {
   return getSessionToken().split(':')[1] || ''
 }
 
+export function getSessionDisplayName() {
+  return getSessionToken().split(':').slice(2).join(':')
+}
+
 export function setDevSession(customerId, accountId, displayName) {
   const token = `${customerId}:${accountId}:${displayName || ''}`
   sessionStorage.setItem(KEY, token)

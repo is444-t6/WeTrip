@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import { useCurrentUser } from '../auth/useCurrentUser'
-import { clearSession, getSessionAccountId, isLoggedIn } from '../auth/session'
+import { clearSession, isLoggedIn } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import SignedOutCard from '../../components/SignedOutCard'
@@ -9,7 +9,9 @@ import Money from '../../components/Money'
 import BalanceHero from '../../components/BalanceHero'
 import RateGauge from './components/RateGauge'
 import { tenorFor } from './api'
-import { useCancelTrip, useCloseTrip, useLockNow, useRate, useTrip, useTripSpend } from './queries'
+import { demoLabel, demoRate, isEnded, tripStatus } from './status'
+import { useCloseTrip } from '../trips/queries'
+import { useCancelTrip, useCheckRates, useLockNow, useRate, useTrip } from './queries'
 
 export default function TripDetail() {
   const { tripId } = useParams({ from: '/fx/trips/$tripId' })
@@ -18,6 +20,8 @@ export default function TripDetail() {
 
   const trip = data?.trip
   const quote = useRate(trip?.currency, tenorFor(trip?.tripStartDate))
+  const checkRates = useCheckRates()
+  const forward = demoRate(quote.data?.forwardRate, trip)
   const locks = data?.locks || []
   const spends = data?.spends || []
 
@@ -36,10 +40,15 @@ export default function TripDetail() {
 
   const spentForeign = spends.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
   const remainingForeign = Math.max(0, (Number(trip.lockedForeign) || 0) - spentForeign)
-  const remainingSgd = Math.max(
-    0,
-    (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0),
-  )
+  const remainingSgd =
+    Math.round(
+      Math.max(0, (Number(trip.targetBudgetSgd) || 0) - (Number(trip.lockedSgd) || 0)) * 100,
+    ) / 100
+  // The status can still read PartiallyLocked once the whole budget is locked.
+  const statusLabel =
+    !isEnded(trip.status) && Number(trip.lockedSgd) > 0 && remainingSgd <= 0
+      ? 'Fully locked'
+      : tripStatus(trip.status).label
   return shell(
     <>
       <Link
@@ -53,8 +62,13 @@ export default function TripDetail() {
       <h1>{trip.destination}</h1>
       <p className="muted" style={{ marginTop: 0 }}>
         {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
-        {trip.status}
+        {statusLabel}
         {trip.childNickname ? ` · ${trip.childNickname}` : ''}
+        {demoLabel(trip) && (
+          <span className="badge pending" style={{ marginLeft: 8 }}>
+            {demoLabel(trip)}
+          </span>
+        )}
       </p>
 
       <BalanceHero
@@ -72,22 +86,19 @@ export default function TripDetail() {
         }
       />
 
-      <RateGauge
-        current={quote.data?.forwardRate}
-        target={trip.targetRate}
-        currency={trip.currency}
-      />
+      <RateGauge current={forward} target={trip.targetRate} currency={trip.currency} />
 
       {role === 'Parent' && (
         <ParentActions
           trip={trip}
           remainingSgd={remainingSgd}
-          currentRate={quote.data?.forwardRate}
-          onCheck={quote.refetch}
-          checking={quote.isFetching}
+          currentRate={forward}
+          // Runs the same check as the 5-minute timer, so an auto-lock fires now.
+          onCheck={() => checkRates.mutate(undefined, { onSettled: () => quote.refetch() })}
+          checking={checkRates.isPending || quote.isFetching}
         />
       )}
-      {role === 'Child' && <SpendCard trip={trip} remainingForeign={remainingForeign} />}
+      {role === 'Child' && remainingForeign > 0 && <PayOnTripCard trip={trip} />}
 
       <h2 className="section-title">Rate locks</h2>
       <div className="card">
@@ -179,13 +190,19 @@ export default function TripDetail() {
 function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
   const [amount, setAmount] = useState('')
   const [period, setPeriod] = useState(tenorFor(trip.tripStartDate))
+  const [confirming, setConfirming] = useState('') // 'close' | 'cancel': the next tap commits
   const lock = useLockNow()
   const cancel = useCancelTrip()
-  const close = useCloseTrip()
+  const close = useCloseTrip(trip.tripId)
 
   const rate = Number(currentRate) || 0
-  const canClose = (Number(trip.lockedForeign) || 0) > 0 && rate > 0
+  const open = !isEnded(trip.status)
+  const lockable = trip.status === 'Watching' || trip.status === 'PartiallyLocked'
+  const canLock = lockable && remainingSgd > 0 && Number(amount) > 0
+  const canClose = open
+  const canCancel = open && !(Number(trip.lockedSgd) > 0)
   const error = lock.error || cancel.error || close.error
+  const reset = { onSettled: () => setConfirming('') }
 
   return (
     <div className="card">
@@ -196,7 +213,7 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
       <Banner>{error?.message}</Banner>
       <Banner kind="ok">
         {close.data
-          ? `Converted ${Number(close.data.returnedForeign).toFixed(2)} ${trip.currency} back at ${Number(close.data.returnRate).toFixed(4)}.`
+          ? `Closed. ${Number(close.data.returnedForeign).toFixed(2)} ${trip.currency} unspent, valued at today's ${Number(close.data.spotRate).toFixed(4)}.`
           : lock.data
             ? `Locked ${Number(lock.data.lock?.sgdAmount).toFixed(2)} SGD at ${Number(lock.data.lock?.lockedRate).toFixed(4)}.`
             : ''}
@@ -209,9 +226,10 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
             id="trip-lock-amount"
             type="number"
             step="0.01"
-            min="1"
+            min="0.01"
+            max={remainingSgd}
             value={amount}
-            placeholder={remainingSgd.toFixed(2)}
+            placeholder={`Up to ${remainingSgd.toFixed(2)}`}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
@@ -234,15 +252,16 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         <button
           type="button"
           className="span-2"
-          disabled={lock.isPending || remainingSgd <= 0}
+          disabled={lock.isPending || !canLock}
           onClick={() =>
-            lock.mutate({
-              tripId: trip.tripId,
-              sgdAmount: Number(amount) || remainingSgd,
-              rate,
-              period,
-              parentAccountId: getSessionAccountId(),
-            })
+            lock.mutate(
+              {
+                tripId: trip.tripId,
+                sgdAmount: Math.min(Number(amount), remainingSgd),
+                period,
+              },
+              { onSuccess: () => setAmount('') },
+            )
           }
         >
           {lock.isPending ? 'Locking…' : 'Lock rate'}
@@ -254,104 +273,53 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
           type="button"
           className="secondary"
           disabled={!canClose || close.isPending}
-          onClick={() => close.mutate({ tripId: trip.tripId, rate })}
+          onClick={() =>
+            confirming === 'close' ? close.mutate(undefined, reset) : setConfirming('close')
+          }
         >
-          {close.isPending ? 'Converting…' : 'Close & convert back'}
+          {close.isPending
+            ? 'Converting…'
+            : confirming === 'close'
+              ? 'Confirm close?'
+              : 'Close & convert back'}
         </button>
         <button
           type="button"
           className="danger span-2"
-          disabled={cancel.isPending || trip.status === 'Completed'}
-          onClick={() => cancel.mutate(trip.tripId)}
+          disabled={!canCancel || cancel.isPending}
+          onClick={() =>
+            confirming === 'cancel' ? cancel.mutate(trip.tripId, reset) : setConfirming('cancel')
+          }
         >
-          Cancel trip
+          {confirming === 'cancel' ? 'Confirm cancel?' : 'Cancel trip'}
         </button>
+        {confirming && (
+          <button type="button" className="secondary span-2" onClick={() => setConfirming('')}>
+            Go back
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
-function SpendCard({ trip, remainingForeign }) {
-  const [amount, setAmount] = useState('')
-  const [merchantAccountId, setMerchantAccountId] = useState('')
-  const [category, setCategory] = useState('General')
-  const [narrative, setNarrative] = useState('')
-  const [message, setMessage] = useState('')
-  const spend = useTripSpend()
-
-  function submit(e) {
-    e.preventDefault()
-    setMessage('')
-    spend.mutate(
-      {
-        tripId: trip.tripId,
-        merchantAccountId: merchantAccountId.trim(),
-        amount: Number(amount),
-        category,
-        narrative,
-      },
-      {
-        onSuccess: (r) => {
-          setMessage(
-            `${Number(amount).toFixed(2)} ${trip.currency} paid · ${Number(r.remainingForeign ?? remainingForeign - Number(amount)).toFixed(2)} ${trip.currency} left`,
-          )
-          setAmount('')
-          setMerchantAccountId('')
-          setNarrative('')
-        },
-      },
-    )
-  }
-
+// Paying from the pot goes through the Trip composite: scan the merchant's QR and
+// the trip pays at its locked rate, and the budget records the spend.
+function PayOnTripCard({ trip }) {
   return (
     <div className="card">
       <h3>Pay from the pot</h3>
-      <Banner>{spend.error?.message}</Banner>
-      <Banner kind="ok">{message}</Banner>
-      <form onSubmit={submit}>
-        <div className="field">
-          <label htmlFor="trip-spend-merchant">Merchant account id</label>
-          <input
-            id="trip-spend-merchant"
-            value={merchantAccountId}
-            onChange={(e) => setMerchantAccountId(e.target.value)}
-            required
-          />
-        </div>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="trip-spend-amount">Amount ({trip.currency})</label>
-            <input
-              id="trip-spend-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="trip-spend-category">Category</label>
-            <input
-              id="trip-spend-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="trip-spend-note">Note (optional)</label>
-          <input
-            id="trip-spend-note"
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
-          />
-        </div>
-        <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
-          {spend.isPending ? 'Paying…' : 'Pay'}
-        </button>
-      </form>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Scan a merchant's QR to pay from this trip at its locked rate.
+      </p>
+      <Link
+        to="/pay"
+        search={{ tripId: Number(trip.tripId) }}
+        className="btn"
+        style={{ width: '100%' }}
+      >
+        Pay on this trip
+      </Link>
     </div>
   )
 }

@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useChildren } from '../../family/queries'
-import { getSessionCustomerId } from '../../auth/session'
 import Banner from '../../../components/Banner'
+import { CATEGORIES, blankFixedCost } from '../../budget/constants'
+import FixedCostFields from '../../budget/components/FixedCostFields'
+import { usePlanTrip } from '../../trips/queries'
 import { CURRENCIES, tenorFor } from '../api'
-import { useCreateTrip, useRate } from '../queries'
+import { useRate } from '../queries'
 
 export default function NewTripForm() {
   const { data: children } = useChildren()
@@ -21,37 +23,60 @@ export default function NewTripForm() {
   const [targetBudgetSgd, setTargetBudgetSgd] = useState('')
   const [targetRate, setTargetRate] = useState('')
   const [autoLockEnabled, setAutoLockEnabled] = useState(true)
+  const [split, setSplit] = useState({}) // category id -> SGD limit, all optional
+  const [fixed, setFixed] = useState([]) // upfront costs: { name, categoryId, amount }, max 10
 
   const period = tenorFor(tripStartDate)
   const quote = useRate(currency, period)
-  const create = useCreateTrip()
+  const create = usePlanTrip()
+  const navigate = useNavigate()
+  const splitTotal = Object.values(split).reduce((sum, v) => sum + (Number(v) || 0), 0)
+  const overSplit = splitTotal > (Number(targetBudgetSgd) || 0)
+  // A fixed cost uses up its category's limit like any spend. A category with no
+  // limit set has nothing to exceed. Compared in cents so 0.1 + 0.2 fits 0.3.
+  const cents = (v) => Math.round((Number(v) || 0) * 100)
+  const overFixed = CATEGORIES.filter(
+    (c) =>
+      cents(split[c.id]) > 0 &&
+      fixed.reduce((sum, f) => sum + (Number(f.categoryId) === c.id ? cents(f.amount) : 0), 0) >
+        cents(split[c.id]),
+  )
+  const blocked = overSplit || overFixed.length > 0
 
+  // PlanTrip opens the trip wallet, creates the trip, sets the SGD category
+  // budgets and records the fixed costs in one call. The child comes from the
+  // family link on the server.
   function submit(e) {
     e.preventDefault()
-    const child = active.find((c) => String(c.familyLinkId) === String(familyLinkId))
+    if (blocked) return
     create.mutate(
       {
-        familyLinkId: Number(familyLinkId),
-        parentCustomerId: getSessionCustomerId(),
-        childCustomerId: child?.childCustomerId || '',
-        destination: destination.trim(),
-        currency,
-        tripStartDate,
-        tripEndDate,
-        targetBudgetSgd: Number(targetBudgetSgd),
-        targetRate: Number(targetRate),
-        autoLockEnabled,
+        FamilyLinkId: Number(familyLinkId),
+        Destination: destination.trim(),
+        Currency: currency,
+        TripStartDate: tripStartDate,
+        TripEndDate: tripEndDate,
+        TargetBudgetSgd: Number(targetBudgetSgd),
+        TargetRate: Number(targetRate),
+        AutoLockEnabled: autoLockEnabled,
+        Budgets: CATEGORIES.filter((c) => Number(split[c.id]) > 0).map((c) => ({
+          CategoryId: c.id,
+          LimitAmount: Number(split[c.id]),
+        })),
+        FixedCosts: fixed.map((f) => ({
+          Name: f.name.trim(),
+          CategoryId: Number(f.categoryId),
+          AmountSgd: Number(f.amount),
+        })),
       },
       {
-        onSuccess: () => {
-          setDestination('')
-          setTripStartDate('')
-          setTripEndDate('')
-          setTargetBudgetSgd('')
-          setTargetRate('')
-          setOpen(false)
-          requestAnimationFrame(() => triggerRef.current?.focus())
-        },
+        // The trip exists even when a fixed cost failed to save; the trip page says so.
+        onSuccess: (trip) =>
+          navigate({
+            to: '/trips/$tripId',
+            params: { tripId: String(trip.id) },
+            state: { fixedCostsFailed: Number(trip.fixedCostsFailed) || 0 },
+          }),
       },
     )
   }
@@ -241,8 +266,73 @@ export default function NewTripForm() {
           </span>
         </label>
 
-        <button type="submit" disabled={create.isPending} style={{ width: '100%' }}>
-          {create.isPending ? 'Creating…' : 'Create trip goal'}
+        <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 16px' }}>
+          <legend style={{ fontWeight: 600, marginBottom: 6 }}>
+            Split the budget by category (SGD, optional)
+          </legend>
+          <div className="grid-2">
+            {CATEGORIES.map((c) => (
+              <div className="field" key={c.id}>
+                <label htmlFor={`trip-split-${c.id}`}>{c.label}</label>
+                <input
+                  id={`trip-split-${c.id}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={split[c.id] ?? ''}
+                  onChange={(e) => setSplit({ ...split, [c.id]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          {overSplit && (
+            <p className="muted" role="alert">
+              The categories add up to more than the trip budget.
+            </p>
+          )}
+        </fieldset>
+
+        <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 16px' }}>
+          <legend style={{ fontWeight: 600, marginBottom: 6 }}>Fixed costs (SGD, optional)</legend>
+          <p className="muted" style={{ margin: '0 0 12px' }}>
+            Known upfront costs such as the hotel or flights. They count towards the category limits
+            above.
+          </p>
+          {fixed.map((f, i) => (
+            <div key={i} role="group" aria-label={`Fixed cost ${i + 1}`}>
+              <FixedCostFields
+                id={`trip-fixed-${i}`}
+                value={f}
+                onChange={(next) => setFixed(fixed.map((x, j) => (j === i ? next : x)))}
+              />
+              <button
+                type="button"
+                className="secondary"
+                aria-label={`Remove fixed cost ${i + 1}`}
+                style={{ marginBottom: 16 }}
+                onClick={() => setFixed(fixed.filter((_, j) => j !== i))}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          {overFixed.map((c) => (
+            <p className="muted" role="alert" key={c.id}>
+              Fixed costs in {c.label} are more than its limit.
+            </p>
+          ))}
+          <button
+            type="button"
+            className="secondary"
+            disabled={fixed.length >= 10}
+            onClick={() => setFixed([...fixed, blankFixedCost()])}
+          >
+            Add a fixed cost
+          </button>
+        </fieldset>
+
+        <button type="submit" disabled={create.isPending || blocked} style={{ width: '100%' }}>
+          {create.isPending ? 'Planning…' : 'Plan trip'}
         </button>
       </form>
     </div>
