@@ -11,7 +11,7 @@ Signed-in dashboard and the public front door.
 | Screen      | Behaviour                                                                     |
 | ----------- | ----------------------------------------------------------------------------- |
 | `FrontDoor` | Chooses once at render: `Home` when `isLoggedIn()`, otherwise `SignedOutCard` |
-| `Home`      | Balance hero, family overview, trip wallets, recent payments, quick actions   |
+| `Home`      | Next-trip hero, quick actions, family overview, recent payments, products     |
 
 ## Data
 
@@ -20,24 +20,24 @@ Signed-in dashboard and the public front door.
 | Name + SGD balance      | `useCurrentUser({ profile: true })` → `GetMyFamilyRole` + `GetMe`      |
 | Pending approvals badge | `GetPendingRequests` for parents only                                  |
 | Family overview         | `GetChildren` (parent) or `GetChildDashboard` (child)                  |
-| Trip wallets            | SmartFX `GetTrips` per active family link (parent) or own link (child) |
+| Next trip + later trips | SmartFX `GetTrips` per active family link (parent) or own link (child) |
 | Recent payments         | Scan-to-Pay `GetHistory`, three newest                                 |
 | Miles (child only)      | Trip composite `GetMyMiles` → `{Balance}`; card hidden if it fails     |
 
-`tripWallets()` filters out ended trips and trips with no locked foreign balance. `latestPayments()` sorts and slices history. Both are pure functions in `homeData.js`.
+The hero leads with the soonest trip that has not ended (`splitTrips` from `fx/status.js`), linking to `/trips/$tripId`; later open trips list beneath it. It reads only `GetTrips` fields, never the trip overview. With no trip, a parent is offered **Plan a trip** (`/fx`). `tripCountdown()` labels how far off a trip is and `latestPayments()` sorts and slices history; both are pure functions in `homeData.js`.
 
 The balance can be masked; the preference is stored in `localStorage['wetrip_hide_balance']`. `maskAccount` shows the last four digits of the account id.
 
 ## Components
 
-`Icons`, `QuickActions`, `ExploreProducts`, `FamilyOverview`, `TripWallets`, `MilesCard`, `RecentPayments`, plus `Money` and `Banner` from the shared kit. Home renders its own hero markup rather than `BalanceHero`.
+`Icons`, `NextTrip`, `QuickActions`, `ExploreProducts`, `FamilyOverview`, `MilesCard`, `RecentPayments`, plus `Money` and `Banner` from the shared kit. Home renders its own hero markup rather than `BalanceHero`.
 
 Quick actions and product tiles are static links; there is no polling or auto-refresh.
 
 ## Tests
 
-- `tests/home-mocked.spec.js` — signed-out card, sign-in/out, parent and child dashboards, trip money, recent payments, balance-hide persistence, Scan-to-Pay outage isolation, Miles card (balance, zero, outage, parent).
-- `tests/home-data.spec.js` — pure helpers (`firstName`, `maskAccount`, `tripWallets`, `latestPayments`, `totalChildBalance`).
+- `tests/home-mocked.spec.js` — signed-out card, sign-in/out, parent and child dashboards, next trip and later trips, the phone bottom bar, recent payments, balance-hide persistence, Scan-to-Pay outage isolation, Miles card (balance, zero, outage, parent).
+- `tests/home-data.spec.js` — pure helpers (`firstName`, `maskAccount`, `tripCountdown`, `latestPayments`, `totalChildBalance`).
 
 ## Known issues
 

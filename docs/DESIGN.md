@@ -453,11 +453,24 @@ same identity tightens into a working fintech UI:
 - **App shell** - 72px `primary-deep` bar with the WeTrip wordmark, pill nav
   tabs (active tab is a mint pill with deep-purple text) and an outline Sign out.
   Home, Trips (SmartFX, the trip hub and Budget), Family and Pay share one pill
-  rail; on mobile the rail wraps onto extra header rows rather than scrolling
-  off-screen. Budget and Insurance are reached from a trip or Home. An Insurance
-  pill appears only on the insurance screens, with a hover/focus submenu on
-  desktop and a visible row on phones. Scan to Pay and My Payments switch with a
-  tab strip inside the Pay screens.
+  rail. At 700px and below the rail becomes a floating white bottom bar (inset
+  16px, clear of the safe area): icon-over-label tabs, the active one on
+  `violet-soft`, and Pay as the bar's one mint pill with a scan icon. The header
+  keeps only the wordmark and Sign out, and pages pad their bottom so the last
+  card scrolls clear of the bar. Budget and Insurance are reached from a trip or
+  Home. An Insurance pill appears only on the insurance screens, with a
+  hover/focus submenu on desktop and its tabs as a header row on phones. Scan to
+  Pay and My Payments switch with a tab strip inside the Pay screens.
+- **Home hero (trip-first)** - one solid `ink` band, 32px radius (full-bleed
+  with only its bottom corners rounded on phones). The greeting and a
+  `primary-deep` balance pill sit on top; the soonest open trip leads beneath
+  it: a mint "Next up · in N days" line, the destination at 52-88px Poppins 800,
+  then a `primary` pot card with the locked amount and last vs target rate
+  tiles on `primary-container`. Later trips list as `primary-deep` rows. With no
+  trip, a parent gets a white secondary "Plan a trip" pill, so Pay stays the
+  one mint action. No gradients.
+- **Choice pills** - a short single choice (the lock tenor) is a row of native
+  radios drawn as 44px pills; the checked pill fills `primary-deep`.
 - **Balance hero** - 28px-radius purple gradient card; 56px Poppins 800 amount,
   translucent chips for context, and one oversized outlined currency code
   (`SGD`, `JPY`) bleeding off the bottom-right corner.
@@ -494,7 +507,8 @@ same identity tightens into a working fintech UI:
 - Don't use mint for large text blocks or full-page backgrounds.
 - Don't add drop shadows to cards, sections or inputs.
 - Don't centre long paragraphs; centre only section titles and short intros.
-- Don't use rounded corners on full-bleed split panels or title bands.
+- Don't use rounded corners on full-bleed split panels or title bands. The one exception is the
+  product Home hero on phones, whose bottom corners round off under the header.
 - Don't mix in a second typeface or use all-caps labels.
 - Don't recolour marketing-site mint CTA text to purple for "contrast"; keep
   brand white and make the type bold and large instead. Product/app buttons are

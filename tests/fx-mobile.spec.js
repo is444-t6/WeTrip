@@ -289,6 +289,25 @@ test.describe('parent controls on a trip', () => {
     expect(bodies[0]).not.toHaveProperty('parentAccountId')
   })
 
+  test('the tenor is a row of pills, and the picked one is what gets locked', async ({ page }) => {
+    const bodies = []
+    await open(page, WATCHING)
+    await page.route('**/api/fx/LockNow*', (route) => {
+      bodies.push(route.request().postDataJSON())
+      return route.fulfill(reply({ Lock: { SgdAmount: 100, LockedRate: 121.05 }, Trip: WATCHING }))
+    })
+    const tenor = page.getByRole('group', { name: 'Tenor' })
+    await expect(tenor.getByRole('radio')).toHaveCount(4)
+    expect((await tenor.locator('span').first().boundingBox()).height).toBeGreaterThanOrEqual(44)
+    await tenor.getByRole('radio', { name: '1Y' }).check()
+    await expect(tenor.getByRole('radio', { name: '1Y' })).toBeChecked()
+    await expect(page.getByText(/Locks at the live 1Y forward/)).toBeVisible()
+    await page.getByLabel('Lock now (SGD)').fill('100')
+    await button(page, 'Lock rate').click()
+    await expect.poll(() => bodies.length).toBe(1)
+    expect(bodies[0]).toMatchObject({ tripId: 12, period: '1Y' })
+  })
+
   test('closing and cancelling take a second tap, and Go back changes nothing', async ({
     page,
   }) => {

@@ -397,6 +397,19 @@ code {
   color: var(--primary-deep);
   font-weight: 700;
 }
+.nav-link svg {
+  display: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.navbar-subnav-phone {
+  display: none;
+}
 .nav-user {
   display: flex;
   align-items: center;
@@ -672,6 +685,56 @@ label,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+/* A short single choice (tenor) as a row of pills over native radios. */
+.pill-choice {
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+.pill-choice legend {
+  padding: 0;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pill-choice-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.pill-choice label {
+  position: relative;
+  margin: 0;
+}
+.pill-choice input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.pill-choice span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 1px solid var(--card-border);
+  border-radius: 100px;
+  background: #fff;
+  color: var(--primary-deep);
+  font-size: 14px;
+  font-weight: 700;
+}
+.pill-choice input:checked + span {
+  border-color: var(--primary-deep);
+  background: var(--primary-deep);
+  color: #fff;
+}
+.pill-choice input:focus-visible + span {
+  outline: 2px solid var(--primary-deep);
+  outline-offset: 2px;
 }
 input[type='checkbox'] {
   width: 18px;
@@ -1241,21 +1304,57 @@ tr:last-child td {
     padding-top: 9px;
     padding-bottom: 9px;
   }
+  /* The rail becomes a floating bottom bar: Home, Trips, Family, then Pay as the mint scan pill. */
   .nav-tabs {
-    position: relative;
-    order: 3;
-    flex: 0 0 100%;
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 3px;
+    position: fixed;
+    z-index: 60;
+    left: 16px;
+    right: 16px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    gap: 4px;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid var(--card-border);
   }
   .nav-insurance-menu {
-    display: contents;
+    display: none;
   }
   .nav-link {
-    white-space: nowrap;
-    padding: 7px 13px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .nav-link:hover {
+    color: var(--primary);
+  }
+  .nav-link svg {
+    display: block;
+  }
+  .nav-link.active {
+    background: var(--violet-soft);
+    color: var(--primary);
+  }
+  .nav-link.nav-pay,
+  .nav-link.nav-pay.active {
+    flex: 1.6 1 0;
+    flex-direction: row;
+    gap: 8px;
+    background: var(--mint);
+    color: var(--primary-deep);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .navbar .nav-tabs :focus-visible {
+    outline-color: var(--primary-deep);
   }
   .navbar .ghost {
     margin-left: auto;
@@ -1263,36 +1362,27 @@ tr:last-child td {
   .navbar .brand-word {
     display: inline;
   }
-  .navbar-subnav {
-    position: static;
-    order: 10;
-    flex: 0 0 100%;
+  .navbar-subnav-phone {
     display: flex;
     justify-content: center;
-    min-width: 0;
-    margin: 4px 0 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    visibility: visible;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
+    order: 10;
+    flex: 0 0 100%;
   }
-  .navbar-subnav .insurance-tabs {
+  .navbar-subnav-phone .insurance-tabs {
     flex-direction: row;
     gap: 4px;
   }
-  .navbar-subnav .insurance-tab {
+  .navbar-subnav-phone .insurance-tab {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     color: rgba(255, 255, 255, 0.72);
   }
-  .navbar-subnav .insurance-tab:hover {
+  .navbar-subnav-phone .insurance-tab:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
   }
-  .navbar-subnav .insurance-tab[data-active='true'] {
+  .navbar-subnav-phone .insurance-tab[data-active='true'] {
     background: rgba(255, 255, 255, 0.14);
     color: #fff;
   }
@@ -1303,19 +1393,13 @@ tr:last-child td {
     width: 34px;
     height: 34px;
   }
-  .nav-tabs {
-    padding: 3px;
-  }
-  .nav-link {
-    padding: 7px 12px;
-    font-size: 13px;
-  }
   .navbar .ghost {
     padding: 7px 12px;
     font-size: 12px;
   }
   .page {
-    padding: 22px 16px 80px;
+    /* clear the floating bottom bar */
+    padding: 22px 16px calc(112px + env(safe-area-inset-bottom));
   }
   .card {
     padding: 20px;
@@ -2341,29 +2425,210 @@ tr:last-child td {
   border-top: 1px solid var(--card-border);
 }
 
-.wallet-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+.home-hero {
+  margin-bottom: 18px;
+  padding: 24px 28px 28px;
+  border-radius: 32px;
+  background: var(--ink);
+  color: #fff;
 }
 
-.wallet-chip {
-  flex: 0 0 auto;
-  min-width: 150px;
+/* the global primary-deep focus ring vanishes on ink */
+.home-hero :focus-visible {
+  outline-color: var(--mint);
+}
+
+.balance-pill .eye-btn {
+  width: 44px;
+  height: 44px;
+}
+
+.home-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.home-top .hero-greeting {
+  margin: 0;
+}
+
+.balance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 16px;
+  border-radius: 100px;
+  background: var(--primary-deep);
+}
+
+.balance-label {
+  font-size: 11px;
+  color: #d8cfe8;
+}
+
+.balance-pill .hero-amount {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.home-hero .hero-sub {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.next-trip {
+  display: block;
+  margin-top: 26px;
+  color: #fff;
+}
+
+.next-trip:hover .next-trip-open {
+  text-decoration: underline;
+}
+
+.next-trip-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mint);
+}
+
+.next-trip-city {
+  margin: 4px 0 6px;
+  font-size: clamp(52px, 15vw, 88px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.next-trip-dates {
+  display: block;
+  font-size: 14px;
+  color: #d8cfe8;
+}
+
+.next-trip-pot {
+  display: block;
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 28px;
+  background: var(--primary);
+}
+
+.next-trip-label {
+  display: block;
+  font-size: 12px;
+  color: #e4dcf1;
+}
+
+.next-trip-amount {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(28px, 9vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.next-trip-rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.next-trip-rates > span {
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: var(--primary-2);
+}
+
+.next-trip-rates strong {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+
+.next-trip-open {
+  display: block;
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mint);
+}
+
+.next-trip-open::after {
+  content: ' ›';
+}
+
+.next-trip-note {
+  margin: 22px 0 0;
+  font-size: 14px;
+  color: #d8cfe8;
+}
+
+.next-trip-empty .btn {
+  margin-top: 14px;
+}
+
+.later-trips {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--text);
-  text-decoration: none;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.wallet-chip .money {
-  font-size: 1.15rem;
+.later-trips a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  background: var(--primary-deep);
+  color: #fff;
+}
+
+.later-trips .stack {
+  min-width: 0;
+  font-size: 13px;
+  color: #d8cfe8;
+}
+
+.later-trips strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.later-trips-code {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--primary-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  /* full-bleed under the header on a phone */
+  .home-hero {
+    margin: 0 -16px 18px;
+    padding: 20px 16px 24px;
+    border-radius: 0 0 32px 32px;
+  }
+  .home-hero:first-child {
+    margin-top: -22px;
+  }
 }
 
 .explore-grid {
