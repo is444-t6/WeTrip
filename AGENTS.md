@@ -66,6 +66,7 @@ Every backend path is same-origin. In dev `vite.config.js` proxies it; in produc
 | `/api/insurance` | `WeTrip_Insurance_Composite/rest/InsuranceAPI`               |
 | `/api/trip`      | `WeTrip_Trip_Composite/rest/Trip`                            |
 | `/scantopay`     | `ScanToPay/rest/ScanToPay` (separate OutSystems environment) |
+| `/api/analytics` | `WeTrip_Analytics_Composite/rest/Analytics`                  |
 
 A new service means an entry in `api/_services.js`, a base in `src/lib/services.js`, and a rewrite in `vercel.json`.
 

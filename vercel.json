@@ -25,6 +25,10 @@
       "destination": "/api/proxy?service=scantopay&path=:path*"
     },
     {
+      "source": "/api/analytics/:path*",
+      "destination": "/api/proxy?service=analytics&path=:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
