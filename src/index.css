@@ -2928,6 +2928,9 @@ tr:last-child td {
 
 .budget-line > .row {
   margin-left: auto;
+  flex-wrap: wrap;
+  /* When the badge and the longer formatted amount wrap, the amount stays right-aligned. */
+  justify-content: flex-end;
 }
 
 .actions-grid {
