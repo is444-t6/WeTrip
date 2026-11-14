@@ -5,6 +5,17 @@ import { RouterProvider } from '@tanstack/react-router'
 import { router } from './router'
 import './index.css'
 
+// A mouse wheel over a focused number field changes its value (800 became 799.60
+// mid-scroll). Drop the focus first so the wheel only scrolls the page.
+addEventListener(
+  'wheel',
+  () => {
+    const el = document.activeElement
+    if (el instanceof HTMLInputElement && el.type === 'number') el.blur()
+  },
+  { passive: true, capture: true },
+)
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
