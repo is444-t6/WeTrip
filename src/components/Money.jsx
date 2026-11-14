@@ -1,8 +1,6 @@
-// Existing WeTrip screens and tests use a plain two-decimal amount.
+import { money } from '../lib/format'
+
+// Every amount in the app: "SGD 1,234.50", "JPY 96,675".
 export default function Money({ amount, currency = 'SGD' }) {
-  return (
-    <span>
-      {currency} {Number(amount ?? 0).toFixed(2)}
-    </span>
-  )
+  return <span>{money(amount, currency)}</span>
 }

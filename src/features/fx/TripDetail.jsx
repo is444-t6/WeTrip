@@ -10,12 +10,13 @@ import BalanceHero from '../../components/BalanceHero'
 import RateGauge from './components/RateGauge'
 import { tenorFor } from './api'
 import { demoLabel, demoRate, isEnded, tripStatus } from './status'
-import { useCloseTrip } from '../trips/queries'
 import { useCancelTrip, useCheckRates, useLockNow, useRate, useTrip } from './queries'
+import { day, dayRange, money, rate, rateText } from '../../lib/format'
+import { maskAccount } from '../home/homeData'
 
 export default function TripDetail() {
   const { tripId } = useParams({ from: '/fx/trips/$tripId' })
-  const { data, error, isLoading } = useTrip(tripId)
+  const { data, error, isLoading, refetch, isFetching } = useTrip(tripId)
   const { role } = useCurrentUser()
 
   const trip = data?.trip
@@ -35,7 +36,26 @@ export default function TripDetail() {
   const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
 
   if (!isLoggedIn()) return <SignedOutCard title="WeTrip SmartFX" />
-  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (error) {
+    return shell(
+      <>
+        <Banner>{error.message}</Banner>
+        <div className="row" style={{ gap: 8 }}>
+          <Link to="/fx" className="btn secondary">
+            All trips
+          </Link>
+          <button
+            type="button"
+            className="secondary"
+            disabled={isFetching}
+            onClick={() => refetch()}
+          >
+            {isFetching ? 'Trying…' : 'Try again'}
+          </button>
+        </div>
+      </>,
+    )
+  }
   if (isLoading || !trip) return shell(<p className="muted">Loading…</p>)
 
   const spentForeign = spends.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
@@ -51,18 +71,13 @@ export default function TripDetail() {
       : tripStatus(trip.status).label
   return shell(
     <>
-      <Link
-        to="/fx"
-        className="muted"
-        style={{ display: 'inline-block', marginBottom: 14, fontWeight: 600 }}
-      >
-        &larr; Back to trips
+      <Link to="/trips/$tripId" params={{ tripId: String(trip.tripId) }} className="back-link">
+        &larr; Back to {trip.destination}
       </Link>
 
       <h1>{trip.destination}</h1>
       <p className="muted" style={{ marginTop: 0 }}>
-        {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)} ·{' '}
-        {statusLabel}
+        {dayRange(trip.tripStartDate, trip.tripEndDate)} · {statusLabel}
         {trip.childNickname ? ` · ${trip.childNickname}` : ''}
         {demoLabel(trip) && (
           <span className="badge pending" style={{ marginLeft: 8 }}>
@@ -75,13 +90,13 @@ export default function TripDetail() {
         label="Locked pot"
         amount={remainingForeign}
         currency={trip.currency}
-        sub={`${Number(trip.lockedSgd).toFixed(2)} SGD locked of ${Number(trip.targetBudgetSgd).toFixed(2)}`}
+        sub={`${money(trip.lockedSgd)} locked of ${money(trip.targetBudgetSgd)}`}
         foot={
           <>
             <span>
               {locks.length} lock{locks.length === 1 ? '' : 's'}
             </span>
-            {trip.autoLockEnabled && <span>auto-lock on</span>}
+            {trip.autoLockEnabled && <span>Auto-lock on</span>}
           </>
         }
       />
@@ -117,13 +132,13 @@ export default function TripDetail() {
             <tbody>
               {locks.map((l) => (
                 <tr key={l.lockId}>
-                  <td data-label="Date">{String(l.createdAt).slice(0, 10)}</td>
-                  <td data-label="Rate">{Number(l.lockedRate).toFixed(4)}</td>
+                  <td data-label="Date">{day(l.createdAt)}</td>
+                  <td data-label="Rate">{rate(l.lockedRate)}</td>
                   <td data-label="SGD" style={{ textAlign: 'right' }}>
                     <Money amount={l.sgdAmount} />
                   </td>
                   <td data-label={trip.currency} style={{ textAlign: 'right' }}>
-                    {Number(l.foreignAmount).toFixed(2)}
+                    {money(l.foreignAmount, trip.currency)}
                   </td>
                   <td data-label="Source" className="muted">
                     {l.source}
@@ -151,13 +166,13 @@ export default function TripDetail() {
             <tbody>
               {spends.map((s) => (
                 <tr key={s.spendId}>
-                  <td data-label="Date">{String(s.createdAt).slice(0, 10)}</td>
+                  <td data-label="Date">{day(s.createdAt)}</td>
                   <td data-label="Category">{s.category}</td>
                   <td data-label="To" className="muted">
-                    {s.merchantAccountId}
+                    {maskAccount(s.merchantAccountId)}
                   </td>
                   <td data-label="Amount" style={{ textAlign: 'right' }}>
-                    {Number(s.amount).toFixed(2)} {trip.currency}
+                    {money(s.amount, trip.currency)}
                   </td>
                 </tr>
               ))}
@@ -170,12 +185,12 @@ export default function TripDetail() {
         <div className="card">
           <div className="card-header">
             <h3>Converted back</h3>
-            <span className="badge active">closed</span>
+            <span className="badge active">Closed</span>
           </div>
           <div className="row-between">
             <span className="muted">
-              {Number(trip.returnedForeign).toFixed(2)} {trip.currency} at{' '}
-              {Number(trip.returnRate).toFixed(4)}
+              {money(trip.returnedForeign, trip.currency)} at{' '}
+              {rateText(trip.returnRate, trip.currency)}
             </span>
             <span className="money">
               <Money amount={trip.returnedSgd} />
@@ -187,36 +202,40 @@ export default function TripDetail() {
   )
 }
 
+const TENORS = [
+  ['1M', '1 mo', '1-month'],
+  ['3M', '3 mo', '3-month'],
+  ['6M', '6 mo', '6-month'],
+  ['1Y', '1 yr', '1-year'],
+]
+const tenorWords = (period) => TENORS.find(([v]) => v === period)?.[2] ?? period
+
 function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
   const [amount, setAmount] = useState('')
   const [period, setPeriod] = useState(tenorFor(trip.tripStartDate))
-  const [confirming, setConfirming] = useState('') // 'close' | 'cancel': the next tap commits
+  const [confirming, setConfirming] = useState(false) // the next tap on Cancel trip commits
   const lock = useLockNow()
   const cancel = useCancelTrip()
-  const close = useCloseTrip(trip.tripId)
 
-  const rate = Number(currentRate) || 0
+  const live = Number(currentRate) || 0
   const open = !isEnded(trip.status)
   const lockable = trip.status === 'Watching' || trip.status === 'PartiallyLocked'
   const canLock = lockable && remainingSgd > 0 && Number(amount) > 0
-  const canClose = open
-  const canCancel = open && !(Number(trip.lockedSgd) > 0)
-  const error = lock.error || cancel.error || close.error
-  const reset = { onSettled: () => setConfirming('') }
+  const hasLocked = Number(trip.lockedSgd) > 0
+  const canCancel = open && !hasLocked
+  const error = lock.error || cancel.error
 
   return (
     <div className="card">
       <div className="card-header">
-        <h3>Controls</h3>
-        <span className="badge pending">{remainingSgd.toFixed(2)} SGD unlocked</span>
+        <h3>Lock a rate</h3>
+        <span className="badge pending">{money(remainingSgd)} not locked yet</span>
       </div>
       <Banner>{error?.message}</Banner>
       <Banner kind="ok">
-        {close.data
-          ? `Closed. ${Number(close.data.returnedForeign).toFixed(2)} ${trip.currency} unspent, valued at today's ${Number(close.data.spotRate).toFixed(4)}.`
-          : lock.data
-            ? `Locked ${Number(lock.data.lock?.sgdAmount).toFixed(2)} SGD at ${Number(lock.data.lock?.lockedRate).toFixed(4)}.`
-            : ''}
+        {lock.data
+          ? `Locked ${money(lock.data.lock?.sgdAmount)} at ${rateText(lock.data.lock?.lockedRate, trip.currency)}.`
+          : ''}
       </Banner>
 
       <div className="grid-2">
@@ -225,35 +244,47 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
           <input
             id="trip-lock-amount"
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0.01"
             max={remainingSgd}
             value={amount}
-            placeholder={`Up to ${remainingSgd.toFixed(2)}`}
+            placeholder={`Up to ${money(remainingSgd)}`}
             onChange={(e) => setAmount(e.target.value)}
           />
+          {lockable && remainingSgd > 0 && (
+            <button
+              type="button"
+              className="chip"
+              style={{ marginTop: 8 }}
+              onClick={() => setAmount(String(remainingSgd))}
+            >
+              Lock all {money(remainingSgd)}
+            </button>
+          )}
         </div>
         <fieldset className="field pill-choice">
-          <legend>Tenor</legend>
+          <legend>Lock for</legend>
           <div className="pill-choice-row">
-            {['1M', '3M', '6M', '1Y'].map((t) => (
-              <label key={t}>
+            {TENORS.map(([value, label]) => (
+              <label key={value}>
                 <input
                   type="radio"
                   name="trip-lock-tenor"
-                  value={t}
-                  checked={period === t}
-                  onChange={() => setPeriod(t)}
+                  value={value}
+                  aria-label={tenorWords(value)}
+                  checked={period === value}
+                  onChange={() => setPeriod(value)}
                 />
-                <span>{t}</span>
+                <span aria-hidden="true">{label}</span>
               </label>
             ))}
           </div>
         </fieldset>
       </div>
       <p className="muted" style={{ marginTop: 0, fontSize: '0.85em' }}>
-        Locks at the live {period} forward ({rate ? rate.toFixed(4) : '—'} {trip.currency} per SGD),
-        not at a rate you type.
+        Locks at today&apos;s {tenorWords(period)} rate ({rateText(live, trip.currency)}), not at a
+        rate you type.
       </p>
 
       <div className="actions-grid">
@@ -274,39 +305,38 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
         >
           {lock.isPending ? 'Locking…' : 'Lock rate'}
         </button>
-        <button type="button" className="secondary" disabled={checking} onClick={onCheck}>
-          {checking ? 'Checking…' : 'Check now'}
+        <button type="button" className="secondary span-2" disabled={checking} onClick={onCheck}>
+          {checking ? 'Checking…' : 'Check the rate now'}
         </button>
-        <button
-          type="button"
-          className="secondary"
-          disabled={!canClose || close.isPending}
-          onClick={() =>
-            confirming === 'close' ? close.mutate(undefined, reset) : setConfirming('close')
-          }
-        >
-          {close.isPending
-            ? 'Converting…'
-            : confirming === 'close'
-              ? 'Confirm close?'
-              : 'Close & convert back'}
-        </button>
-        <button
-          type="button"
-          className="danger span-2"
-          disabled={!canCancel || cancel.isPending}
-          onClick={() =>
-            confirming === 'cancel' ? cancel.mutate(trip.tripId, reset) : setConfirming('cancel')
-          }
-        >
-          {confirming === 'cancel' ? 'Confirm cancel?' : 'Cancel trip'}
-        </button>
+        {canCancel && (
+          <button
+            type="button"
+            className="danger span-2"
+            disabled={cancel.isPending}
+            onClick={() =>
+              confirming
+                ? cancel.mutate(trip.tripId, { onSettled: () => setConfirming(false) })
+                : setConfirming(true)
+            }
+          >
+            {confirming ? 'Confirm cancel?' : 'Cancel trip'}
+          </button>
+        )}
         {confirming && (
-          <button type="button" className="secondary span-2" onClick={() => setConfirming('')}>
+          <button type="button" className="secondary span-2" onClick={() => setConfirming(false)}>
             Go back
           </button>
         )}
       </div>
+      {open && hasLocked && (
+        <p className="muted" style={{ margin: '12px 0 0', fontSize: '0.85em' }}>
+          Trips with locked money can&apos;t be cancelled.{' '}
+          <Link to="/trips/$tripId" params={{ tripId: String(trip.tripId) }}>
+            Close it from the trip page
+          </Link>{' '}
+          when you&apos;re back.
+        </p>
+      )}
     </div>
   )
 }

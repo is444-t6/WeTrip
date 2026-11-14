@@ -26,6 +26,7 @@ import { CATEGORIES, toCategory } from './categories'
 import { monthLabel } from './chart'
 import { percentChange, ymd } from './insights'
 import { useChildSpending } from './useChildSpending'
+import { day, money } from '../../lib/format'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -141,6 +142,7 @@ function BudgetCard({ child }) {
             <input
               id="child-budget-amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               value={amount}
@@ -156,10 +158,15 @@ function BudgetCard({ child }) {
             onClick={() => setAmount(lastSpend.toFixed(2))}
             style={{ marginBottom: 12 }}
           >
-            Use last {span}'s spending (SGD {lastSpend.toFixed(2)})
+            Use last {span}'s spending ({money(lastSpend)})
           </button>
         )}
-        <button disabled={setBudget.isPending} type="submit" style={{ width: '100%' }}>
+        <button
+          className="secondary"
+          disabled={setBudget.isPending}
+          type="submit"
+          style={{ width: '100%' }}
+        >
           Save budget
         </button>
       </form>
@@ -233,6 +240,15 @@ function RulesCard({ familyLinkId }) {
             />
             Freeze all spending
           </label>
+          {frozen ? (
+            <p className="banner warn" style={{ margin: '8px 0 0' }}>
+              Every payment will be blocked, including abroad, until you unfreeze.
+            </p>
+          ) : (
+            <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.85em' }}>
+              Blocks every payment, including abroad.
+            </p>
+          )}
         </div>
         <div className="field">
           <label>Only allow these categories (none ticked means all)</label>
@@ -251,17 +267,26 @@ function RulesCard({ familyLinkId }) {
           </div>
         </div>
         <div className="field">
-          <label htmlFor="auto-under">Approve asks under (SGD, 0 for never)</label>
+          <label htmlFor="auto-under">Auto-approve asks under (SGD)</label>
           <input
             id="auto-under"
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
             value={autoUnder}
             onChange={(e) => setAutoUnder(e.target.value)}
           />
+          <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.85em' }}>
+            0 means you approve every ask yourself.
+          </p>
         </div>
-        <button disabled={save.isPending} type="submit" style={{ width: '100%' }}>
+        <button
+          className="secondary"
+          disabled={save.isPending}
+          type="submit"
+          style={{ width: '100%' }}
+        >
           Save rules
         </button>
       </form>
@@ -297,7 +322,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
     <div className="card">
       {hasAllowance && (
         <span className="badge active" style={{ marginBottom: 10, display: 'inline-flex' }}>
-          active
+          Allowance on
         </span>
       )}
       <Banner>{setup.error?.message || stop.error?.message}</Banner>
@@ -309,6 +334,7 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
             <input
               id="child-allowance-amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               value={amount}
@@ -338,8 +364,8 @@ function AllowanceCard({ familyLinkId, hasAllowance }) {
           />
         </div>
         <div className="row">
-          <button disabled={busy} type="submit">
-            Set up allowance
+          <button className="secondary" disabled={busy} type="submit">
+            {hasAllowance ? 'Replace allowance' : 'Set up allowance'}
           </button>
           {confirmingStop ? (
             <>
@@ -405,7 +431,7 @@ function TopUpCard({ child }) {
       { familyLinkId: Number(familyLinkId), amount: value, narrative },
       {
         onSuccess: (r) => {
-          setOk(`Transferred. Your balance is now SGD ${Number(r.balanceAfter).toFixed(2)}.`)
+          setOk(`Transferred. Your balance is now ${money(Number(r.balanceAfter))}.`)
           setAmount('')
           setNarrative('')
         },
@@ -436,6 +462,7 @@ function TopUpCard({ child }) {
             <input
               id="child-topup-amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               value={amount}
@@ -468,7 +495,7 @@ function TopUpCard({ child }) {
             </div>
           </div>
         )}
-        {tooMuch && <Banner>You only have SGD {mine.toFixed(2)} to send.</Banner>}
+        {tooMuch && <Banner>You only have {money(mine)} to send.</Banner>}
         <button disabled={topUp.isPending || tooMuch} type="submit" style={{ width: '100%' }}>
           Top up
         </button>
@@ -513,7 +540,9 @@ function ExpensesCard({ familyLinkId }) {
             onChange={(e) => setTo(e.target.value)}
           />
         </div>
-        <button type="submit">Refresh</button>
+        <button type="submit" className="secondary">
+          Refresh
+        </button>
       </form>
       {!result && !error && (
         <p className="muted" style={{ marginTop: 10 }}>
@@ -541,7 +570,7 @@ function ExpensesCard({ familyLinkId }) {
             <tbody>
               {(result.expenses ?? []).map((x) => (
                 <tr key={x.transactionId}>
-                  <td data-label="Date">{String(x.date).slice(0, 10)}</td>
+                  <td data-label="Date">{day(x.date)}</td>
                   <td data-label="To">{x.accountTo}</td>
                   <td data-label="Category">{toCategory(x.category)}</td>
                   <td data-label="Amount" style={{ textAlign: 'right' }}>
@@ -607,7 +636,7 @@ function BalanceTrendCard({ familyLinkId }) {
         <p className="muted">
           {delta === 0
             ? `Balance is unchanged since ${monthLabel(before.yearMonth)}.`
-            : `Balance is ${delta > 0 ? 'up' : 'down'} SGD ${Math.abs(delta).toFixed(2)}${pct === null ? '' : ` (${Math.abs(pct)}%)`} since ${monthLabel(before.yearMonth)}.`}
+            : `Balance is ${delta > 0 ? 'up' : 'down'} ${money(Math.abs(delta))}${pct === null ? '' : ` (${Math.abs(pct)}%)`} since ${monthLabel(before.yearMonth)}.`}
         </p>
       )}
     </div>

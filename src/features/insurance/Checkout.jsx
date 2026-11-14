@@ -13,6 +13,7 @@ import { useTripMiles } from '../trips/queries'
 import { clearPurchaseResult, getDraft, getTrip, savePurchaseResult, tripIdFor } from './storage'
 import Money from '../../components/Money'
 import InsuranceLayout from './components/InsuranceLayout'
+import { dayRange } from '../../lib/format'
 
 export default function Checkout() {
   const draft = getDraft()
@@ -137,9 +138,7 @@ export default function Checkout() {
         </div>
         <div className="row-between" style={{ marginTop: 8 }}>
           <span>Travel dates</span>
-          <strong>
-            {draft.trip.startDate} – {draft.trip.endDate}
-          </strong>
+          <strong>{dayRange(draft.trip.startDate, draft.trip.endDate)}</strong>
         </div>
       </div>
       <div className="card">
@@ -148,7 +147,9 @@ export default function Checkout() {
           <strong>
             {planLabel(plan)} · {draft.coverType === 'family' ? 'Family' : 'Individual'}
           </strong>
-          <strong>{draft.travellers.length} traveller(s)</strong>
+          <strong>
+            {draft.travellers.length} {draft.travellers.length === 1 ? 'traveller' : 'travellers'}
+          </strong>
         </div>
         <p className="muted" style={{ marginTop: 10 }}>
           Travellers: {draft.travellers.map((t) => t.name).join(', ')}

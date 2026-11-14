@@ -118,7 +118,7 @@ export default function InsuranceHome() {
         </button>
       </form>
       <Link to="/insurance/policies" className="muted">
-        View My Insurance →
+        View my insurance →
       </Link>
     </InsuranceLayout>
   )

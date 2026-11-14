@@ -166,7 +166,7 @@ export default function TripPay({ tripId }) {
           }}
         >
           <p style={{ marginTop: 0 }}>
-            Merchant <strong>{qr.merchantCode}</strong>
+            Merchant <strong>{preview.data?.merchantName || qr.merchantCode}</strong>
             {trip && (
               <span className="muted" style={{ display: 'block' }}>
                 <Money amount={left} currency={trip.currency} /> left on this trip

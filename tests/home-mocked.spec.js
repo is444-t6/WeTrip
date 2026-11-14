@@ -163,7 +163,7 @@ test.describe('parent home page', () => {
     await mockApi(page)
     await page.goto('/')
     await expect(page.getByText('Hi, Parent!')).toBeVisible()
-    await expect(page.locator('.hero-amount')).toHaveText('SGD 1000.00')
+    await expect(page.locator('.hero-amount')).toHaveText('SGD 1,000.00')
     await expect(page.getByText('Deposit account ····4554')).toBeVisible()
   })
 
@@ -175,16 +175,17 @@ test.describe('parent home page', () => {
     expect(calls.filter((c) => c.name === 'GetMyMiles')).toHaveLength(0)
   })
 
-  test('quick actions go to each product', async ({ page }) => {
+  test('quick actions hold only what the nav does not: rates, cover and budgets', async ({
+    page,
+  }) => {
     await mockApi(page)
     await page.goto('/')
     const quick = page.getByRole('navigation', { name: 'Quick actions' })
+    await expect(quick.getByRole('link')).toHaveText(['Lock a rate', 'Insurance', 'Budgets'])
     for (const [name, href] of [
-      ['Scan to Pay', '/pay'],
-      ['Family', '/family'],
-      ['SmartFX', '/fx'],
+      ['Lock a rate', '/fx'],
       ['Insurance', '/insurance'],
-      ['Budget', '/budget'],
+      ['Budgets', '/budget'],
     ]) {
       await expect(quick.getByRole('link', { name })).toHaveAttribute('href', href)
     }
@@ -213,8 +214,8 @@ test.describe('parent home page', () => {
     await expect(next).toHaveCount(1)
     await expect(next.getByRole('heading', { name: 'Kyoto' })).toBeVisible()
     await expect(next).toContainText('Next up')
-    await expect(next).toContainText('2027-04-01 – 2027-04-14 · JPY')
-    await expect(next).toContainText('JPY 96675.38')
+    await expect(next).toContainText('1–14 Apr 2027 · JPY')
+    await expect(next).toContainText('JPY 96,675.38')
     await expect(next).toContainText('Locked')
     // Every trip tile opens the trip hub, which links on to FX, budget and cover.
     await expect(next).toHaveAttribute('href', '/trips/12')
@@ -256,8 +257,9 @@ test.describe('parent home page', () => {
     })
     await page.goto('/')
     const pot = page.locator('.next-trip-rates')
-    await expect(pot).toContainText('Last rate120.5000')
-    await expect(pot).toContainText('Target122.0000')
+    await expect(pot).toContainText('Last checked120.50')
+    await expect(pot).toContainText('Target · higher is better122.00')
+    await expect(page.locator('.next-trip')).toContainText('JPY per 1 SGD')
   })
 
   test('a trip that ended but was never closed does not lead', async ({ page }) => {
@@ -331,7 +333,7 @@ test.describe('parent home page', () => {
     const rows = card.locator('.home-row')
     await expect(rows).toHaveCount(3)
     await expect(rows.nth(0)).toContainText('Ichiran Ramen')
-    await expect(rows.nth(0)).toContainText('JPY 1800.00')
+    await expect(rows.nth(0)).toContainText('JPY 1,800.00')
     await expect(rows.nth(1)).toContainText('Uniqlo')
     await expect(rows.nth(1)).toContainText('Pay later')
     await expect(rows.nth(2)).toContainText('Old Chang Kee')
@@ -342,23 +344,10 @@ test.describe('parent home page', () => {
     expect(calls.find((c) => c.name === 'GetHistory').query.CustomerId).toBe('0000002169')
   })
 
-  test('product tiles link to insurance, SmartFX, budget and Scan to Pay', async ({ page }) => {
-    await mockApi(page)
-    await page.goto('/')
-    const tiles = page.locator('.explore-card')
-    await expect(tiles).toHaveCount(4)
-    await expect(page.getByRole('link', { name: /Travel insurance/ })).toHaveAttribute(
-      'href',
-      '/insurance',
-    )
-    await expect(page.getByRole('link', { name: /Trip budget/ })).toHaveAttribute('href', '/budget')
-  })
-
   test('waiting approvals flag the Family action and show a banner', async ({ page }) => {
     await mockApi(page)
     await page.goto('/')
     await expect(page.getByText('1 spend request is waiting for your approval.')).toBeVisible()
-    await expect(page.locator('.quick .dot')).toHaveCount(1)
     await expect(page.getByText('1 to approve')).toBeVisible()
   })
 
@@ -373,13 +362,13 @@ test.describe('parent home page', () => {
   test('the balance can be hidden, and stays hidden after a reload', async ({ page }) => {
     await mockApi(page)
     await page.goto('/')
-    await expect(page.locator('.hero-amount')).toHaveText('SGD 1000.00')
+    await expect(page.locator('.hero-amount')).toHaveText('SGD 1,000.00')
     await page.getByRole('button', { name: 'Hide balance' }).click()
     await expect(page.locator('.hero-amount')).toHaveText('SGD ••••••')
     await page.reload()
     await expect(page.locator('.hero-amount')).toHaveText('SGD ••••••')
     await page.getByRole('button', { name: 'Show balance' }).click()
-    await expect(page.locator('.hero-amount')).toHaveText('SGD 1000.00')
+    await expect(page.locator('.hero-amount')).toHaveText('SGD 1,000.00')
   })
 
   test('a Scan to Pay outage does not take the rest of the page down', async ({ page }) => {
@@ -460,7 +449,7 @@ test.describe('child home page', () => {
     })
     await page.goto('/')
     await expect.poll(() => calls.some((c) => c.name === 'GetMyMiles')).toBe(true)
-    await expect(page.locator('.hero-amount')).toHaveText('SGD 1000.00')
+    await expect(page.locator('.hero-amount')).toHaveText('SGD 1,000.00')
     await expect(page.locator('.next-trip')).toHaveCount(1)
     await expect(miles(page)).toHaveCount(0)
     await expect(page.locator('.banner.error')).toHaveCount(0)
@@ -532,7 +521,7 @@ test.describe('on a phone', () => {
   test('the last card scrolls clear of the bar, and nothing scrolls sideways', async ({ page }) => {
     await mockApi(page)
     await page.goto('/')
-    const last = page.locator('.explore-card').last()
+    const last = page.locator('main .card').last()
     await expect(last).toBeVisible()
     await expect(page.getByText('Ichiran Ramen')).toBeVisible()
     await expect(page.getByText('Second kid')).toBeVisible()

@@ -128,7 +128,7 @@ test.describe('on a phone', () => {
     const big = { ...TRIP, LockedForeign: 123456789.55 }
     await mockApi(page, { GetTrip: () => ({ Trip: big, Locks: LOCKS, Spends: [] }) })
     await page.goto('/fx/trips/12')
-    await expect(page.locator('.hero-amount')).toContainText('123456789.55')
+    await expect(page.locator('.hero-amount')).toContainText('JPY 123,456,789.55')
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
   })
 
@@ -139,10 +139,10 @@ test.describe('on a phone', () => {
     const locks = page.locator('.stack-table').first()
     await expect(locks.locator('thead')).toBeHidden()
     const firstRow = locks.locator('tbody tr').first()
-    await expect(firstRow.locator('td[data-label="Date"]')).toHaveText('2026-10-28')
-    await expect(firstRow.locator('td[data-label="Rate"]')).toHaveText('120.8236')
+    await expect(firstRow.locator('td[data-label="Date"]')).toHaveText('28 Oct 2026')
+    await expect(firstRow.locator('td[data-label="Rate"]')).toHaveText('120.82')
     await expect(firstRow.locator('td[data-label="SGD"]')).toContainText('SGD 200.00')
-    await expect(firstRow.locator('td[data-label="JPY"]')).toHaveText('24164.72')
+    await expect(firstRow.locator('td[data-label="JPY"]')).toHaveText('JPY 24,164.72')
     // Each cell is a row of its own, with its label drawn beside the value.
     const display = await firstRow
       .locator('td')
@@ -157,26 +157,32 @@ test.describe('on a phone', () => {
 
     const spend = page.locator('.stack-table').nth(1).locator('tbody tr').first()
     await expect(spend.locator('td[data-label="Category"]')).toHaveText('Food')
-    await expect(spend.locator('td[data-label="To"]')).toHaveText('0000006718')
+    await expect(spend.locator('td[data-label="To"]')).toHaveText('····6718')
   })
 
-  test('the action buttons sit in a grid: lock and cancel full width, the others side by side', async ({
+  test('the action buttons stack full width, and closing lives on the trip page', async ({
     page,
   }) => {
     await mockApi(page)
     await page.goto('/fx/trips/12')
     const box = (name) => page.getByRole('button', { name }).boundingBox()
-    const [lock, check, close, cancel] = await Promise.all([
-      box('Lock rate'),
-      box('Check now'),
-      box('Close & convert back'),
-      box('Cancel trip'),
-    ])
-    expect(Math.round(lock.width)).toBe(Math.round(cancel.width))
-    expect(check.y).toBe(close.y)
-    expect(check.width + close.width).toBeLessThan(lock.width)
-    expect(close.y).toBeGreaterThan(lock.y)
-    expect(cancel.y).toBeGreaterThan(close.y)
+    const [lock, check] = await Promise.all([box('Lock rate'), box('Check the rate now')])
+    expect(Math.round(lock.width)).toBe(Math.round(check.width))
+    expect(check.y).toBeGreaterThan(lock.y)
+    await expect(page.getByRole('button', { name: /Close/ })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Close it from the trip page' })).toHaveAttribute(
+      'href',
+      '/trips/12',
+    )
+  })
+
+  test('the back link returns to the trip, not the list', async ({ page }) => {
+    await mockApi(page)
+    await page.goto('/fx/trips/12')
+    await expect(page.getByRole('link', { name: '← Back to Kyoto' })).toHaveAttribute(
+      'href',
+      '/trips/12',
+    )
   })
 
   test('the trip card header keeps the dates on one line and moves the badge below', async ({
@@ -184,7 +190,7 @@ test.describe('on a phone', () => {
   }) => {
     await mockApi(page)
     await page.goto('/fx')
-    const dates = page.getByText('2027-04-01 → 2027-04-14')
+    const dates = page.getByText('1–14 Apr 2027')
     await expect(dates).toBeVisible()
     const height = await dates.evaluate((e) => e.getBoundingClientRect().height)
     expect(height).toBeLessThan(24)
@@ -193,7 +199,7 @@ test.describe('on a phone', () => {
   test('the trip card shows the last checked rate instead of a dash', async ({ page }) => {
     await mockApi(page)
     await page.goto('/fx')
-    await expect(page.locator('.card', { hasText: 'Kyoto' })).toContainText('121.0190 JPY')
+    await expect(page.locator('.card', { hasText: 'Kyoto' })).toContainText('1 SGD = 121.02 JPY')
   })
 
   test('the trip card opens the trip hub, with FX management one link away', async ({ page }) => {
@@ -203,7 +209,7 @@ test.describe('on a phone', () => {
     await expect(card).toContainText('Partly locked')
     await expect(card).not.toContainText('PartiallyLocked')
     await expect(card.getByRole('link', { name: 'Open trip' })).toHaveAttribute('href', '/trips/12')
-    await expect(card.getByRole('link', { name: 'Manage FX & locks' })).toHaveAttribute(
+    await expect(card.getByRole('link', { name: 'Manage rates & locks' })).toHaveAttribute(
       'href',
       '/fx/trips/12',
     )
@@ -217,7 +223,7 @@ test.describe('trip pages, any width', () => {
     await mockApi(page)
     await page.goto('/fx/trips')
     await expect(page).toHaveURL(/\/fx$/)
-    await expect(page.getByRole('heading', { name: 'SmartFX' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Trips', exact: true })).toBeVisible()
   })
 
   test('a trip page opened without signing in offers sign-in, not an endless "Loading…"', async ({
@@ -259,15 +265,16 @@ test.describe('parent controls on a trip', () => {
     await open(page, TRIP)
     await expect(page.getByText('Fully locked')).toBeVisible()
     await expect(button(page, 'Lock rate')).toBeDisabled()
-    await expect(button(page, 'Cancel trip')).toBeDisabled()
-    await expect(button(page, 'Close & convert back')).toBeEnabled()
+    // Locked money can't be cancelled: no dead button, a pointer to closing instead.
+    await expect(button(page, 'Cancel trip')).toHaveCount(0)
+    await expect(page.getByText("Trips with locked money can't be cancelled.")).toBeVisible()
   })
 
   test('a finished trip has no controls left', async ({ page }) => {
     await open(page, { ...TRIP, Status: 'Completed' })
     await expect(page.getByText(/· Completed/)).toBeVisible()
-    for (const name of ['Lock rate', 'Cancel trip', 'Close & convert back'])
-      await expect(button(page, name)).toBeDisabled()
+    await expect(button(page, 'Lock rate')).toBeDisabled()
+    await expect(button(page, 'Cancel trip')).toHaveCount(0)
   })
 
   test('locking needs an amount, is capped at what is left and sends no rate or account', async ({
@@ -296,23 +303,21 @@ test.describe('parent controls on a trip', () => {
       bodies.push(route.request().postDataJSON())
       return route.fulfill(reply({ Lock: { SgdAmount: 100, LockedRate: 121.05 }, Trip: WATCHING }))
     })
-    const tenor = page.getByRole('group', { name: 'Tenor' })
+    const tenor = page.getByRole('group', { name: 'Lock for' })
     await expect(tenor.getByRole('radio')).toHaveCount(4)
     expect((await tenor.locator('span').first().boundingBox()).height).toBeGreaterThanOrEqual(44)
-    await tenor.getByRole('radio', { name: '1Y' }).check()
-    await expect(tenor.getByRole('radio', { name: '1Y' })).toBeChecked()
-    await expect(page.getByText(/Locks at the live 1Y forward/)).toBeVisible()
+    await tenor.getByRole('radio', { name: '1-year' }).check()
+    await expect(tenor.getByRole('radio', { name: '1-year' })).toBeChecked()
+    await expect(page.getByText(/Locks at today's 1-year rate/)).toBeVisible()
     await page.getByLabel('Lock now (SGD)').fill('100')
     await button(page, 'Lock rate').click()
     await expect.poll(() => bodies.length).toBe(1)
     expect(bodies[0]).toMatchObject({ tripId: 12, period: '1Y' })
   })
 
-  test('closing and cancelling take a second tap, and Go back changes nothing', async ({
-    page,
-  }) => {
+  test('cancelling takes a second tap, and Go back changes nothing', async ({ page }) => {
     const sent = []
-    await open(page, { ...WATCHING, LockedForeign: 100 })
+    await open(page, WATCHING)
     await page.route(/\/api\/(fx|trip)\/(CancelTrip|CloseTrip)/, (route) => {
       sent.push(new URL(route.request().url()).pathname.split('/').pop())
       return route.fulfill(reply({ Id: 12, Status: 'Cancelled' }))
@@ -321,10 +326,9 @@ test.describe('parent controls on a trip', () => {
     await expect(button(page, 'Confirm cancel?')).toBeVisible()
     await button(page, 'Go back').click()
     await expect(button(page, 'Cancel trip')).toBeVisible()
-    await button(page, 'Close & convert back').click()
-    await expect(button(page, 'Confirm close?')).toBeVisible()
     expect(sent).toEqual([])
-    await button(page, 'Confirm close?').click()
-    await expect.poll(() => sent).toEqual(['CloseTrip'])
+    await button(page, 'Cancel trip').click()
+    await button(page, 'Confirm cancel?').click()
+    await expect.poll(() => sent).toEqual(['CancelTrip'])
   })
 })

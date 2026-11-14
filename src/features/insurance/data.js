@@ -1,3 +1,5 @@
+import { money } from '../../lib/format'
+
 export function toDateInputValue(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -42,15 +44,7 @@ export function isReasonableBirthDate(value, today = getTodayDateInputValue()) {
 
 export function formatMoney(amount, currencyCode = 'SGD') {
   const value = Number(amount)
-  if (!Number.isFinite(value)) return '—'
-  try {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: currencyCode || 'SGD',
-    }).format(value)
-  } catch {
-    return `${currencyCode || 'SGD'} ${value.toFixed(2)}`
-  }
+  return Number.isFinite(value) ? money(value, currencyCode) : '—'
 }
 
 export function formatDate(value) {

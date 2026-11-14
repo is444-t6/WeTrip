@@ -9,6 +9,7 @@ import MyTripCard from './components/MyTripCard'
 import PaceBar from './components/PaceBar'
 import { declineMessage } from './approvals'
 import BalanceHero from '../../components/BalanceHero'
+import { money, rateText } from '../../lib/format'
 
 export default function ChildHome() {
   const { data: dash, error } = useChildDashboard()
@@ -85,11 +86,11 @@ export default function ChildHome() {
     <div>
       <h1 className="visually-hidden">Child wallet</h1>
       <BalanceHero
-        label={dash.nickname ? `${dash.nickname}'s balance` : 'Your balance'}
+        label="Your balance"
         amount={dash.balance}
         sub={
           dash.rate > 0 && dash.hostCurrency && dash.hostCurrency !== 'SGD'
-            ? `≈ ${dash.hostCurrency} ${(dash.balance * dash.rate).toFixed(2)} · 1 SGD = ${Number(dash.rate).toFixed(2)} ${dash.hostCurrency}`
+            ? `≈ ${money(dash.balance * dash.rate, dash.hostCurrency)} · ${rateText(dash.rate, dash.hostCurrency)}`
             : undefined
         }
       />
@@ -149,7 +150,7 @@ export default function ChildHome() {
       <MyTripCard />
 
       <div className="card">
-        <h3>Pay a merchant</h3>
+        <h3>Send to a WeTrip account</h3>
         <Banner>{spend.error?.message}</Banner>
         <Banner kind="ok">{message}</Banner>
         {declined && (
@@ -164,19 +165,22 @@ export default function ChildHome() {
         )}
         <form onSubmit={pay}>
           <div className="field">
-            <label htmlFor="child-pay-merchant">Merchant account id</label>
+            <label htmlFor="child-pay-merchant">Recipient account number</label>
             <input
               id="child-pay-merchant"
+              inputMode="numeric"
+              autoComplete="off"
               value={merchantAccountId}
               onChange={(e) => setMerchantAccountId(e.target.value)}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="child-pay-amount">Amount</label>
+            <label htmlFor="child-pay-amount">Amount (SGD)</label>
             <input
               id="child-pay-amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               value={amount}
@@ -212,7 +216,7 @@ export default function ChildHome() {
           </div>
           {notice && <div className={`banner ${notice.kind}`}>{notice.text}</div>}
           <button disabled={spend.isPending} type="submit" style={{ width: '100%' }}>
-            Pay
+            Send
           </button>
         </form>
       </div>

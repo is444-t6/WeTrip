@@ -1,6 +1,6 @@
 // Pure helpers for the pending-approvals list.
 
-const money = (n) => `SGD ${Number(n).toFixed(2)}`
+import { money } from '../../lib/format'
 
 // Old requests hold a payment for a merchant; an "ask for more" has no merchant
 // (the backend sends it blank). Newer builds may also flag it outright.

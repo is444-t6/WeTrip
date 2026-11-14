@@ -119,13 +119,14 @@ export default function Login() {
           ) : (
             <form onSubmit={lookup}>
               <div className="field">
-                <label htmlFor="customerId">CustomerId (the number, not the username)</label>
+                <label htmlFor="customerId">Customer ID (the number, not your username)</label>
                 <input
                   id="customerId"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
                   placeholder="0000003018"
                   inputMode="numeric"
+                  autoComplete="username"
                   pattern="\d+"
                   title="Digits only, e.g. 0000003018."
                   required

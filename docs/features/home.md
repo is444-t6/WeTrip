@@ -11,7 +11,7 @@ Signed-in dashboard and the public front door.
 | Screen      | Behaviour                                                                     |
 | ----------- | ----------------------------------------------------------------------------- |
 | `FrontDoor` | Chooses once at render: `Home` when `isLoggedIn()`, otherwise `SignedOutCard` |
-| `Home`      | Next-trip hero, quick actions, family overview, recent payments, products     |
+| `Home`      | Next-trip hero, quick actions, family overview, recent payments               |
 
 ## Data
 
@@ -30,9 +30,9 @@ The balance can be masked; the preference is stored in `localStorage['wetrip_hid
 
 ## Components
 
-`Icons`, `NextTrip`, `QuickActions`, `ExploreProducts`, `FamilyOverview`, `MilesCard`, `RecentPayments`, plus `Money` and `Banner` from the shared kit. Home renders its own hero markup rather than `BalanceHero`.
+`Icons`, `NextTrip`, `QuickActions`, `FamilyOverview`, `MilesCard`, `RecentPayments`, plus `Money` and `Banner` from the shared kit. Home renders its own hero markup rather than `BalanceHero`.
 
-Quick actions and product tiles are static links; there is no polling or auto-refresh.
+Quick actions hold only what the nav bar does not: a parent gets Lock a rate, Insurance and Budgets; a child gets Budgets and My payments. They are static links; there is no polling or auto-refresh.
 
 ## Tests
 

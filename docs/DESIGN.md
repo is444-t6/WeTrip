@@ -488,6 +488,17 @@ same identity tightens into a working fintech UI:
   budget is exceeded.
 - **Data** - tables stay inside white cards, use 13px/1.5 numerals and scroll
   horizontally on mobile rather than shrinking the type.
+- **Numbers and dates** - every amount goes through `src/lib/format.js`: code
+  first, grouped digits, two decimals ("SGD 1,234.50", "JPY 96,675.38"; the
+  trip pot is a ledger with cents, so yen keep them). Rates always say their
+  direction ("1 SGD = 121.02 JPY"; two decimals, four below 10). Dates read
+  "1 Apr 2027" and ranges "1–14 Apr 2027", never ISO. Raw account and
+  customer numbers are masked to their last four digits.
+- **Copy** - sentence case for labels, tabs and badges; no jargon a child
+  would not know ("Lock for 6 mo", not "Tenor 6M"; "today's rate", not
+  "forward"). A disabled action says why next to it, and a control nobody
+  can use is hidden rather than shown disabled. Every error and dead end
+  offers a way back.
 
 ## Do's and Don'ts
 
