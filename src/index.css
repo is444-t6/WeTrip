@@ -2872,6 +2872,64 @@ tr:last-child td {
   stroke-width: 2;
 }
 
+/* Insights charts stay phone-sized on wide screens instead of scaling up. */
+.chart-capped svg {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.chart-hit {
+  fill: transparent;
+}
+
+.chart-hit:hover {
+  fill: var(--accent-soft);
+  fill-opacity: 0.5;
+}
+
+/* Labelled horizontal bars (insights): name, track, value. */
+.hbars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hbar-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 30%) 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.86rem;
+}
+
+.hbar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hbar-track {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--card-border);
+  overflow: hidden;
+}
+
+.hbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.bar-over-fill {
+  background: var(--danger);
+}
+
 .request {
   display: flex;
   flex-direction: column;

@@ -6,7 +6,7 @@ An internal page that answers the product's core claim: does locking a rate actu
 **Service:** `WeTrip_Analytics_Composite` → `/api/analytics` → `/rest/Analytics`.
 **Code:** `src/features/analytics/`.
 
-The data mart is **not a system of record**: nothing reads it to move money, and it only holds copies. The page shows **aggregates only**, never customer ids, names or account numbers. All figures cover all time (no period picker), and months are SGT.
+The data mart is **not a system of record**: nothing reads it to move money, and it only holds copies. The page shows **aggregates only**, never customer ids, names or account numbers. Months are SGT; the page filters by currency and period client-side.
 
 ## Backend contract
 
@@ -17,17 +17,23 @@ Headers: `X-Contacts-Key` + `X-Session-Token` (any signed-in customer). Response
 | POST   | `RunEtlNow`   | Wakes the ETL timer and returns at once `{EtlRunId, Status: "Running", StartedOn}`; a run under 10 minutes old is returned instead |
 | GET    | `GetInsights` | `{LastRun, LastSuccessOn, SpendSgd, SavedVsSpotSgd, TripsCount, OverBudgetTripPct, ByCurrencyMonth[], ByCategory[], Bnpl}`         |
 
-`LastRun` is `{EtlRunId, Status (Running/Success/Failed), RowsExtracted, RowsLoaded, RowsRejected, StartedOn, FinishedOn, Error}`. `ByCurrencyMonth[]` is `{Currency, Month, SpendSgd, SavedVsSpotSgd}`, `ByCategory[]` is `{Category, SpendSgd}` and `Bnpl` is `{Plans, PrincipalSgd}`. `SavedVsSpotSgd` is positive when locking saved money. `OverBudgetTripPct` is 0–100. OutSystems cannot send null, so `OverBudgetEligibleTrips` (completed trips that have category limits) says whether it means anything: the page shows "—" when it is 0. `LastRun` also carries `RowsInserted` (new `SourceKey`s) and `Watermark`; an empty `LastSuccessOn` arrives as `1900-01-01`.
+`LastRun` is `{EtlRunId, Status (Running/Success/Failed), RowsExtracted, RowsLoaded, RowsRejected, StartedOn, FinishedOn, Error}`. `ByCurrencyMonth[]` is `{Currency, Month, SpendSgd, SavedVsSpotSgd}`, `ByCategory[]` is `{Category, SpendSgd, Currency, Month}` and `Bnpl` is `{Plans, PrincipalSgd}`. `SavedVsSpotSgd` is positive when locking saved money. `OverBudgetTripPct` is 0–100. OutSystems cannot send null, so `OverBudgetEligibleTrips` (completed trips that have category limits) says whether it means anything: the page shows "—" when it is 0. `LastRun` also carries `RowsInserted` (new `SourceKey`s) and `Watermark`; an empty `LastSuccessOn` arrives as `1900-01-01`.
 
 ## Screen
 
-`Insights` shows:
+`Insights` (`Insights.jsx`, charts in `Charts.jsx`, pure shaping in `insightsData.js`) shows:
 
-- the headline "Locking saved families SGD x", or "Locking cost families SGD x" when the total is negative;
-- spend and saved vs spot by currency and month, spend by category, the share of completed trips over budget, pay-later plans and principal;
+- **Filters** in one row above the charts: currency chips (All, then each trip currency in the mart) and a period switch (All time, 12 months, 3 months; months are SGT and count the current month). They apply to the headline, both month charts and the category bars. The trip count, over-budget share and pay-later tile are all-time totals the mart does not split, and sit under "All trips, all time".
+- the headline "Locking saved families SGD x", or "Locking cost families SGD x" when the filtered total is negative, with the filtered spend;
+- **Saved vs spot by month**: one bar per month with a zero line; months where spot would have been cheaper fall below it in the danger colour;
+- **Spend by month**: bars with empty months filled in, plus a "Show as table" view;
+- **Spend by category** and, for all currencies, **spend by currency**, as labelled horizontal bars;
+- the over-budget share as a meter ("—" and no meter when no completed trip has category limits), pay-later plans and principal;
 - "Last updated" with the rows loaded by the latest successful run;
 - a banner with the run's error when the latest run `Failed` (the numbers still show);
-- "No data yet. Refresh to load trip activity." and no tables when the mart is empty.
+- "No data yet. Refresh to load trip activity." and no charts when the mart is empty.
+
+Charts are hand-drawn SVG and CSS (no chart library), in the app's purple accent with a native `<title>` tooltip per month. `ByCategory[]` rows carry `Currency` and `Month` so the category bars can follow the filters.
 
 "Refresh data" calls `RunEtlNow` once and is never retried. While the run is `Running` the button is disabled and reads "Refreshing…", and `GetInsights` is polled every 3 s; when the run ends a status line shows its extracted, loaded and rejected counts.
 
@@ -37,7 +43,7 @@ Headers: `X-Contacts-Key` + `X-Session-Token` (any signed-in customer). Response
 
 ## Tests
 
-`tests/analytics.spec.js` (mocked): headline sign, empty state, failed-run banner, refresh with polling, error banner, signed out. Live: `bun run test:analytics` runs the ETL twice and checks the second run inserts nothing, the totals do not move, `Extracted = Loaded + Rejected`, and the response carries no customer ids. It writes only to the data mart.
+`tests/analytics.spec.js` (mocked): headline sign, currency and period filters, the month-series helpers, empty state, failed-run banner, refresh with polling, error banner, signed out. Live: `bun run test:analytics` runs the ETL twice and checks the second run inserts nothing, the totals do not move, `Extracted = Loaded + Rejected`, and the response carries no customer ids. It writes only to the data mart.
 
 ## Backend (OutSystems)
 
