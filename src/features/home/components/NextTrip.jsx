@@ -6,9 +6,7 @@ import { useChildTrips } from '../../family/tripQueries'
 import { useChildren } from '../../family/queries'
 import Money from '../../../components/Money'
 import { tripCountdown, tripOver } from '../homeData'
-
-const day = (value) => String(value ?? '').slice(0, 10)
-const rate = (value) => (Number(value) ? Number(value).toFixed(4) : '—')
+import { dayRange, rate } from '../../../lib/format'
 
 // Home leads with the soonest trip that has not ended. A parent sees every
 // linked child's trips; a child sees their own. Only GetTrips fields are used,
@@ -58,8 +56,8 @@ export default function NextTrip() {
         <span className="next-trip-eyebrow">Next up · {tripCountdown(next)}</span>
         <h2 className="next-trip-city">{next.destination}</h2>
         <span className="next-trip-dates">
-          {day(next.tripStartDate)} – {day(next.tripEndDate)} · {next.currency}
-          {next.childNickname ? ` · ${next.childNickname}` : ''}
+          {dayRange(next.tripStartDate, next.tripEndDate)} · {next.currency}
+          {isParent && next.childNickname ? ` · ${next.childNickname}` : ''}
         </span>
         <span className="next-trip-pot">
           <span className="row-between">
@@ -73,15 +71,16 @@ export default function NextTrip() {
           </span>
           <span className="next-trip-rates">
             <span>
-              <span className="next-trip-label">Last rate</span>
+              <span className="next-trip-label">Last checked</span>
               {/* GetTrips carries the watcher's last check, not a live quote. */}
               <strong>{rate(next.currentRate || next.lastCheckedRate)}</strong>
             </span>
             <span>
-              <span className="next-trip-label">Target</span>
+              <span className="next-trip-label">Target · higher is better</span>
               <strong>{rate(next.targetRate)}</strong>
             </span>
           </span>
+          <span className="next-trip-label">{next.currency} per 1 SGD</span>
           <span className="next-trip-open">Open trip</span>
         </span>
       </Link>
@@ -94,7 +93,12 @@ export default function NextTrip() {
                 <span className="stack">
                   <strong>{t.destination}</strong>
                   <span>
-                    {tripCountdown(t)} · <Money amount={t.lockedForeign} currency={t.currency} />
+                    {tripCountdown(t)} ·{' '}
+                    {Number(t.lockedForeign) > 0 ? (
+                      <Money amount={t.lockedForeign} currency={t.currency} />
+                    ) : (
+                      'Nothing locked yet'
+                    )}
                   </span>
                 </span>
               </Link>

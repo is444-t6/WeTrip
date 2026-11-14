@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useSearch } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import Banner from '../../components/Banner'
 import { isLoggedIn } from '../auth/session'
 import TripPay from '../trips/TripPay'
@@ -10,6 +10,10 @@ import PaymentResult from './components/PaymentResult'
 import QrScanner from './components/QrScanner'
 import { getCustomerId } from './customer'
 import { usePayLater, usePayNow, usePreview } from './queries'
+import { useCurrentUser } from '../auth/useCurrentUser'
+import { useChildTrips } from '../family/tripQueries'
+import { splitTrips } from '../fx/status'
+import { tripOver } from '../home/homeData'
 
 function parseQr(text) {
   try {
@@ -36,6 +40,21 @@ export default function ScanToPay() {
   const { tripId } = useSearch({ strict: false })
   if (tripId && isLoggedIn()) return <TripPay tripId={tripId} />
   return <WalletPay />
+}
+
+// A child paying abroad should pay from the trip pot, not the SGD wallet.
+function TripPotHint() {
+  const { role, familyLinkId } = useCurrentUser()
+  const trips = useChildTrips(role === 'Child' ? familyLinkId : undefined)
+  const trip = splitTrips(trips.data).active.find(
+    (t) => !tripOver(t) && Number(t.lockedForeign) > 0,
+  )
+  if (!trip) return null
+  return (
+    <Link to="/pay" search={{ tripId: Number(trip.tripId) }} className="banner ok trip-pot-hint">
+      Paying in {trip.destination}? Pay from your {trip.currency} trip pot instead &rarr;
+    </Link>
+  )
 }
 
 function WalletPay() {
@@ -159,6 +178,7 @@ function WalletPay() {
 
   return (
     <PayLayout title="Scan to Pay">
+      <TripPotHint />
       <Banner>{preview.error?.message}</Banner>
       {preview.isPending ? (
         <div className="card empty" role="status">

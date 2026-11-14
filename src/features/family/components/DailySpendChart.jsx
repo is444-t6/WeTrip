@@ -1,4 +1,5 @@
 import { barsLayout, monthLabel } from '../chart'
+import { money } from '../../../lib/format'
 
 const shortDate = (d) => `${Number(String(d).slice(8, 10))} ${monthLabel(d)}`
 
@@ -28,7 +29,7 @@ export default function DailySpendChart({ days, limit = 0 }) {
             height={b.h}
             rx="2"
           >
-            <title>{`${shortDate(b.date)}: SGD ${b.total.toFixed(2)}`}</title>
+            <title>{`${shortDate(b.date)}: ${money(b.total)}`}</title>
           </rect>
         ))}
         <text className="chart-label" x={first.x} y={height - 6}>
@@ -42,7 +43,7 @@ export default function DailySpendChart({ days, limit = 0 }) {
       </svg>
       {limit > 0 && (
         <figcaption className="muted">
-          Dashed line: SGD {limit.toFixed(2)} a day keeps the budget on track.
+          Dashed line: {money(limit)} a day keeps the budget on track.
         </figcaption>
       )}
     </figure>

@@ -827,6 +827,8 @@ button.danger:disabled:hover {
   background: var(--coral-soft);
   border-color: transparent;
   color: var(--danger);
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* ------------------------------- banners ----------------------------- */
@@ -1173,7 +1175,8 @@ tr:last-child td {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 18px;
+  min-height: 44px;
+  margin-bottom: 10px;
   font-size: 14px;
   font-weight: 600;
   color: var(--primary-2);
@@ -1329,7 +1332,7 @@ tr:last-child td {
     justify-content: center;
     gap: 2px;
     padding: 6px 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--muted);
   }
@@ -1534,7 +1537,7 @@ tr:last-child td {
   position: absolute;
   inset: 0 0 auto;
   height: 3px;
-  background: linear-gradient(90deg, var(--brand-grad-2), var(--brand-grad-3));
+  background: var(--primary-2);
   content: '';
 }
 
@@ -1676,10 +1679,8 @@ tr:last-child td {
   display: block;
   margin-bottom: 6px;
   color: var(--muted-2);
-  font-size: 0.7rem;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
 }
 
 .insurance-plan-detail-hero .insurance-plan-detail-eyebrow {
@@ -2013,7 +2014,7 @@ tr:last-child td {
   border-radius: 999px;
   background: var(--ok-bg);
   color: var(--ok);
-  font-size: 0.68rem;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -2376,7 +2377,8 @@ tr:last-child td {
 
 .quick {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 4px;
   padding: 16px 8px;
 }
@@ -2387,7 +2389,7 @@ tr:last-child td {
   align-items: center;
   gap: 8px;
   color: var(--text);
-  font-size: 0.74rem;
+  font-size: 13px;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
@@ -2465,7 +2467,7 @@ tr:last-child td {
 }
 
 .balance-label {
-  font-size: 11px;
+  font-size: 12px;
   color: #d8cfe8;
 }
 
@@ -2733,6 +2735,7 @@ tr:last-child td {
 
 .tab {
   flex: 1;
+  min-height: 44px;
   padding: 8px 12px;
   border: 0;
   border-radius: 999px;
@@ -2760,7 +2763,8 @@ tr:last-child td {
 }
 
 .chip {
-  padding: 6px 14px;
+  min-height: 44px;
+  padding: 6px 16px;
   border: 1px solid var(--card-border);
   border-radius: 999px;
   background: var(--card);
@@ -2924,6 +2928,9 @@ tr:last-child td {
 
 .budget-line > .row {
   margin-left: auto;
+  flex-wrap: wrap;
+  /* When the badge and the longer formatted amount wrap, the amount stays right-aligned. */
+  justify-content: flex-end;
 }
 
 .actions-grid {
@@ -2978,9 +2985,45 @@ tr:last-child td {
     content: attr(data-label);
     flex: none;
     color: var(--muted-2);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
+    font-size: 12px;
     text-align: left;
-    text-transform: uppercase;
+  }
+}
+
+/* The child's trip actions: Pay and Add a receipt side by side; the receipt form takes a full row. */
+.trip-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.trip-actions > .btn,
+.trip-actions > button {
+  flex: 1 1 160px;
+}
+.trip-actions > form {
+  flex: 1 1 100%;
+  margin: 0;
+}
+.next-trip-rates + .next-trip-label {
+  margin-top: 8px;
+}
+.trip-pot-hint {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+/* Header links ("View all") are real tap targets, not 20px of text. */
+.card-header > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-weight: 600;
+}
+@media (max-width: 700px) {
+  .navbar .ghost {
+    min-height: 44px;
   }
 }

@@ -1,3 +1,5 @@
+import { money, rate, rateText } from '../../lib/format'
+
 // Pure helpers for showing a child's SmartFX trips inside the Family screens.
 // Field names are the camelCase ones FxApi returns (see features/fx/api.js).
 
@@ -66,13 +68,13 @@ export function lockSummary(trip, forwardRate) {
 
 export function lockMessage(s, { currency, period }) {
   if (s.state === 'none') return 'Nothing locked yet.'
-  const head = `Locked ${currency} ${s.foreign.toFixed(2)} for SGD ${s.sgd.toFixed(2)} (average rate ${s.avgRate.toFixed(4)}).`
+  const head = `Locked ${money(s.foreign, currency)} for ${money(s.sgd)} (average ${rateText(s.avgRate, currency)}).`
   if (s.state === 'norate') return `${head} Today's rate is not available.`
-  const tail = `At today's ${period} forward of ${s.rate.toFixed(4)} that would cost SGD ${s.todaySgd.toFixed(2)}`
+  const tail = `At today's ${period} rate of ${rate(s.rate)} that would cost ${money(s.todaySgd)}`
   if (s.state === 'same') return `${head} ${tail}, about the same.`
   return s.state === 'costlier'
-    ? `${head} ${tail}, so locking early cost SGD ${s.diffSgd.toFixed(2)} more.`
-    : `${head} ${tail}, so locking early saved SGD ${s.diffSgd.toFixed(2)}.`
+    ? `${head} ${tail}, so locking early cost ${money(s.diffSgd)} more.`
+    : `${head} ${tail}, so locking early saved ${money(s.diffSgd)}.`
 }
 
 // Foreign money still to spend on the trip: what was locked, less what the

@@ -4,6 +4,7 @@ import Avatar from './Avatar'
 import PaceBar from './PaceBar'
 import Money from '../../../components/Money'
 import NextTripLine from './NextTripLine'
+import { maskAccount } from '../../home/homeData'
 
 function badgeClass(status) {
   if (status === 'Active') return 'active'
@@ -25,7 +26,7 @@ export default function ChildCard({ child }) {
           <Avatar name={label} />
           <div className="stack">
             <strong>{label}</strong>
-            <span className="muted">{child.childCustomerId}</span>
+            <span className="muted">Customer {maskAccount(child.childCustomerId)}</span>
           </div>
         </div>
         <span className={`badge ${badgeClass(child.status)}`}>{child.status}</span>

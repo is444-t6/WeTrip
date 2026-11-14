@@ -43,7 +43,7 @@ test.describe('depositAccounts', () => {
 
 test.describe('labels and messages', () => {
   test('an account reads as number, currency and balance', () => {
-    expect(accountLabel(ACCOUNTS[0])).toBe('0000004554 · SGD 8207.23')
+    expect(accountLabel(ACCOUNTS[0])).toBe('0000004554 · SGD 8,207.23')
     expect(accountLabel({ accountId: '9', currency: 'SGD' })).toBe('9 · SGD 0.00')
   })
 

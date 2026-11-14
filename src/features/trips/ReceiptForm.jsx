@@ -31,12 +31,7 @@ export default function ReceiptForm({ trip }) {
   return open ? (
     <ReceiptFields trip={trip} onClose={() => setOpen(false)} />
   ) : (
-    <button
-      type="button"
-      className="secondary"
-      style={{ marginTop: 12 }}
-      onClick={() => setOpen(true)}
-    >
+    <button type="button" className="secondary" onClick={() => setOpen(true)}>
       Add a receipt
     </button>
   )

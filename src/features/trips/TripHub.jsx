@@ -15,13 +15,14 @@ import ReceiptForm from './ReceiptForm'
 import { useCloseOptions, useCloseTrip, useTripOverview } from './queries'
 import { COUNTRY_BY_CURRENCY, day, milesLabel } from './trip'
 import { useState } from 'react'
+import { dayRange, rateText } from '../../lib/format'
 
 // One trip, every feature, from one call: Trip.GetTripOverview gathers the SmartFX
 // trip, its locks and spends, the SGD budget and the policies bought for it. The
 // child pays from here (Pay on this trip) and the parent closes the trip here.
 export default function TripHub() {
   const { tripId } = useParams({ from: '/trips/$tripId' })
-  const { data, error, isLoading } = useTripOverview(tripId)
+  const { data, error, isLoading, refetch, isFetching } = useTripOverview(tripId)
   const { role } = useCurrentUser()
 
   function signOut() {
@@ -31,7 +32,26 @@ export default function TripHub() {
   const shell = (content) => <AppShell onSignOut={signOut}>{content}</AppShell>
 
   if (!isLoggedIn()) return <SignedOutCard title="WeTrip" />
-  if (error) return shell(<Banner>{error.message}</Banner>)
+  if (error) {
+    return shell(
+      <>
+        <Banner>{error.message}</Banner>
+        <div className="row" style={{ gap: 8 }}>
+          <Link to="/fx" className="btn secondary">
+            All trips
+          </Link>
+          <button
+            type="button"
+            className="secondary"
+            disabled={isFetching}
+            onClick={() => refetch()}
+          >
+            {isFetching ? 'Trying…' : 'Try again'}
+          </button>
+        </div>
+      </>,
+    )
+  }
   if (isLoading || !data) return shell(<p className="muted">Loading…</p>)
 
   const trip = data.trip
@@ -44,9 +64,7 @@ export default function TripHub() {
       <div className="row-between trip-head" style={{ marginBottom: 4 }}>
         <div className="stack">
           <h1 style={{ margin: 0 }}>{trip.destination}</h1>
-          <span className="muted">
-            {day(trip.tripStartDate)} → {day(trip.tripEndDate)}
-          </span>
+          <span className="muted">{dayRange(trip.tripStartDate, trip.tripEndDate)}</span>
         </div>
         <span className="row" style={{ gap: 6 }}>
           {demoLabel(trip) && <span className="badge pending">{demoLabel(trip)}</span>}
@@ -56,21 +74,19 @@ export default function TripHub() {
         </span>
       </div>
 
-      {role === 'Child' && !isEnded(trip.status) && Number(data.remainingForeign) > 0 && (
-        <Link
-          to="/pay"
-          search={{ tripId: Number(tripId) }}
-          className="btn"
-          style={{ marginTop: 12 }}
-        >
-          Pay on this trip
-        </Link>
+      {role === 'Child' && !isEnded(trip.status) && (
+        <div className="row trip-actions">
+          {Number(data.remainingForeign) > 0 && (
+            <Link to="/pay" search={{ tripId: Number(tripId) }} className="btn">
+              Pay on this trip
+            </Link>
+          )}
+          <ReceiptForm trip={trip} />
+        </div>
       )}
 
-      {role === 'Child' && !isEnded(trip.status) && <ReceiptForm trip={trip} />}
-
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'start' }}>
-        <MoneyCard tripId={tripId} overview={data} />
+        <MoneyCard tripId={tripId} role={role} overview={data} />
         <BudgetCard tripId={tripId} role={role} overview={data} />
         <PayLaterCard plans={data.bnplPlans} currency={trip.currency} />
         <InsuranceCard trip={trip} role={role} tripPolicies={data.policies} />
@@ -91,7 +107,7 @@ function useDestinationOf(familyLinkId, enabled) {
   return (id) => data?.find((t) => Number(t.tripId) === Number(id))?.destination
 }
 
-function MoneyCard({ tripId, overview }) {
+function MoneyCard({ tripId, role, overview }) {
   const trip = overview.trip
   // Money other trips handed over on closing (lock Source "CarryOver", reference "carry:<trip id>").
   const carries = (overview.locks ?? []).filter((l) => l.source === 'CarryOver')
@@ -107,7 +123,7 @@ function MoneyCard({ tripId, overview }) {
   return (
     <div className="card" aria-label="Money">
       <div className="card-header">
-        <h3>Money (SmartFX)</h3>
+        <h3>Trip money</h3>
       </div>
       <div className="progress">
         <div style={{ width: `${pct}%` }} />
@@ -128,7 +144,7 @@ function MoneyCard({ tripId, overview }) {
             <Money amount={spent} currency={trip.currency} /> spent)
             {rate > 0 && (
               <span className="muted" style={{ display: 'block', fontSize: '0.85em' }}>
-                Locked at {rate.toFixed(4)} {trip.currency} per SGD
+                Locked at {rateText(rate, trip.currency)}
               </span>
             )}
           </>
@@ -149,7 +165,7 @@ function MoneyCard({ tripId, overview }) {
         className="btn secondary"
         style={{ width: '100%', marginTop: 12 }}
       >
-        Manage FX &amp; locks
+        {role === 'Parent' ? 'Manage rates & locks' : 'See rates & locks'}
       </Link>
     </div>
   )
@@ -167,7 +183,16 @@ function BudgetCard({ tripId, role, overview }) {
       </div>
       {lines.length > 0 ? (
         <>
-          <p style={{ margin: 0 }}>
+          <div
+            className={`progress ${Number(summary.totalSpent) > Number(summary.totalLimit) ? 'over' : ''}`}
+          >
+            <div
+              style={{
+                width: `${Math.min(100, (Number(summary.totalSpent) / (Number(summary.totalLimit) || 1)) * 100)}%`,
+              }}
+            />
+          </div>
+          <p style={{ margin: '4px 0 0' }}>
             <Money amount={summary.totalSpent} currency="SGD" /> spent of{' '}
             <Money amount={summary.totalLimit} currency="SGD" />
           </p>
@@ -270,12 +295,20 @@ function FamilyCard({ trip, role }) {
       {who ? (
         <>
           <p style={{ margin: 0 }}>
-            <strong>{name || 'Child'}</strong> has <Money amount={who.balance} />
+            {childView ? (
+              'You have'
+            ) : (
+              <>
+                <strong>{name || 'Child'}</strong> has
+              </>
+            )}{' '}
+            <Money amount={who.balance} />
           </p>
           <p className="muted" style={{ margin: '4px 0 0' }}>
             {budget > 0 ? (
               <>
-                <Money amount={spent} /> spent of <Money amount={budget} /> this period
+                <Money amount={spent} /> spent of <Money amount={budget} /> this{' '}
+                {PERIOD_WORD[who.period] ?? 'period'}
               </>
             ) : (
               'No spending limit set.'
@@ -298,6 +331,8 @@ function FamilyCard({ trip, role }) {
     </div>
   )
 }
+
+const PERIOD_WORD = { Weekly: 'week', Monthly: 'month' }
 
 const BETTER_LINE = {
   Spot: 'Converting now beats your locked cost',
@@ -396,13 +431,13 @@ function CloseTripCard({ tripId, trip }) {
                   >
                     {eligible.map((t) => (
                       <option key={t.tripId} value={t.tripId}>
-                        {t.destination}, {day(t.tripStartDate)} → {day(t.tripEndDate)}
+                        {t.destination}, {dayRange(t.tripStartDate, t.tripEndDate)}
                       </option>
                     ))}
                   </select>
                 ) : (
                   <p className="muted" style={{ margin: '8px 0 0' }}>
-                    No Watching or Partly locked {trip.currency} trip has room for this yet.
+                    No other open {trip.currency} trip has room for this yet.
                   </p>
                 ))}
             </div>
@@ -415,6 +450,7 @@ function CloseTripCard({ tripId, trip }) {
           <div className="row" style={{ gap: 8 }}>
             <button
               type="button"
+              className="danger"
               disabled={close.isPending || (keep && !next)}
               onClick={() => close.mutate(next?.tripId)}
             >

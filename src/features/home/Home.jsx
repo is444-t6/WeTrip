@@ -5,13 +5,13 @@ import { clearSession, getSessionDisplayName } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import { firstName, maskAccount } from './homeData'
-import ExploreProducts from './components/ExploreProducts'
 import FamilyOverview from './components/FamilyOverview'
 import { EyeIcon } from './components/Icons'
 import QuickActions from './components/QuickActions'
 import RecentPayments from './components/RecentPayments'
 import MilesCard from './components/MilesCard'
 import NextTrip from './components/NextTrip'
+import { money } from '../../lib/format'
 
 const HIDE_KEY = 'wetrip_hide_balance'
 
@@ -63,7 +63,7 @@ export default function Home() {
           <div className="balance-pill">
             <span className="balance-label">Available balance</span>
             <span className="hero-amount">
-              {user ? (hidden ? 'SGD ••••••' : `SGD ${Number(user.balance ?? 0).toFixed(2)}`) : '…'}
+              {user ? (hidden ? 'SGD ••••••' : money(user.balance)) : '…'}
             </span>
             <button
               type="button"
@@ -80,7 +80,7 @@ export default function Home() {
         <NextTrip />
       </section>
 
-      <QuickActions pendingApprovals={pendingApprovals} />
+      {role && <QuickActions role={role} />}
 
       {pendingApprovals > 0 && (
         <Banner kind="warn">
@@ -95,9 +95,6 @@ export default function Home() {
 
       <h2 className="section-title">Recent activity</h2>
       <RecentPayments />
-
-      <h2 className="section-title">Explore WeTrip</h2>
-      <ExploreProducts />
     </AppShell>
   )
 }

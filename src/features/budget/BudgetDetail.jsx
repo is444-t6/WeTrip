@@ -14,6 +14,7 @@ import ExpenseList from './components/ExpenseList'
 import AddExpenseForm from './components/AddExpenseForm'
 import SetBudgetForm from './components/SetBudgetForm'
 import AddFixedCostForm from './components/AddFixedCostForm'
+import { money } from '../../lib/format'
 
 export default function BudgetDetail() {
   const { tripId } = useParams({ from: '/budget/$tripId' })
@@ -47,8 +48,8 @@ export default function BudgetDetail() {
 
   return shell(
     <>
-      <Link to="/budget" className="back-link">
-        &larr; Back
+      <Link to="/trips/$tripId" params={{ tripId: String(tripId) }} className="back-link">
+        &larr; Back to {destination || 'the trip'}
       </Link>
 
       <h1>{destination || `Trip ${tripId}`} budget</h1>
@@ -57,19 +58,16 @@ export default function BudgetDetail() {
         label="Budget remaining"
         amount={Number(summary.totalRemaining) || 0}
         currency={DEFAULT_CURRENCY}
-        sub={`${Number(summary.totalSpent || 0).toFixed(2)} spent of ${Number(summary.totalLimit || 0).toFixed(2)}`}
+        sub={`${money(summary.totalSpent || 0)} spent of ${money(summary.totalLimit || 0)}`}
         foot={
           <>
             <span>{lines.length} categories</span>
             {alerts > 0 && <span>{alerts} near or over limit</span>}
             {fixed > 0 && (
               <>
+                <span>Fixed {money(fixed, DEFAULT_CURRENCY)}</span>
                 <span>
-                  Fixed {DEFAULT_CURRENCY} {fixed.toFixed(2)}
-                </span>
-                <span>
-                  Day-to-day {DEFAULT_CURRENCY}{' '}
-                  {((Number(summary.totalSpent) || 0) - fixed).toFixed(2)}
+                  Day-to-day {money((Number(summary.totalSpent) || 0) - fixed, DEFAULT_CURRENCY)}
                 </span>
               </>
             )}

@@ -114,7 +114,7 @@ test('the budget splits spending into fixed and day-to-day, and remaining stays 
   await expect(hero).toContainText('Fixed SGD 300.00')
   await expect(hero).toContainText('Day-to-day SGD 150.00')
   await expect(hero.locator('.hero-amount')).toHaveText('SGD 550.00')
-  await expect(hero.locator('.hero-sub')).toHaveText('450.00 spent of 1000.00')
+  await expect(hero.locator('.hero-sub')).toHaveText('SGD 450.00 spent of SGD 1,000.00')
 })
 
 test('a budget with no fixed costs shows no split', async ({ page }) => {
@@ -149,8 +149,8 @@ test('overspending shows a negative remaining and the OVER alert', async ({ page
       }),
   })
   await page.goto('/budget/12')
-  await expect(page.locator('.hero-amount')).toHaveText('SGD -20.00')
-  await expect(page.locator('.budget-line').getByText('OVER')).toBeVisible()
+  await expect(page.locator('.hero-amount')).toHaveText('-SGD 20.00')
+  await expect(page.locator('.budget-line').getByText('Over', { exact: true })).toBeVisible()
 })
 
 test('the parent adds a fixed cost through AddFixedCost, not RecordSpending', async ({ page }) => {

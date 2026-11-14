@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Banner from '../../../components/Banner'
 import { useReceipt } from '../../trips/queries'
 import { SOURCE, categoryName } from '../constants'
+import { day, money } from '../../../lib/format'
 
 // Opens the stored photo (Trip.GetReceipt) full size, only once it is tapped.
 function ReceiptPhoto({ receiptId }) {
@@ -55,7 +56,7 @@ export default function ExpenseList({ expenses }) {
           <tbody>
             {expenses.map((e) => (
               <tr key={e.id}>
-                <td data-label="Date">{String(e.expenseDate).slice(0, 10)}</td>
+                <td data-label="Date">{day(e.expenseDate)}</td>
                 <td data-label="Details">
                   {e.merchantName || e.description || 'Expense'}
                   {Number(e.sourceId) === SOURCE.FIXED && (
@@ -79,7 +80,7 @@ export default function ExpenseList({ expenses }) {
                   {categoryName(e.categoryId)}
                 </td>
                 <td data-label="Amount" style={{ textAlign: 'right' }}>
-                  {Number(e.amount).toFixed(2)} {e.currency}
+                  {money(e.amount, e.currency)}
                 </td>
               </tr>
             ))}

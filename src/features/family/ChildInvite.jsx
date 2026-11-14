@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAcceptLink, useAccounts, useMyInvite } from './queries'
 import Banner from '../../components/Banner'
 import LinkChildForm from './components/LinkChildForm'
+import { money } from '../../lib/format'
 
 // The backend answers "no link for this customer" as a not-found error on some
 // paths and as an empty / hasInvite:false body on others. Both mean the same
@@ -90,8 +91,11 @@ export default function ChildInvite() {
               {choices.map((a) => (
                 <option key={a.accountId} value={a.accountId}>
                   {a.accountId}
-                  {a.currency ? ` · ${a.currency}` : ''}
-                  {a.balance != null ? ` ${Number(a.balance).toFixed(2)}` : ''}
+                  {a.balance != null
+                    ? ` · ${money(a.balance, a.currency)}`
+                    : a.currency
+                      ? ` · ${a.currency}`
+                      : ''}
                 </option>
               ))}
             </select>

@@ -137,8 +137,8 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(insuranceTabs).toBeHidden()
   await insuranceMenu.hover()
   await expect(insuranceTabs).toBeVisible()
-  await expect(insuranceTabs.getByRole('link', { name: 'Buy Insurance' })).toBeVisible()
-  await expect(insuranceTabs.getByRole('link', { name: 'My Insurance' })).toBeVisible()
+  await expect(insuranceTabs.getByRole('link', { name: 'Buy insurance' })).toBeVisible()
+  await expect(insuranceTabs.getByRole('link', { name: 'My insurance' })).toBeVisible()
   await expect(insuranceMenu.getByRole('link', { name: 'Insurance', exact: true })).toBeVisible()
   const navbarBox = await page.locator('.navbar-inner').boundingBox()
   const insuranceSubnavBox = await insuranceMenu.locator('.navbar-subnav').boundingBox()
@@ -170,7 +170,7 @@ test('destination details lead to a separate insurance plan selection step', asy
     /insurance-coverage-individual/,
   )
   await expect(essentialCard.getByText('Maximum coverage')).toBeVisible()
-  await expect(essentialCard.getByText('$10,000.00')).toBeVisible()
+  await expect(essentialCard.getByText('SGD 10,000.00')).toBeVisible()
   await expect(essentialCard.getByText('Up to 4 people')).toBeVisible()
   await expect(essentialCard.locator('.insurance-coverage-badge')).toHaveText('Individual')
   await expect(essentialCard.getByText('Available', { exact: true })).toHaveCount(0)
@@ -222,14 +222,14 @@ test('destination details lead to a separate insurance plan selection step', asy
 
   await page.getByLabel('Compare plans').uncheck()
   await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
-  await page.getByRole('button', { name: 'Plan details' }).first().click()
+  await page.getByRole('button', { name: 'Choose plan' }).first().click()
   await expect(page.getByRole('heading', { name: 'Essential' })).toBeVisible()
   await expect(page.getByText(/per day|premium per day/i)).toHaveCount(0)
   await expect(page.locator('.insurance-plan-detail-card')).toHaveCount(1)
   await expect(page.locator('.insurance-plan-detail-card .card')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Plan information' })).toBeVisible()
   await expect(page.getByText('Maximum coverage')).toBeVisible()
-  await expect(page.getByText('$10,000.00', { exact: true })).toBeVisible()
+  await expect(page.getByText('SGD 10,000.00', { exact: true })).toBeVisible()
   await expect(page.getByText('Plan status')).toHaveCount(0)
   await expect(page.getByText('4 people')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Plan benefits' })).toBeVisible()
@@ -252,17 +252,23 @@ test('destination details lead to a separate insurance plan selection step', asy
   await expect(page.getByText(/per day/i)).toHaveCount(0)
 })
 
-test('signing out from an insurance page returns to the signed-out Family screen', async ({
+test('signing out from an insurance page returns to the front door, like every page', async ({
   page,
 }) => {
-  await page.addInitScript(() => sessionStorage.setItem('wetrip_session', 'parent:account:Parent'))
+  // Seed once: signing out reloads, and a re-seed would sign straight back in.
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('wetrip_session', 'parent:account:Parent')
+      sessionStorage.setItem('seeded', '1')
+    }
+  })
   await page.goto('/insurance')
 
   await page.getByRole('button', { name: 'Sign out' }).click()
 
-  await expect(page).toHaveURL(/\/family$/)
+  await expect(page).toHaveURL(/\/$/)
   await expect(page.getByText("You're not signed in yet.")).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Continue to sign in' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Continue to sign in' })).toBeVisible()
   expect(await page.evaluate(() => sessionStorage.getItem('wetrip_session'))).toBeNull()
 })
 
@@ -421,7 +427,7 @@ test('checkout presents the API quote as the final price for covered days', asyn
 
   await expect(page.getByText('Final quoted premium · 2 covered days')).toBeVisible()
   await expect(page.getByText('Final price calculated by the insurance service')).toBeVisible()
-  await expect(page.getByText('$12.50')).toBeVisible()
+  await expect(page.getByText('SGD 12.50')).toBeVisible()
   await expect(page.getByText(/estimate/i)).toHaveCount(0)
 })
 
@@ -486,10 +492,9 @@ test('successful insurance payment confirms purchase and refreshes the Family wa
   await expect(page.getByRole('heading', { name: 'Insurance purchase confirmed' })).toBeVisible()
   await expect(page.getByRole('status')).toHaveText('Payment successful from SMUtBank.')
   await expect(page.getByText('POL-2026-001')).toBeVisible()
-  await expect(page.getByText('$12.50')).toBeVisible()
-  await expect(page.getByText('$1.25')).toBeVisible()
-  await expect(page.getByText('$13.75')).toBeVisible()
-  await expect(page.getByText('SGD', { exact: true })).toBeVisible()
+  await expect(page.getByText('SGD 12.50')).toBeVisible()
+  await expect(page.getByText('SGD 1.25')).toBeVisible()
+  await expect(page.getByText('SGD 13.75')).toBeVisible()
   await expect(page.getByText('Confirmed', { exact: true })).toBeVisible()
 
   await page.locator('.navbar').getByRole('link', { name: 'Family', exact: true }).click()
@@ -676,7 +681,7 @@ test('expired insurance policies use the red status badge', async ({ page }) => 
   await expect(page.getByText('Purchased', { exact: true })).toBeVisible()
   await expect(page.getByText('Destination', { exact: true })).toBeVisible()
   await expect(page.locator('.insurance-policy-detail')).toHaveCount(3)
-  await expect(page.locator('.insurance-policy-extra')).toContainText('$20.00')
+  await expect(page.locator('.insurance-policy-extra')).toContainText('SGD 20.00')
 
   await page.getByRole('button', { name: /Hide details/ }).click()
   await expect(page.getByRole('heading', { name: 'Who is covered' })).toHaveCount(0)
@@ -747,5 +752,5 @@ test('confirmation total falls back to the premium when the bank fee is missing'
   })
   await page.goto('/insurance/confirmation')
   const total = page.locator('.row-between', { hasText: 'Total wallet deduction' })
-  await expect(total).toContainText('$12.50')
+  await expect(total).toContainText('SGD 12.50')
 })

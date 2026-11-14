@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { formatMoney } from './data'
-import { getDraft, getPurchaseResult } from './storage'
+import { getDraft, getPurchaseResult, getTrip, tripIdFor } from './storage'
 import InsuranceLayout from './components/InsuranceLayout'
 
 export default function Confirmation() {
@@ -33,6 +33,8 @@ export default function Confirmation() {
   const premium = purchase.totalPremium ?? purchase.premium ?? draft.quote?.totalPremium
   const paymentFee = Number(purchase.paymentFee)
   const totalDeducted = Number(premium) + (paymentFee || 0)
+  // The same rule checkout used to link the policy to a trip.
+  const tripId = tripIdFor(getTrip(), draft.trip)
 
   return (
     <InsuranceLayout>
@@ -72,25 +74,29 @@ export default function Confirmation() {
           <span>Premium</span>
           <strong>{formatMoney(premium, currencyCode)}</strong>
         </div>
-        <div className="row-between" style={{ marginTop: 8 }}>
-          <span>Bank fee</span>
-          <strong>{formatMoney(paymentFee, currencyCode)}</strong>
-        </div>
+        {paymentFee > 0 && (
+          <div className="row-between" style={{ marginTop: 8 }}>
+            <span>Bank fee</span>
+            <strong>{formatMoney(paymentFee, currencyCode)}</strong>
+          </div>
+        )}
         <div className="row-between" style={{ marginTop: 8 }}>
           <span>Total wallet deduction</span>
           <strong>{formatMoney(totalDeducted, currencyCode)}</strong>
         </div>
-        <div className="row-between" style={{ marginTop: 8 }}>
-          <span>Currency</span>
-          <strong>{currencyCode}</strong>
-        </div>
       </div>
-      <div className="row">
-        <Link to="/insurance/policies" className="btn">
-          View My Insurance
+      {/* Bought from a trip page: take them back to that trip, now covered. */}
+      <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+        {tripId ? (
+          <Link to="/trips/$tripId" params={{ tripId: String(tripId) }} className="btn">
+            Back to {draft.trip?.destination || 'your trip'}
+          </Link>
+        ) : null}
+        <Link to="/insurance/policies" className={tripId ? 'btn secondary' : 'btn'}>
+          View my insurance
         </Link>
         <Link to="/insurance" className="btn secondary">
-          Back to plans
+          Buy another policy
         </Link>
       </div>
     </InsuranceLayout>

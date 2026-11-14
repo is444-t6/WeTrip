@@ -1,5 +1,5 @@
 import Money from '../../components/Money'
-import { day } from './trip'
+import { day } from '../../lib/format'
 
 // The trip's instalment plans (GetTripOverview.BnplPlans). Billed by the bank, so
 // they are listed here but are not part of the trip pot.

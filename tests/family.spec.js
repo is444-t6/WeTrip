@@ -23,7 +23,7 @@ test.describe('auth', () => {
     await expect(page).toHaveURL(/\/$/)
     await expect(page.getByRole('heading', { name: 'WeTrip', exact: true })).toBeVisible()
     await expect(page.getByText("You're not signed in yet.")).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Continue to sign in' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Continue to sign in' })).toBeVisible()
   })
 
   test('the dev login form stores a session and opens the parent home', async ({ page }) => {
@@ -95,8 +95,8 @@ test.describe('parent view', () => {
   test('SmartFX home lists trip goals for the parent', async ({ page }) => {
     await page.goto('/fx')
 
-    await expect(page.getByRole('heading', { name: 'SmartFX' })).toBeVisible()
-    await expect(page.getByText('Trip goals')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Trips', exact: true })).toBeVisible()
+    await expect(page.getByText('Your trips')).toBeVisible()
 
     // Opening the create form is the stable assertion: the trip list itself
     // depends on sandbox data.
@@ -120,14 +120,14 @@ test.describe('child view', () => {
     // By then everything else on the page is there.
     await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByRole('heading', { name: /Spending limit this/ })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Send to a WeTrip account' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible()
   })
 
   test('child does not get the parent-only trip form on SmartFX', async ({ page }) => {
     await page.goto('/fx')
 
-    await expect(page.getByRole('heading', { name: 'SmartFX' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Trips', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'New trip goal' })).toHaveCount(0)
   })
 })
