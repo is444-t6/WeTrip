@@ -1,7 +1,5 @@
 // Pure helpers for the home page. No React and no fetching.
 
-const ENDED = new Set(['Completed', 'Cancelled'])
-
 // "Parent Demo" and "timothy.loo" both greet well: the first word, capitalised.
 export function firstName(displayName, fallback = 'there') {
   const word = String(displayName ?? '')
@@ -16,18 +14,20 @@ export function maskAccount(id) {
   return s.length > 4 ? `····${s.slice(-4)}` : s
 }
 
-// Foreign money already set aside for each trip that has not finished: one
-// entry per trip, soonest first, skipping trips with nothing locked yet.
-export function tripWallets(trips) {
-  return (trips ?? [])
-    .filter((t) => !ENDED.has(t.status) && Number(t.lockedForeign) > 0)
-    .sort((a, b) => String(a.tripStartDate).localeCompare(String(b.tripStartDate)))
-    .map((t) => ({
-      tripId: t.tripId,
-      destination: t.destination,
-      currency: t.currency,
-      amount: Number(t.lockedForeign),
-    }))
+const DAY = 86_400_000
+const dayNumber = (value) => Math.floor(Date.parse(String(value ?? '').slice(0, 10)) / DAY)
+
+// "In 12 days", "Tomorrow", "Starts today", "On now": how far off a trip is.
+// Dates are compared as calendar days, so the time of day never shifts the count.
+export function tripCountdown(trip, today = new Date()) {
+  const now = Math.floor((today.getTime() - today.getTimezoneOffset() * 60_000) / DAY)
+  const start = dayNumber(trip?.tripStartDate)
+  if (Number.isNaN(start)) return ''
+  const days = start - now
+  if (days > 1) return `In ${days} days`
+  if (days === 1) return 'Tomorrow'
+  if (days === 0) return 'Starts today'
+  return 'On now'
 }
 
 // Newest payments first. History arrives in the backend's order, which the

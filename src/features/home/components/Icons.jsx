@@ -50,3 +50,15 @@ export const EyeIcon = ({ off }) => (
     {off && <path d="M4 4l16 16" />}
   </Svg>
 )
+
+export const HomeIcon = () => (
+  <Svg>
+    <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+  </Svg>
+)
+
+export const PlaneIcon = () => (
+  <Svg>
+    <path d="M10.5 13.5L3 11l1.5-1.5 8 .5 4-4c1-1 2.6-1.4 3.3-.8.6.7.2 2.3-.8 3.3l-4 4 .5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22 5 19l-3-1.5L3.5 16H6z" />
+  </Svg>
+)

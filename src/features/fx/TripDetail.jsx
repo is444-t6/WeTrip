@@ -233,15 +233,23 @@ function ParentActions({ trip, remainingSgd, currentRate, onCheck, checking }) {
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
-        <div className="field">
-          <label htmlFor="trip-lock-tenor">Tenor</label>
-          <select id="trip-lock-tenor" value={period} onChange={(e) => setPeriod(e.target.value)}>
-            <option value="1M">1M</option>
-            <option value="3M">3M</option>
-            <option value="6M">6M</option>
-            <option value="1Y">1Y</option>
-          </select>
-        </div>
+        <fieldset className="field pill-choice">
+          <legend>Tenor</legend>
+          <div className="pill-choice-row">
+            {['1M', '3M', '6M', '1Y'].map((t) => (
+              <label key={t}>
+                <input
+                  type="radio"
+                  name="trip-lock-tenor"
+                  value={t}
+                  checked={period === t}
+                  onChange={() => setPeriod(t)}
+                />
+                <span>{t}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
       <p className="muted" style={{ marginTop: 0, fontSize: '0.85em' }}>
         Locks at the live {period} forward ({rate ? rate.toFixed(4) : '—'} {trip.currency} per SGD),

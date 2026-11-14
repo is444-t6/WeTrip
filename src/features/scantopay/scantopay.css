@@ -72,3 +72,22 @@
   background: var(--warn-bg);
   color: var(--warn);
 }
+
+/* The confirm step reads as a sheet: big amount, full-width mint pay pill. */
+.pay-sheet {
+  border-radius: 32px;
+}
+
+.pay-amount > span:last-child {
+  display: block;
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.pay-sheet .scantopay-actions button {
+  min-height: 52px;
+}
