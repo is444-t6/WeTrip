@@ -38,6 +38,11 @@ export const SERVICES = {
     base: '/scantopay',
     normalize: true,
   },
+  // Trip analytics data mart: ETL refresh and the aggregate insights.
+  analytics: {
+    base: '/api/analytics',
+    normalize: true,
+  },
 }
 
 // A client for one service. `overrides` is for the odd call that needs a different

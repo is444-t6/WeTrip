@@ -36,6 +36,7 @@ export default defineConfig({
       '/api/trip': proxyTo('trip', '/api/trip'),
       '/api/insurance': proxyTo('insurance', '/api/insurance'),
       '/scantopay': proxyTo('scantopay', '/scantopay'),
+      '/api/analytics': proxyTo('analytics', '/api/analytics'),
     },
   },
 })

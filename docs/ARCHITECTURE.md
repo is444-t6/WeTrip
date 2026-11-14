@@ -31,7 +31,7 @@ The C4 diagrams are editable in [`docs/diagrams/`](diagrams) (`*.drawio`) and ex
 | Parent                   | Person          | Funds the family wallet, sets weekly/monthly limits and allowances, approves or rejects spending requests, plans trips, locks FX rates, buys insurance, closes trips. |
 | Child                    | Person          | Spends from the family wallet, pays merchants by QR (wallet or trip pot), asks for more budget, views their budget and trips.                                         |
 | WeTrip                   | Software system | React SPA plus the OutSystems composite services that implement family, FX, budget, insurance, trip and payment behaviour.                                            |
-| OutSystems Platform      | Software system | Hosts the six WeTrip composite modules, the atomic modules that own the WeTrip tables, and the shared API-key site properties.                                        |
+| OutSystems Platform      | Software system | Hosts the seven WeTrip composite modules, the atomic modules that own the WeTrip tables, and the shared API-key site properties.                                      |
 | SMUtBank sandbox (tBank) | External system | Training core bank: market data, FX forward contracts, deposit accounts, customers, payments and standing instructions. Sandbox money only.                           |
 
 The browser is untrusted and never holds a composite key. It sends an unsigned `customerId:accountId:displayName` stub token; the serverless proxy adds the shared `WETRIP_SERVER_KEY`. This is demo-grade authentication, not production auth.
@@ -106,6 +106,7 @@ Feature module inventory:
 | `budget`    | `BudgetHome`, `BudgetDetail`                                          | Budget (+ SmartFX for the destination)   |
 | `insurance` | 7 screens from destination to policies                                | Insurance                                |
 | `scantopay` | `ScanToPay` (`WalletPay`), `MyPayments`                               | Scan-to-Pay                              |
+| `analytics` | `Insights` (`/insights`, URL only)                                    | Analytics                                |
 | `auth`      | `Login`                                                               | Family (account lookup)                  |
 
 Frontend composition rules:
@@ -140,6 +141,7 @@ This rule is stated in `AGENTS.md` and matches every observed Family, SmartFX, B
 | `WeTrip_Budget_Composite`    | Composite | `/WeTrip_Budget_Composite/rest/BudgetComposite`             | Trip category budgets + expense ledger                                             | headers                                                                  |
 | `WeTrip_Insurance_Composite` | Composite | `/WeTrip_Insurance_Composite/rest/InsuranceAPI`             | Plans, benefits, quote, purchase, policies                                         | headers                                                                  |
 | `WeTrip_ScanToPay_Composite` | Composite | `/WeTrip_ScanToPay_Composite/rest/ScanToPay`                | QR preview, PayNow, PayLater (BNPL), history                                       | headers + `CustomerId` query                                             |
+| `WeTrip_Analytics_Composite` | Composite | `/WeTrip_Analytics_Composite/rest/Analytics`                | Nightly ETL, `RunEtlNow`, `GetInsights`; data mart via Analytics_Atomic            | headers                                                                  |
 | `WeTrip_Family_Atomic`       | Atomic    | `/WeTrip_Family_Atomic/rest/FamilyData` **[inferred path]** | `FamilyLink`, `Budget`, `SpendLog`, `SpendRequest`                                 | key only                                                                 |
 | `WeTrip_SmartFX_Atomic`      | Atomic    | not called from the browser                                 | `Trip`, `TripLock`, `TripSpend`                                                    | internal                                                                 |
 | `WeTrip_Budget_Atomic`       | Atomic    | `/WeTrip_Budget_Atomic/rest/BudgetAPI`                      | category budgets, expenses                                                         | internal                                                                 |
@@ -158,6 +160,7 @@ Endpoints, request/response shapes, query keys and feature-level rules live in o
 | `WeTrip_Budget_Composite`    | [Budget](features/budget.md); also written by `PayOnTrip`                                                                         |
 | `WeTrip_Insurance_Composite` | [Insurance](features/insurance.md); also read by the trip hub                                                                     |
 | `WeTrip_ScanToPay_Composite` | [Scan-to-Pay](features/scantopay.md)                                                                                              |
+| `WeTrip_Analytics_Composite` | [Analytics](features/analytics.md)                                                                                                |
 
 Transport rules are shared: Family and SmartFX request bodies are camelCase; Budget, Insurance and Trip bodies and query parameters are PascalCase; Scan-to-Pay passes `CustomerId` in the query. Responses are `decap`ed except for SmartFX, whose feature maps `Id` itself.
 

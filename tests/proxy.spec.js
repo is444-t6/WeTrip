@@ -36,6 +36,7 @@ test('old VITE_* key names are ignored; unknown services are refused', () => {
   expect(upstream('scantopay', 'x', '', ENV).headers['X-Contacts-Key']).toBe('fam')
   expect(upstream('nope', 'x', '', ENV)).toBeNull()
   expect(Object.keys(SERVICES).sort()).toEqual([
+    'analytics',
     'budget',
     'family',
     'fx',
@@ -47,7 +48,7 @@ test('old VITE_* key names are ignored; unknown services are refused', () => {
 
 test('WETRIP_SERVER_KEY is the one key for every service when it is set', () => {
   const env = { ...ENV, WETRIP_SERVER_KEY: 'one' }
-  for (const s of ['family', 'budget', 'insurance', 'trip', 'scantopay'])
+  for (const s of ['family', 'budget', 'insurance', 'trip', 'scantopay', 'analytics'])
     expect(upstream(s, 'x', '', env).headers['X-Contacts-Key']).toBe('one')
   expect(new URL(upstream('fx', 'x', '', env).url).searchParams.get('apiKey')).toBe('one')
 })
