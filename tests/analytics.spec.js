@@ -26,6 +26,7 @@ const insights = (over = {}) => ({
   SavedVsSpotSgd: 12.34,
   TripsCount: 4,
   OverBudgetTripPct: 25,
+  OverBudgetEligibleTrips: 4,
   ByCurrencyMonth: [
     { Currency: 'JPY', Month: '2026-10', SpendSgd: 200, SavedVsSpotSgd: 8.1 },
     { Currency: 'EUR', Month: '2026-11', SpendSgd: 140.5, SavedVsSpotSgd: 4.24 },
@@ -42,7 +43,8 @@ const EMPTY = insights({
   TripsCount: 0,
   SpendSgd: 0,
   SavedVsSpotSgd: 0,
-  OverBudgetTripPct: null,
+  OverBudgetTripPct: 0,
+  OverBudgetEligibleTrips: 0,
   ByCurrencyMonth: [],
   ByCategory: [],
   Bnpl: { Plans: 0, PrincipalSgd: 0 },
@@ -93,7 +95,7 @@ test('a negative total reads "cost" with the absolute amount; no over-budget dat
 }) => {
   await signedIn(page)
   await mockApi(page, {
-    get: () => insights({ SavedVsSpotSgd: -0.2, OverBudgetTripPct: null }),
+    get: () => insights({ SavedVsSpotSgd: -0.2, OverBudgetTripPct: 0, OverBudgetEligibleTrips: 0 }),
   })
   await page.goto('/insights')
   await expect(page.getByRole('heading', { name: 'Locking cost families SGD 0.20' })).toBeVisible()

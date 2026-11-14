@@ -31,7 +31,7 @@ The C4 diagrams are editable in [`docs/diagrams/`](diagrams) (`*.drawio`) and ex
 | Parent                   | Person          | Funds the family wallet, sets weekly/monthly limits and allowances, approves or rejects spending requests, plans trips, locks FX rates, buys insurance, closes trips. |
 | Child                    | Person          | Spends from the family wallet, pays merchants by QR (wallet or trip pot), asks for more budget, views their budget and trips.                                         |
 | WeTrip                   | Software system | React SPA plus the OutSystems composite services that implement family, FX, budget, insurance, trip and payment behaviour.                                            |
-| OutSystems Platform      | Software system | Hosts the six WeTrip composite modules, the atomic modules that own the WeTrip tables, and the shared API-key site properties.                                        |
+| OutSystems Platform      | Software system | Hosts the seven WeTrip composite modules, the atomic modules that own the WeTrip tables, and the shared API-key site properties.                                      |
 | SMUtBank sandbox (tBank) | External system | Training core bank: market data, FX forward contracts, deposit accounts, customers, payments and standing instructions. Sandbox money only.                           |
 
 The browser is untrusted and never holds a composite key. It sends an unsigned `customerId:accountId:displayName` stub token; the serverless proxy adds the shared `WETRIP_SERVER_KEY`. This is demo-grade authentication, not production auth.

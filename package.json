@@ -15,6 +15,7 @@
     "test:atomic": "bun --env-file=.env.local scripts/test-atomic.mjs",
     "test:composite": "bun --env-file=.env.local scripts/test-composite.mjs",
     "test:trip": "bun --env-file=.env.local scripts/test-trip.mjs",
+    "test:analytics": "bun --env-file=.env.local scripts/test-analytics.mjs",
     "demo:market": "bun --env-file=.env.local scripts/demo-market.mjs",
     "test:smartfx": "playwright test tests/smartfx-api.spec.js",
     "test:ui": "playwright test tests/family.spec.js",

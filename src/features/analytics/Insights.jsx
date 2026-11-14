@@ -33,7 +33,9 @@ export default function Insights() {
   const empty = Number(data?.tripsCount) === 0 && !rows.length && !categories.length
   const busy = refresh.isPending || run.status === 'Running'
   const saved = Number(data?.savedVsSpotSgd) || 0
-  const pct = data?.overBudgetTripPct == null ? '—' : `${Math.round(data.overBudgetTripPct)}%`
+  // OutSystems can't send null: no completed trip with category limits arrives as 0 eligible trips.
+  const pct =
+    Number(data?.overBudgetEligibleTrips) > 0 ? `${Math.round(data.overBudgetTripPct)}%` : '—'
   const updated = when(data?.lastSuccessOn)
   // Counts of the run this page started, once it has finished.
   const finished = refresh.data && run.etlRunId === refresh.data.etlRunId && !busy
