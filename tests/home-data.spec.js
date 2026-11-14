@@ -5,6 +5,7 @@ import {
   maskAccount,
   totalChildBalance,
   tripCountdown,
+  tripOver,
 } from '../src/features/home/homeData.js'
 
 // Pure logic only: no browser, no API.
@@ -37,9 +38,11 @@ test.describe('maskAccount', () => {
 })
 
 test.describe('tripCountdown', () => {
-  // Late in the local day, so a naive UTC comparison would be off by one in Singapore.
-  const today = new Date(2026, 10, 14, 23, 30)
-  const starting = (tripStartDate) => tripCountdown({ tripStartDate }, today)
+  // Just after local midnight: in Singapore that is still the previous day in
+  // UTC, so a naive UTC comparison would be off by one there.
+  const today = new Date(2026, 10, 14, 0, 30)
+  const starting = (tripStartDate, tripEndDate = '2026-12-31') =>
+    tripCountdown({ tripStartDate, tripEndDate }, today)
 
   test('counts whole calendar days to the start', () => {
     expect(starting('2026-11-26')).toBe('In 12 days')
@@ -47,6 +50,14 @@ test.describe('tripCountdown', () => {
     expect(starting('2026-11-15')).toBe('Tomorrow')
     expect(starting('2026-11-14')).toBe('Starts today')
     expect(starting('2026-11-10T00:00:00')).toBe('On now')
+  })
+
+  test('a trip whose end date has passed is over, whatever its status', () => {
+    expect(starting('2026-10-01', '2026-11-14')).toBe('On now')
+    expect(starting('2026-10-01', '2026-11-13')).toBe('Trip over')
+    expect(tripOver({ tripEndDate: '2026-11-13' }, today)).toBe(true)
+    expect(tripOver({ tripEndDate: '2026-11-14' }, today)).toBe(false)
+    expect(tripOver({}, today)).toBe(false)
   })
 
   test('says nothing for a trip without a start date', () => {

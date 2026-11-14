@@ -3,8 +3,9 @@ import { useTrips } from '../../fx/queries'
 import { splitTrips, tripStatus } from '../../fx/status'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useChildTrips } from '../../family/tripQueries'
+import { useChildren } from '../../family/queries'
 import Money from '../../../components/Money'
-import { tripCountdown } from '../homeData'
+import { tripCountdown, tripOver } from '../homeData'
 
 const day = (value) => String(value ?? '').slice(0, 10)
 const rate = (value) => (Number(value) ? Number(value).toFixed(4) : '—')
@@ -12,14 +13,27 @@ const rate = (value) => (Number(value) ? Number(value).toFixed(4) : '—')
 // Home leads with the soonest trip that has not ended. A parent sees every
 // linked child's trips; a child sees their own. Only GetTrips fields are used,
 // so Home never waits on a trip overview.
-export default function NextTrip({ role }) {
-  const { familyLinkId } = useCurrentUser()
+export default function NextTrip() {
+  const { role, familyLinkId, isLoading: roleLoading, error: roleError } = useCurrentUser()
+  const isParent = role === 'Parent'
+  // useTrips stays disabled until GetChildren answers, so a parent's trips are
+  // still loading while the children are.
+  const children = useChildren()
   const parentTrips = useTrips()
   const childTrips = useChildTrips(role === 'Child' ? familyLinkId : undefined)
   const query = role === 'Child' ? childTrips : parentTrips
-  const [next, ...later] = splitTrips(query.data).active
+  const loading = roleLoading || query.isLoading || (isParent && children.isLoading)
+  const failed = roleError || query.error || (isParent && children.error)
 
-  if (!role || query.isLoading) return <p className="next-trip-note">Loading your trips…</p>
+  // Open trips whose end date has passed (never closed) go after the real ones.
+  const active = splitTrips(query.data).active
+  const [next, ...later] = [
+    ...active.filter((t) => !tripOver(t)),
+    ...active.filter((t) => tripOver(t)),
+  ]
+
+  if (loading) return <p className="next-trip-note">Loading your trips…</p>
+  if (failed) return <p className="next-trip-note">Your trips are unavailable right now.</p>
 
   if (!next) {
     return (
@@ -29,8 +43,8 @@ export default function NextTrip({ role }) {
             ? 'No trip yet. When your parent plans one, it shows up here.'
             : 'No trip planned yet. Plan one and lock a rate before you fly.'}
         </p>
-        {role === 'Parent' && (
-          <Link to="/fx" className="btn">
+        {isParent && (
+          <Link to="/fx" className="btn secondary">
             Plan a trip
           </Link>
         )}

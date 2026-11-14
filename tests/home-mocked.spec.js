@@ -249,6 +249,56 @@ test.describe('parent home page', () => {
     await expect(rows.nth(1)).toContainText('Zurich')
   })
 
+  test('the next trip shows its last and target rates', async ({ page }) => {
+    await mockApi(page, {
+      GetTrips: (_b, q) =>
+        q.familyLinkId === '3' ? [{ ...TRIP, LastCheckedRate: 120.5, TargetRate: 122 }] : [],
+    })
+    await page.goto('/')
+    const pot = page.locator('.next-trip-rates')
+    await expect(pot).toContainText('Last rate120.5000')
+    await expect(pot).toContainText('Target122.0000')
+  })
+
+  test('a trip that ended but was never closed does not lead', async ({ page }) => {
+    const stale = {
+      ...TRIP,
+      Id: 9,
+      Destination: 'Paris',
+      Currency: 'EUR',
+      TripStartDate: '2025-01-01',
+      TripEndDate: '2025-01-10',
+    }
+    await mockApi(page, { GetTrips: (_b, q) => (q.familyLinkId === '3' ? [stale, TRIP] : []) })
+    await page.goto('/')
+    await expect(page.locator('.next-trip')).toContainText('Kyoto')
+    const other = page.getByRole('list', { name: 'Other trips' })
+    await expect(other).toContainText('Paris')
+    await expect(other).toContainText('Trip over')
+  })
+
+  test('no "Plan a trip" flashes while the children are still loading', async ({ page }) => {
+    await mockApi(page)
+    let release
+    const held = new Promise((r) => (release = r))
+    await page.route('**/api/family/GetChildren*', async (route) => {
+      await held
+      await route.fallback()
+    })
+    await page.goto('/')
+    await expect(page.getByText('Loading your trips…')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Plan a trip' })).toHaveCount(0)
+    release()
+    await expect(page.locator('.next-trip')).toContainText('Kyoto')
+  })
+
+  test('a trips outage says so instead of offering to plan a trip', async ({ page }) => {
+    await mockApi(page, { GetTrips: () => ({ __status: 500, body: { Errors: ['down'] } }) })
+    await page.goto('/')
+    await expect(page.getByText('Your trips are unavailable right now.')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Plan a trip' })).toHaveCount(0)
+  })
+
   test('a parent with no trip is offered to plan one', async ({ page }) => {
     await mockApi(page, { GetTrips: () => [] })
     await page.goto('/')
@@ -376,6 +426,13 @@ test.describe('child home page', () => {
     await expect(page.locator('.banner.warn')).toHaveCount(0)
   })
 
+  test('a child with no trip is told their parent plans them', async ({ page }) => {
+    await mockApi(page, { ...child, GetTrips: () => [] })
+    await page.goto('/')
+    await expect(page.getByText('No trip yet. When your parent plans one')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Plan a trip' })).toHaveCount(0)
+  })
+
   const miles = (page) => page.getByLabel('Miles', { exact: true })
 
   test('the Miles card reads the balance, singular for one', async ({ page }) => {
@@ -477,14 +534,20 @@ test.describe('on a phone', () => {
     await page.goto('/')
     const last = page.locator('.explore-card').last()
     await expect(last).toBeVisible()
-    await expect(page.locator('.home-row')).not.toHaveCount(0)
+    await expect(page.getByText('Ichiran Ramen')).toBeVisible()
+    await expect(page.getByText('Second kid')).toBeVisible()
+    // Sections above can still settle and push it down, so measure until it holds.
     // The page scrolls smoothly; jump straight to the end instead.
-    await page.evaluate(() =>
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }),
-    )
-    const card = await last.boundingBox()
-    const nav = await bar(page).boundingBox()
-    expect(card.y + card.height).toBeLessThanOrEqual(nav.y)
+    await expect
+      .poll(async () => {
+        await page.evaluate(() =>
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }),
+        )
+        const card = await last.boundingBox()
+        const nav = await bar(page).boundingBox()
+        return nav.y - (card.y + card.height)
+      })
+      .toBeGreaterThanOrEqual(0)
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

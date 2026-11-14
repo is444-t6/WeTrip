@@ -77,7 +77,7 @@ export default function Home() {
           </div>
         </div>
         {user && <div className="hero-sub">Deposit account {maskAccount(user.accountId)}</div>}
-        <NextTrip role={role} />
+        <NextTrip />
       </section>
 
       <QuickActions pendingApprovals={pendingApprovals} />

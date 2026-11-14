@@ -466,8 +466,9 @@ same identity tightens into a working fintech UI:
   `primary-deep` balance pill sit on top; the soonest open trip leads beneath
   it: a mint "Next up · in N days" line, the destination at 52-88px Poppins 800,
   then a `primary` pot card with the locked amount and last vs target rate
-  tiles on `primary-container`. Later trips list as `primary-deep` rows. No
-  gradients.
+  tiles on `primary-container`. Later trips list as `primary-deep` rows. With no
+  trip, a parent gets a white secondary "Plan a trip" pill, so Pay stays the
+  one mint action. No gradients.
 - **Choice pills** - a short single choice (the lock tenor) is a row of native
   radios drawn as 44px pills; the checked pill fills `primary-deep`.
 - **Balance hero** - 28px-radius purple gradient card; 56px Poppins 800 amount,
@@ -506,7 +507,8 @@ same identity tightens into a working fintech UI:
 - Don't use mint for large text blocks or full-page backgrounds.
 - Don't add drop shadows to cards, sections or inputs.
 - Don't centre long paragraphs; centre only section titles and short intros.
-- Don't use rounded corners on full-bleed split panels or title bands.
+- Don't use rounded corners on full-bleed split panels or title bands. The one exception is the
+  product Home hero on phones, whose bottom corners round off under the header.
 - Don't mix in a second typeface or use all-caps labels.
 - Don't recolour marketing-site mint CTA text to purple for "contrast"; keep
   brand white and make the type bold and large instead. Product/app buttons are

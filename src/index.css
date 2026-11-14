@@ -1373,6 +1373,9 @@ tr:last-child td {
     gap: 4px;
   }
   .navbar-subnav-phone .insurance-tab {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     color: rgba(255, 255, 255, 0.72);
   }
   .navbar-subnav-phone .insurance-tab:hover {
@@ -2428,6 +2431,16 @@ tr:last-child td {
   border-radius: 32px;
   background: var(--ink);
   color: #fff;
+}
+
+/* the global primary-deep focus ring vanishes on ink */
+.home-hero :focus-visible {
+  outline-color: var(--mint);
+}
+
+.balance-pill .eye-btn {
+  width: 44px;
+  height: 44px;
 }
 
 .home-top {

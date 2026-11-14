@@ -17,13 +17,22 @@ export function maskAccount(id) {
 const DAY = 86_400_000
 const dayNumber = (value) => Math.floor(Date.parse(String(value ?? '').slice(0, 10)) / DAY)
 
-// "In 12 days", "Tomorrow", "Starts today", "On now": how far off a trip is.
-// Dates are compared as calendar days, so the time of day never shifts the count.
+const localDay = (today) => Math.floor((today.getTime() - today.getTimezoneOffset() * 60_000) / DAY)
+
+// A trip stays open until the parent closes it, so one whose end date has
+// passed is over even while its status still says Locked or Spending.
+export function tripOver(trip, today = new Date()) {
+  return dayNumber(trip?.tripEndDate) < localDay(today)
+}
+
+// "In 12 days", "Tomorrow", "Starts today", "On now", "Trip over": how far off
+// a trip is. Dates are compared as calendar days, so the time of day never
+// shifts the count.
 export function tripCountdown(trip, today = new Date()) {
-  const now = Math.floor((today.getTime() - today.getTimezoneOffset() * 60_000) / DAY)
   const start = dayNumber(trip?.tripStartDate)
   if (Number.isNaN(start)) return ''
-  const days = start - now
+  if (tripOver(trip, today)) return 'Trip over'
+  const days = start - localDay(today)
   if (days > 1) return `In ${days} days`
   if (days === 1) return 'Tomorrow'
   if (days === 0) return 'Starts today'
