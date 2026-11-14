@@ -296,6 +296,24 @@ test.describe('parent controls on a trip', () => {
     expect(bodies[0]).not.toHaveProperty('parentAccountId')
   })
 
+  test('after a lock the page shows the new pot without a reload', async ({ page }) => {
+    // Regression: the page cached the trip under '12' (from the URL) and the lock
+    // refreshed 12 (a number), so it kept showing nothing locked.
+    let trip = WATCHING
+    await mockApi(page, { GetTrip: () => ({ Trip: trip, Locks: [], Spends: [] }) })
+    await page.route('**/api/fx/LockNow*', (route) => {
+      trip = { ...TRIP, Status: 'Locked' }
+      return route.fulfill(reply({ Lock: { SgdAmount: 800, LockedRate: 120.82 }, Trip: trip }))
+    })
+    await page.goto('/fx/trips/12')
+    await expect(page.locator('.hero-amount')).toContainText('JPY 0.00')
+    await page.getByLabel('Lock now (SGD)').fill('800')
+    await button(page, 'Lock rate').click()
+    await expect(page.getByText(/^Locked SGD 800\.00 at/)).toBeVisible()
+    await expect(page.locator('.hero-amount')).toContainText('JPY 96,675.38')
+    await expect(page.getByText('Fully locked')).toBeVisible()
+  })
+
   test('the tenor is a row of pills, and the picked one is what gets locked', async ({ page }) => {
     const bodies = []
     await open(page, WATCHING)
