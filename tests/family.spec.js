@@ -120,8 +120,8 @@ test.describe('child view', () => {
     // By then everything else on the page is there.
     await expect(page.getByText(/balance/).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByRole('heading', { name: /Spending limit this/ })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Pay' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Send to a WeTrip account' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible()
   })
 
   test('child does not get the parent-only trip form on SmartFX', async ({ page }) => {
