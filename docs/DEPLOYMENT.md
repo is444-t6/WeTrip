@@ -295,16 +295,18 @@ bun run build
 
 Playwright starts a production build served by `vite preview` on port 5199 (`bun run build && bun --bun vite preview --port 5199`). It reuses an existing server on that port if one is running.
 
-| Command                                          | Scope                                             | Writes to the sandbox?                        |
-| ------------------------------------------------ | ------------------------------------------------- | --------------------------------------------- |
-| `bun run test:mocked` / `bun run test:ui:mocked` | Mocked browser specs, parallel                    | No                                            |
-| `bun run test:ui`                                | `family.spec.js` live, read-only                  | No (reads)                                    |
-| `bun run test:smartfx`                           | `smartfx-api.spec.js` live contract test          | Yes: trips, locks, a cancellation and a close |
-| `bun run test:e2e`                               | Mocked project, then live project with one worker | Yes (live part)                               |
-| `bun run test:atomic`                            | `scripts/test-atomic.mjs`, Family atomic          | Yes: synthetic links/rows                     |
-| `bun run test:composite`                         | `scripts/test-composite.mjs`, Family composite    | Yes: moves sandbox money                      |
-| `bun run test:trip`                              | `scripts/test-trip.mjs`, Trip composite           | Yes: moves sandbox money                      |
-| `bun run test:analytics`                         | `scripts/test-analytics.mjs`, Analytics composite | Writes the data mart only; no money           |
+| Command                                          | Scope                                             | Writes to the sandbox?                                                  |
+| ------------------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------- |
+| `bun run test:mocked` / `bun run test:ui:mocked` | Mocked browser specs, parallel                    | No                                                                      |
+| `bun run test:ui`                                | `family.spec.js` live, read-only                  | No (reads)                                                              |
+| `bun run test:smartfx`                           | `smartfx-api.spec.js` live contract test          | Yes: trips, locks, a cancellation and a close                           |
+| `bun run test:e2e`                               | Mocked project, then live project with one worker | Yes (live part)                                                         |
+| `bun run test:atomic`                            | `scripts/test-atomic.mjs`, Family atomic          | Yes: synthetic links/rows                                               |
+| `bun run test:composite`                         | `scripts/test-composite.mjs`, Family composite    | Yes: moves sandbox money                                                |
+| `bun run test:trip`                              | `scripts/test-trip.mjs`, Trip composite           | Yes: moves sandbox money                                                |
+| `bun run test:analytics`                         | `scripts/test-analytics.mjs`, Analytics composite | Writes the data mart only; no money                                     |
+| `bun run demo:pre` (`--check` = read-only)       | `scripts/predemo.ts`, demo preflight              | Stages a locked backup trip and a demo market; tops the child up if low |
+| `bun run demo:post`                              | `scripts/postdemo.ts`, demo rollback              | Resets demo markets, closes or cancels demo trips, reopens spending     |
 
 Guidelines:
 

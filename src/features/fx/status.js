@@ -23,7 +23,7 @@ export function splitTrips(trips) {
   }
 }
 
-// Demo-day switch (scripts/demo-market.mjs): a per-trip percent the server moves
+// Demo-day switch (scripts/predemo.ts sets it, postdemo.ts resets it): a per-trip percent the server moves
 // the market by. Pages apply it to live quotes so they match what SmartFX uses.
 export const demoShift = (trip) => Number(trip?.demoRateShiftPct) || 0
 export const demoRate = (rate, trip) =>
