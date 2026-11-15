@@ -125,7 +125,7 @@ export default function MilesHome() {
     <AppShell onSignOut={signOut}>
       <h1 style={{ margin: 0 }}>Miles</h1>
       <p className="muted" style={{ marginTop: 4 }}>
-        Earn 1 mile for every S$1 you spend from your account, then trade them for cashback and
+        Earn 10 miles for every S$1 you spend from your account, then trade them for cashback and
         travel perks.
       </p>
 
