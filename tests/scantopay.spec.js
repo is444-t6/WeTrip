@@ -120,15 +120,15 @@ test('pasted QR previews and pays now', async ({ page }) => {
 
   await pasteQr(page, RAMEN_QR)
   await expect(page.getByText('Ichiran Ramen Shibuya')).toBeVisible()
-  await expect(page.getByText('JPY 1200.00')).toBeVisible()
+  await expect(page.getByText('JPY 1,200.00')).toBeVisible()
   await expect(page.getByText('SGD 9.72')).toBeVisible()
-  await expect(page.getByText('0000006816')).toBeVisible()
-  await expect(page.getByText('JPY 100000.00')).toBeVisible()
+  await expect(page.getByText('····6816')).toBeVisible()
+  await expect(page.getByText('JPY 100,000.00')).toBeVisible()
 
   await page.getByRole('button', { name: 'Pay now' }).click()
   await expect(page.getByText('Payment successful')).toBeVisible()
   await expect(page.getByText('0000427916')).toBeVisible()
-  await expect(page.getByText('JPY 98799.95')).toBeVisible()
+  await expect(page.getByText('JPY 98,799.95')).toBeVisible()
 
   expect(namesOf(calls)).toEqual(['PreviewPayment', 'PayNow'])
   expect(calls[1]).toMatchObject({
@@ -151,8 +151,8 @@ test('pay later needs a plan and sends the chosen months', async ({ page }) => {
   await payLater.click()
 
   await expect(page.getByText('Pay-later plan created')).toBeVisible()
-  await expect(page.getByText('2026-12-07')).toBeVisible()
-  await expect(page.getByText('2027-05-07')).toBeVisible()
+  await expect(page.getByText('7 Dec 2026')).toBeVisible()
+  await expect(page.getByText('7 May 2027')).toBeVisible()
   expect(calls.at(-1)).toMatchObject({
     name: 'PayLater',
     body: { qrText: USJ_QR, amount: 0, numberOfMonths: 6 },
@@ -296,7 +296,6 @@ test('uses the signed-in customer', async ({ page }) => {
 
   await page.goto('/pay/history')
   await expect(page.getByText('No payments yet.')).toBeVisible()
-  await expect(page.getByText('0000001111')).toBeVisible()
   expect(calls[0].customerId).toBe('0000001111')
 })
 
@@ -350,7 +349,7 @@ test('My Payments lists payments and plans', async ({ page }) => {
   await expect(page.locator('.badge', { hasText: 'Pay now' })).toHaveCount(1)
   await expect(page.getByText('JPY 133.91')).toBeVisible()
   await expect(page.locator('.badge', { hasText: 'ACTIVE' })).toBeVisible()
-  await expect(page.getByText('2027-02-07')).toBeVisible()
+  await expect(page.getByText('7 Feb 2027')).toBeVisible()
 })
 
 test('My Payments shows the API error', async ({ page }) => {

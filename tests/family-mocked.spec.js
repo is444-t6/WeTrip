@@ -371,9 +371,9 @@ test.describe('child dashboard', () => {
       ChildSpend: () => ({ Status: status, Remaining: 140 }),
     })
     await page.goto('/family')
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('10')
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(page.getByText('Paid! Remaining this period: SGD 140.00')).toBeVisible()
     expect(last(calls, 'ChildSpend').body).toMatchObject({
       merchantAccountId: '0000006718',
@@ -381,9 +381,9 @@ test.describe('child dashboard', () => {
       category: 'Others',
     })
     status = 'Declined'
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('500')
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(page.getByText('Payment not made')).toBeVisible()
     await expect(page.getByText('Paid!')).toHaveCount(0)
   })
@@ -404,9 +404,9 @@ test.describe('asking for more', () => {
       AskForMore: () => ({ requestId: 21, status: 'PendingApproval' }),
     })
     await page.goto('/family')
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('500')
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
 
     await expect(page.getByText("Over this month's budget by SGD 350.00")).toBeVisible()
     await expect(page.getByLabel('Ask your parent for')).toHaveValue('350')
@@ -427,9 +427,9 @@ test.describe('asking for more', () => {
       ChildSpend: () => ({ Status: 'Declined', shortBy: 10 }),
     })
     await page.goto('/family')
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('500')
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
     // AskForMore is left unmocked, so the mock answers it with a 500.
     await page.getByRole('button', { name: 'Ask for more' }).click()
     await expect(page.locator('.banner.error', { hasText: 'unmocked AskForMore' })).toBeVisible()
@@ -525,7 +525,7 @@ test.describe('grants, history and spending rules', () => {
     // GetMyRequests is left unmocked, so the mock answers it with a 500.
     await mockApi(page, child)
     await page.goto('/family')
-    await expect(page.getByRole('heading', { name: 'Pay a merchant' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Send to a WeTrip account' })).toBeVisible()
     await expect(page.getByText('Your asks')).toHaveCount(0)
   })
 
@@ -537,9 +537,9 @@ test.describe('grants, history and spending rules', () => {
       AskForMore: () => ({ requestId: 30, status: 'Approved' }),
     })
     await page.goto('/family')
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('500')
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
     await page.getByRole('button', { name: 'Ask for more' }).click()
     await expect(page.getByText('Approved straight away. You can pay again now.')).toBeVisible()
   })
@@ -552,7 +552,7 @@ test.describe('grants, history and spending rules', () => {
     await page.getByLabel('Freeze all spending').check()
     await page.getByRole('button', { name: 'Food', exact: true }).click()
     await page.getByRole('button', { name: 'Transport', exact: true }).click()
-    await page.getByLabel(/Approve asks under/).fill('15')
+    await page.getByLabel(/Auto-approve asks under/).fill('15')
     await page.getByRole('button', { name: 'Save rules' }).click()
     await expect
       .poll(() => last(calls, 'SetSpendingRules')?.body)
@@ -691,19 +691,19 @@ test.describe('SmartFX trips in the family screens', () => {
     const calls = await mockApi(page, fx())
     await page.goto('/family/child/3')
     const trip = page.locator('.card', { hasText: 'Kyoto' })
-    await expect(trip).toContainText('2027-04-01 → 2027-04-14 · in 144 days')
+    await expect(trip).toContainText('1–14 Apr 2027 · in 144 days')
     await expect(trip).toContainText('Partly locked')
     await expect(trip).not.toContainText('PartiallyLocked')
     await expect(trip).toContainText('SGD 800.00 locked')
-    await expect(trip).toContainText('120.8236 JPY')
-    await expect(trip).toContainText("Today's 6M forward")
-    await expect(trip).toContainText('121.0494 JPY')
+    await expect(trip).toContainText('1 SGD = 120.82 JPY')
+    await expect(trip).toContainText("Today's 6M rate")
+    await expect(trip).toContainText('1 SGD = 121.05 JPY')
     await expect(trip).toContainText(
-      "Locked JPY 96675.38 for SGD 800.00 (average rate 120.8442). At today's 6M forward of 121.0494 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
+      "Locked JPY 96,675.38 for SGD 800.00 (average 1 SGD = 120.84 JPY). At today's 6M rate of 121.05 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
     )
     expect(last(calls, 'GetRate').query).toMatchObject({ currency: 'JPY', period: '6M' })
     await expect(trip.getByRole('link', { name: 'Open trip' })).toHaveAttribute('href', '/trips/12')
-    await expect(trip.getByRole('link', { name: 'Manage FX & locks' })).toHaveAttribute(
+    await expect(trip.getByRole('link', { name: 'Manage rates & locks' })).toHaveAttribute(
       'href',
       '/fx/trips/12',
     )
@@ -739,9 +739,9 @@ test.describe('SmartFX trips in the family screens', () => {
     await page.goto('/family')
     const card = page.locator('.card', { hasText: 'My trip to Kyoto' })
     await expect(card).toContainText('in 144 days')
-    await expect(card).toContainText('JPY 76675.38')
+    await expect(card).toContainText('JPY 76,675.38')
     await expect(card).toContainText('left to spend')
-    await expect(card).toContainText('JPY 20000.00 spent of JPY 96675.38')
+    await expect(card).toContainText('JPY 20,000.00 spent of JPY 96,675.38')
     expect(last(calls, 'GetTrip').query).toMatchObject({ tripId: '12' })
   })
 
@@ -853,9 +853,9 @@ test.describe('child detail (parent)', () => {
     await page.goto('/family/child/3')
     await openTab(page, 'Manage')
     await expect(page.getByText('Postman')).toHaveCount(0)
-    const c = card(page, 'Set up allowance')
+    const c = card(page, 'Replace allowance')
     await field(c, 'Amount (SGD)').fill('100')
-    await c.getByRole('button', { name: 'Set up allowance' }).click()
+    await c.getByRole('button', { name: 'Replace allowance' }).click()
     await expect(page.getByText('Allowance set up.')).toBeVisible()
     expect(last(calls, 'SetupAllowance').body).toMatchObject({
       familyLinkId: 3,
@@ -1022,7 +1022,7 @@ test.describe('child tabs', () => {
 
     await openTab(page, 'Manage')
     await expect(page.getByRole('button', { name: 'Save budget' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Set up allowance' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Replace allowance' })).toBeVisible()
     await expect(page.getByText('Spending insights')).toHaveCount(0)
 
     await openTab(page, 'Activity')
@@ -1091,7 +1091,7 @@ test.describe('manage: budget and top-up checks', () => {
     await expect(c.locator('.preview')).toHaveCount(0)
     await c.getByRole('button', { name: '50', exact: true }).click()
     await expect(field(c, 'Amount (SGD)')).toHaveValue('50')
-    await expect(c.locator('.preview')).toContainText('SGD 1000.00 → SGD 950.00')
+    await expect(c.locator('.preview')).toContainText('SGD 1,000.00 → SGD 950.00')
     await expect(c.locator('.preview')).toContainText("Jamie's balance")
     await expect(c.locator('.preview')).toContainText('SGD 250.50 → SGD 300.50')
     await c.getByRole('button', { name: 'Top up', exact: true }).click()
@@ -1105,7 +1105,7 @@ test.describe('manage: budget and top-up checks', () => {
     await openTab(page, 'Manage')
     const c = card(page, 'Top up')
     await field(c, 'Amount (SGD)').fill('5000')
-    await expect(page.getByText('You only have SGD 1000.00 to send.')).toBeVisible()
+    await expect(page.getByText('You only have SGD 1,000.00 to send.')).toBeVisible()
     await expect(c.getByRole('button', { name: 'Top up', exact: true })).toBeDisabled()
     expect(calls.filter((x) => x.name === 'TopUp')).toHaveLength(0)
     await field(c, 'Amount (SGD)').fill('1000')
@@ -1130,7 +1130,7 @@ test.describe('parent home flow', () => {
   }) => {
     await mockApi(page, { GetPendingRequests: () => [REQUEST(11, 40), REQUEST(12, 9999)] })
     await page.goto('/family')
-    await expect(page.getByText('SGD 10039.00 waiting across 2 requests')).toBeVisible()
+    await expect(page.getByText('SGD 10,039.00 waiting across 2 requests')).toBeVisible()
     // Said once for the child, then a small badge on the row that does not fit.
     await expect(
       page.getByText(
@@ -1139,7 +1139,7 @@ test.describe('parent home flow', () => {
     ).toBeVisible()
     await expect(page.getByText('Over balance')).toHaveCount(1)
     await expect(
-      page.locator('.request', { hasText: 'SGD 9999.00' }).getByText('Over balance'),
+      page.locator('.request', { hasText: 'SGD 9,999.00' }).getByText('Over balance'),
     ).toBeVisible()
     await expect(page.getByRole('button', { name: 'Approve' })).toHaveCount(2)
   })
@@ -1217,14 +1217,14 @@ test.describe('child pay flow', () => {
       'aria-pressed',
       'true',
     )
-    await field(page, 'Merchant account id').fill('0000006718')
+    await field(page, 'Recipient account number').fill('0000006718')
     await field(page, 'Amount').fill('10')
     await page.getByRole('button', { name: 'Food', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Food', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
-    await page.getByRole('button', { name: 'Pay', exact: true }).click()
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect.poll(() => last(calls, 'ChildSpend')?.body?.category).toBe('Food')
   })
 

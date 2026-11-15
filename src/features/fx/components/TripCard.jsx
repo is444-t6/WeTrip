@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import Money from '../../../components/Money'
 import { tripStatus } from '../status'
+import { dayRange, rate as fmtRate, rateText } from '../../../lib/format'
 
 const badge = {
   Watching: 'pending',
@@ -23,7 +24,7 @@ export default function TripCard({ trip, role }) {
         <div className="stack">
           <strong>{trip.destination}</strong>
           <span className="muted">
-            {String(trip.tripStartDate).slice(0, 10)} → {String(trip.tripEndDate).slice(0, 10)}
+            {dayRange(trip.tripStartDate, trip.tripEndDate)}
             {trip.childNickname ? ` · ${trip.childNickname}` : ''}
           </span>
         </div>
@@ -45,11 +46,11 @@ export default function TripCard({ trip, role }) {
       </div>
 
       <div className="row-between" style={{ marginTop: 12 }}>
-        <span className="muted">Rate</span>
+        <span className="muted">Last checked</span>
         <span className="money">
           {/* GetTrips carries the watcher's last check, not a live quote. */}
-          {rate ? `${Number(rate).toFixed(4)} ${trip.currency}` : '—'}
-          <span className="muted"> / target {Number(trip.targetRate).toFixed(4)}</span>
+          {rateText(rate, trip.currency)}
+          <span className="muted"> · target {fmtRate(trip.targetRate)}</span>
         </span>
       </div>
 
@@ -68,7 +69,7 @@ export default function TripCard({ trip, role }) {
           className="muted"
           style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
         >
-          Manage FX &amp; locks
+          Manage rates &amp; locks
         </Link>
       )}
     </div>

@@ -3,6 +3,7 @@ import { useChildSpending } from '../useChildSpending'
 import Avatar from './Avatar'
 import Money from '../../../components/Money'
 import PaceBar from './PaceBar'
+import { maskAccount } from '../../home/homeData'
 
 const HEALTH_BADGE = { ok: 'active', watch: 'pending', over: 'removed', none: 'pending' }
 
@@ -27,7 +28,7 @@ export default function ChildOverview({ child, onSetBudget }) {
           <Avatar name={label} />
           <div className="stack">
             <strong>{label}</strong>
-            <span className="muted">{child.childCustomerId}</span>
+            <span className="muted">Customer {maskAccount(child.childCustomerId)}</span>
           </div>
         </div>
         <div className="stack overview-balance">

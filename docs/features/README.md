@@ -12,6 +12,7 @@ One page per feature: routes, screens, backend contract, query keys, rules, test
 | Budget      | `/budget/`, `/budget/$tripId`                              | `WeTrip_Budget_Composite`              | [budget.md](budget.md)       |
 | Insurance   | `/insurance/*`                                             | `WeTrip_Insurance_Composite`           | [insurance.md](insurance.md) |
 | Scan-to-Pay | `/pay/`, `/pay/history`                                    | `WeTrip_ScanToPay_Composite`           | [scantopay.md](scantopay.md) |
+| Analytics   | `/insights` (URL only)                                     | `WeTrip_Analytics_Composite`           | [analytics.md](analytics.md) |
 
 Shared code that every feature uses:
 

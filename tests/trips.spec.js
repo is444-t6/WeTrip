@@ -105,7 +105,7 @@ test.describe('locked rate versus today', () => {
     expect(s.todaySgd.toFixed(2)).toBe('798.64')
     expect(s.diffSgd.toFixed(2)).toBe('1.36')
     expect(lockMessage(s, { currency: 'JPY', period: '6M' })).toBe(
-      "Locked JPY 96675.38 for SGD 800.00 (average rate 120.8442). At today's 6M forward of 121.0494 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
+      "Locked JPY 96,675.38 for SGD 800.00 (average 1 SGD = 120.84 JPY). At today's 6M rate of 121.05 that would cost SGD 798.64, so locking early cost SGD 1.36 more.",
     )
   })
 

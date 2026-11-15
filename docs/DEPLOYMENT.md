@@ -59,7 +59,7 @@ Vercel project "wetrip"
   └─ Serverless function: api/proxy.js
 
 Browser ──HTTPS──▶ Vercel CDN / rewrite ──▶ api/proxy.js ──HTTPS──▶ smuedu-dev.outsystemsenterprise.com
-                                                   │                  six composites
+                                                   │                seven composites
                                                    │                  → atomics → SMUtBank
                                                    └─ adds WETRIP_SERVER_KEY, forwards X-Session-Token
 ```
@@ -304,6 +304,7 @@ Playwright starts a production build served by `vite preview` on port 5199 (`bun
 | `bun run test:atomic`                            | `scripts/test-atomic.mjs`, Family atomic          | Yes: synthetic links/rows                     |
 | `bun run test:composite`                         | `scripts/test-composite.mjs`, Family composite    | Yes: moves sandbox money                      |
 | `bun run test:trip`                              | `scripts/test-trip.mjs`, Trip composite           | Yes: moves sandbox money                      |
+| `bun run test:analytics`                         | `scripts/test-analytics.mjs`, Analytics composite | Writes the data mart only; no money           |
 
 Guidelines:
 

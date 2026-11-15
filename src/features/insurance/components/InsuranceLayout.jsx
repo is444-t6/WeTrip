@@ -1,13 +1,11 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import AppShell from '../../../components/AppShell'
 import { clearSession } from '../../auth/session'
 
 export default function InsuranceLayout({ children }) {
-  const navigate = useNavigate()
-
   function signOut() {
     clearSession()
-    navigate({ to: '/family' })
+    window.location.assign('/')
   }
 
   return (
@@ -21,14 +19,14 @@ export default function InsuranceLayout({ children }) {
             activeOptions={{ exact: true }}
             activeProps={{ 'data-active': 'true' }}
           >
-            Buy Insurance
+            Buy insurance
           </Link>
           <Link
             to="/insurance/policies"
             className="insurance-tab"
             activeProps={{ 'data-active': 'true' }}
           >
-            My Insurance
+            My insurance
           </Link>
         </nav>
       }

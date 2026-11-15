@@ -24,16 +24,16 @@ Open `/login`, enter a demo customer's `CustomerId`, and the app looks up their 
 
 ## Scripts
 
-| Command                                                                 | What                                                      |
-| ----------------------------------------------------------------------- | --------------------------------------------------------- |
-| `bun run dev`                                                           | Vite dev server with the API proxy                        |
-| `bun run dev:https`                                                     | HTTPS + LAN URL for the phone camera                      |
-| `bun run build`                                                         | Production build into `dist/`                             |
-| `bun run lint` / `bun run format` / `bun run format:check`              | oxlint / oxfmt                                            |
-| `bun run test:mocked` / `bun run test:ui:mocked`                        | Mocked browser specs, no backend                          |
-| `bun run test:ui`                                                       | Live read-only Family UI suite                            |
-| `bun run test:e2e`                                                      | All specs (mocked, then live; live writes to the sandbox) |
-| `bun run test:atomic` / `test:composite` / `test:trip` / `test:smartfx` | API contract suites; several write to the shared sandbox  |
+| Command                                                                                    | What                                                      |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `bun run dev`                                                                              | Vite dev server with the API proxy                        |
+| `bun run dev:https`                                                                        | HTTPS + LAN URL for the phone camera                      |
+| `bun run build`                                                                            | Production build into `dist/`                             |
+| `bun run lint` / `bun run format` / `bun run format:check`                                 | oxlint / oxfmt                                            |
+| `bun run test:mocked` / `bun run test:ui:mocked`                                           | Mocked browser specs, no backend                          |
+| `bun run test:ui`                                                                          | Live read-only Family UI suite                            |
+| `bun run test:e2e`                                                                         | All specs (mocked, then live; live writes to the sandbox) |
+| `bun run test:atomic` / `test:composite` / `test:trip` / `test:analytics` / `test:smartfx` | API contract suites; several write to the shared sandbox  |
 
 Run `bun run format:check`, `bun run lint` and `bun run build` before pushing. Live suites are serialized because they share one sandbox.
 

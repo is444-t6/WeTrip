@@ -10,6 +10,7 @@ import TripCard from './components/TripCard'
 import PastTrips from '../../components/PastTrips'
 import { useTrips } from './queries'
 import { splitTrips } from './status'
+import SignedOutCard from '../../components/SignedOutCard'
 
 export default function FxHome() {
   const { role, familyLinkId: ownLinkId } = useCurrentUser()
@@ -23,19 +24,7 @@ export default function FxHome() {
   // Trips are per linked child, so a customer with nobody linked has none to show.
   const nothingLinked = role === 'None' || (role === 'Parent' && children && !hasChildren)
 
-  if (!isLoggedIn()) {
-    return (
-      <div className="center-page">
-        <div className="card center-card" style={{ textAlign: 'center' }}>
-          <h1>WeTrip SmartFX</h1>
-          <p className="muted">You're not signed in yet.</p>
-          <Link to="/login">
-            <button style={{ width: '100%', marginTop: 8 }}>Continue to sign in</button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  if (!isLoggedIn()) return <SignedOutCard title="WeTrip trips" />
 
   function signOut() {
     clearSession()
@@ -47,25 +36,28 @@ export default function FxHome() {
       <Banner>{error?.message}</Banner>
 
       <div className="row-between" style={{ marginBottom: 6 }}>
-        <h1 style={{ margin: 0 }}>SmartFX</h1>
+        <h1 style={{ margin: 0 }}>Trips</h1>
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
-        Lock a trip budget at today's rate. If the market moves your way first, SmartFX locks it for
-        you.
+        {role === 'Child'
+          ? 'Your trips, what is in each pot and how to pay from it.'
+          : "Lock each trip's money at today's rate. If the rate moves your way first, SmartFX locks it for you."}
       </p>
 
-      <h2 className="section-title">{role === 'Child' ? 'Your trips' : 'Trip goals'}</h2>
+      <h2 className="section-title">Your trips</h2>
       {isLoading && <p className="muted">Loading…</p>}
       {nothingLinked && (
         <div className="card empty">
           <p style={{ margin: '0 0 8px' }}>
-            Trip goals are set up for a child, and no child is linked to your account yet.
+            Trips are planned for a child, and no child is linked to your account yet.
           </p>
           <Link to="/family">Link a child in Family</Link>
         </div>
       )}
       {!nothingLinked && trips?.length === 0 && (
-        <div className="card empty">No trip goals yet.</div>
+        <div className="card empty">
+          {role === 'Parent' ? 'No trips yet. Plan one below.' : 'No trips yet.'}
+        </div>
       )}
       {active.map((t) => (
         <TripCard key={t.tripId} trip={t} role={role} />

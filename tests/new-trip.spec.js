@@ -186,3 +186,17 @@ test('the trip page says when a fixed cost was not saved', async ({ page }) => {
     page.getByText("1 fixed cost wasn't saved. Add it on the budget page."),
   ).toBeVisible()
 })
+
+test('scrolling with a mouse wheel never changes a focused number field', async ({ page }) => {
+  await mockApi(page)
+  await openForm(page)
+  const budget = page.getByLabel('Budget (SGD)')
+  await budget.fill('800')
+  // Focused by a real click, the way a person leaves it before scrolling on.
+  await budget.click()
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, 120)
+    await page.waitForTimeout(50)
+  }
+  await expect(budget).toHaveValue('800')
+})

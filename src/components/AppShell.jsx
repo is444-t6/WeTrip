@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
+import { FamilyIcon, HomeIcon, PlaneIcon, ScanIcon } from '../features/home/components/Icons'
 
 // The WeTrip logo. Decorative beside the wordmark; give it an alt when it stands alone.
 export function BrandMark({ alt = '', size, style }) {
@@ -64,6 +65,7 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               activeOptions={{ exact: true }}
               activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
             >
+              <HomeIcon />
               Home
             </Link>
             <Link
@@ -71,6 +73,7 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               className={onTrips ? 'nav-link active' : 'nav-link'}
               aria-current={onTrips ? 'page' : undefined}
             >
+              <PlaneIcon />
               Trips
             </Link>
             <Link
@@ -78,18 +81,22 @@ export default function AppShell({ onSignOut, secondaryNav, children }) {
               className="nav-link"
               activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
             >
+              <FamilyIcon />
               Family
             </Link>
             {/* Insurance is reached from a trip or Home; its tab only appears on its own screens. */}
             {secondaryNav && <InsuranceMenu secondaryNav={secondaryNav} />}
             <Link
               to="/pay"
-              className="nav-link"
-              activeProps={{ className: 'nav-link active', 'aria-current': 'page' }}
+              className="nav-link nav-pay"
+              activeProps={{ className: 'nav-link nav-pay active', 'aria-current': 'page' }}
             >
+              <ScanIcon />
               Pay
             </Link>
           </nav>
+          {/* On a phone the rail is a bottom bar, so the insurance tabs get their own header row. */}
+          {secondaryNav && <div className="navbar-subnav-phone">{secondaryNav}</div>}
           {onSignOut && (
             <button className="ghost" onClick={onSignOut}>
               Sign out

@@ -78,7 +78,9 @@ export default function TravellerDetails() {
       return
     }
     if (travellers.length > maxTravellers) {
-      setError(`This plan allows up to ${maxTravellers} traveller(s).`)
+      setError(
+        `This plan allows up to ${maxTravellers} ${maxTravellers === 1 ? 'traveller' : 'travellers'}.`,
+      )
       return
     }
     if (coverType === 'family' && travellers.length === 0) {
@@ -140,7 +142,9 @@ export default function TravellerDetails() {
 
   function toggleChild(child, checked) {
     if (checked && travellers.length >= maxTravellers) {
-      setError(`This plan allows up to ${maxTravellers} traveller(s).`)
+      setError(
+        `This plan allows up to ${maxTravellers} ${maxTravellers === 1 ? 'traveller' : 'travellers'}.`,
+      )
       return
     }
 

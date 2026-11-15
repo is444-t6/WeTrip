@@ -3,6 +3,8 @@ import { Link } from '@tanstack/react-router'
 import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
 import DetailRow from './DetailRow'
+import { day } from '../../../lib/format'
+import { maskAccount } from '../../home/homeData'
 
 // One radio per BNPL tenor; shared with the trip pay screen.
 export function PlanOptions({ plans, currency, months, disabled, onChange }) {
@@ -23,7 +25,7 @@ export function PlanOptions({ plans, currency, months, disabled, onChange }) {
             /month
             <small>
               Interest <Money amount={plan.totalInterest} currency={currency} /> · ends{' '}
-              {String(plan.maturityDate).slice(0, 10)}
+              {day(plan.maturityDate)}
             </small>
           </span>
         </label>
@@ -51,7 +53,7 @@ export default function PaymentPreview({
       <Banner>{error?.message}</Banner>
       {mayHaveGoneThrough && (
         <Banner kind="warn">
-          This payment may still have gone through. Check <Link to="/pay/history">My Payments</Link>{' '}
+          This payment may still have gone through. Check <Link to="/pay/history">My payments</Link>{' '}
           before trying again.
         </Banner>
       )}
@@ -65,12 +67,12 @@ export default function PaymentPreview({
           <DetailRow label="Amount">
             <Money amount={preview.amount} currency={currency} />
           </DetailRow>
-          {preview.rateFound && (
+          {preview.rateFound && currency !== 'SGD' && (
             <DetailRow label="Approx.">
               ≈ <Money amount={preview.amountSGD} />
             </DetailRow>
           )}
-          <DetailRow label="Wallet">{preview.walletAccountId}</DetailRow>
+          <DetailRow label="Wallet">{maskAccount(preview.walletAccountId)}</DetailRow>
           <DetailRow label="Balance">
             <Money amount={preview.walletBalance} currency={currency} />
           </DetailRow>
@@ -89,7 +91,7 @@ export default function PaymentPreview({
 
       {plans.length > 0 && (
         <>
-          <h2 className="section-title">Or split it</h2>
+          <h2 className="section-title">Or pay later</h2>
           <div className="card">
             <PlanOptions
               plans={plans}

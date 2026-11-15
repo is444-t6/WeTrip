@@ -4,7 +4,8 @@ import {
   latestPayments,
   maskAccount,
   totalChildBalance,
-  tripWallets,
+  tripCountdown,
+  tripOver,
 } from '../src/features/home/homeData.js'
 
 // Pure logic only: no browser, no API.
@@ -36,44 +37,32 @@ test.describe('maskAccount', () => {
   })
 })
 
-test.describe('tripWallets', () => {
-  const trip = (over) => ({
-    tripId: 1,
-    destination: 'Kyoto',
-    currency: 'JPY',
-    status: 'Locked',
-    tripStartDate: '2027-04-01',
-    lockedForeign: 96675.38,
-    ...over,
+test.describe('tripCountdown', () => {
+  // Just after local midnight: in Singapore that is still the previous day in
+  // UTC, so a naive UTC comparison would be off by one there.
+  const today = new Date(2026, 10, 14, 0, 30)
+  const starting = (tripStartDate, tripEndDate = '2026-12-31') =>
+    tripCountdown({ tripStartDate, tripEndDate }, today)
+
+  test('counts whole calendar days to the start', () => {
+    expect(starting('2026-11-26')).toBe('In 12 days')
+    expect(starting('2026-11-16')).toBe('In 2 days')
+    expect(starting('2026-11-15')).toBe('Tomorrow')
+    expect(starting('2026-11-14')).toBe('Starts today')
+    expect(starting('2026-11-10T00:00:00')).toBe('On now')
   })
 
-  test('one entry per funded trip, soonest first', () => {
-    const wallets = tripWallets([
-      trip({
-        tripId: 2,
-        destination: 'Seoul',
-        currency: 'KRW',
-        tripStartDate: '2027-08-01',
-        lockedForeign: 500000,
-      }),
-      trip({ tripId: 1 }),
-    ])
-    expect(wallets).toEqual([
-      { tripId: 1, destination: 'Kyoto', currency: 'JPY', amount: 96675.38 },
-      { tripId: 2, destination: 'Seoul', currency: 'KRW', amount: 500000 },
-    ])
+  test('a trip whose end date has passed is over, whatever its status', () => {
+    expect(starting('2026-10-01', '2026-11-14')).toBe('On now')
+    expect(starting('2026-10-01', '2026-11-13')).toBe('Trip over')
+    expect(tripOver({ tripEndDate: '2026-11-13' }, today)).toBe(true)
+    expect(tripOver({ tripEndDate: '2026-11-14' }, today)).toBe(false)
+    expect(tripOver({}, today)).toBe(false)
   })
 
-  test('skips finished trips and trips with nothing locked', () => {
-    expect(
-      tripWallets([
-        trip({ tripId: 1, status: 'Completed' }),
-        trip({ tripId: 2, status: 'Cancelled' }),
-        trip({ tripId: 3, lockedForeign: 0 }),
-        trip({ tripId: 4, lockedForeign: undefined }),
-      ]),
-    ).toEqual([])
-    expect(tripWallets(undefined)).toEqual([])
+  test('says nothing for a trip without a start date', () => {
+    expect(tripCountdown({}, today)).toBe('')
+    expect(tripCountdown(undefined, today)).toBe('')
   })
 })
 

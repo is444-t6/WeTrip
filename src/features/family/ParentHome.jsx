@@ -14,6 +14,7 @@ import {
   shortfallMessage,
   shortfalls,
 } from './approvals'
+import { maskAccount } from '../home/homeData'
 
 export default function ParentHome() {
   const me = useMe()
@@ -124,7 +125,9 @@ function PendingRequests({ requests, linkedChildren }) {
                   : r.reason || r.narrative || 'No reason given'}
               </span>
               {isPayment(r) ? (
-                <span className="muted request-to">To account {r.merchantAccountId}</span>
+                <span className="muted request-to">
+                  To account {maskAccount(r.merchantAccountId)}
+                </span>
               ) : (
                 <span className="muted request-to">Asks to raise the limit for 24 hours</span>
               )}

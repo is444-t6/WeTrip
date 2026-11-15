@@ -154,8 +154,8 @@ test.describe('on a phone', () => {
       const box = await row.boundingBox()
       expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width + 1)
     }
-    await expect(card.getByText('WARNING')).toBeVisible()
-    await expect(card.getByText('OVER')).toBeVisible()
+    await expect(card.getByText('Near limit')).toBeVisible()
+    await expect(card.getByText('Over', { exact: true })).toBeVisible()
     // The amount is right-aligned whether or not the row had to wrap.
     const money = await card
       .locator('.money')
@@ -170,9 +170,9 @@ test.describe('on a phone', () => {
     const table = page.locator('.stack-table')
     await expect(table.locator('thead')).toBeHidden()
     const first = table.locator('tbody tr').first()
-    await expect(first.locator('td[data-label="Date"]')).toHaveText('2026-11-02')
+    await expect(first.locator('td[data-label="Date"]')).toHaveText('2 Nov 2026')
     await expect(first.locator('td[data-label="Category"]')).toHaveText('Food')
-    await expect(first.locator('td[data-label="Amount"]')).toHaveText('38.50 SGD')
+    await expect(first.locator('td[data-label="Amount"]')).toHaveText('SGD 38.50')
     const second = table.locator('tbody tr').nth(1)
     await expect(second.locator('td[data-label="Details"]')).toHaveText('Expense')
     const display = await first

@@ -36,6 +36,10 @@ export const SERVICES = {
     path: '/WeTrip_ScanToPay_Composite/rest/ScanToPay',
     key: KEY,
   },
+  analytics: {
+    path: '/WeTrip_Analytics_Composite/rest/Analytics',
+    key: KEY,
+  },
   miles: {
     path: '/WeTrip_Loyalty_Composite/rest/Loyalty',
     key: KEY,

@@ -49,10 +49,8 @@ function ParentFamily({ pendingApprovals }) {
           </span>
         </div>
       )}
-      <Link to="/family">
-        <button className="secondary" style={{ width: '100%', marginTop: 12 }}>
-          Manage family
-        </button>
+      <Link to="/family" className="btn secondary" style={{ width: '100%', marginTop: 12 }}>
+        Manage family
       </Link>
     </div>
   )
@@ -91,10 +89,8 @@ function ChildFamily() {
           </p>
         </>
       )}
-      <Link to="/family">
-        <button className="secondary" style={{ width: '100%', marginTop: 12 }}>
-          Open my wallet
-        </button>
+      <Link to="/family" className="btn secondary" style={{ width: '100%', marginTop: 12 }}>
+        Open my wallet
       </Link>
     </div>
   )
@@ -111,10 +107,8 @@ export default function FamilyOverview({ role, pendingApprovals }) {
           Parents can link a child to manage their budget and allowance. Children can accept an
           invite from a parent.
         </p>
-        <Link to="/family">
-          <button className="secondary" style={{ width: '100%', marginTop: 12 }}>
-            Set up family
-          </button>
+        <Link to="/family" className="btn secondary" style={{ width: '100%', marginTop: 12 }}>
+          Set up family
         </Link>
       </div>
     )

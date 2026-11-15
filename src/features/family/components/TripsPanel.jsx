@@ -8,8 +8,7 @@ import Banner from '../../../components/Banner'
 import Money from '../../../components/Money'
 import PastTrips from '../../../components/PastTrips'
 import { splitTrips } from '../../fx/status'
-
-const day = (value) => String(value).slice(0, 10)
+import { dayRange, rateText } from '../../../lib/format'
 
 function TripRow({ trip }) {
   const ended = trip.status === 'Completed' || trip.status === 'Cancelled'
@@ -28,7 +27,7 @@ function TripRow({ trip }) {
         <div className="stack">
           <strong>{trip.destination}</strong>
           <span className="muted">
-            {day(trip.tripStartDate)} → {day(trip.tripEndDate)} · {tripTiming(trip)}
+            {dayRange(trip.tripStartDate, trip.tripEndDate)} · {tripTiming(trip)}
           </span>
         </div>
         <span className={`badge ${statusBadge(trip.status)}`}>{tripStatus(trip.status).label}</span>
@@ -48,18 +47,12 @@ function TripRow({ trip }) {
 
       <div className="row-between" style={{ marginTop: 12 }}>
         <span className="muted">Target rate</span>
-        <span className="money">
-          {Number(trip.targetRate).toFixed(4)} {trip.currency}
-        </span>
+        <span className="money">{rateText(trip.targetRate, trip.currency)}</span>
       </div>
       {!ended && (
         <div className="row-between">
-          <span className="muted">Today's {period} forward</span>
-          <span className="money">
-            {rate.data?.forwardRate
-              ? `${Number(rate.data.forwardRate).toFixed(4)} ${trip.currency}`
-              : '—'}
-          </span>
+          <span className="muted">Today&apos;s {period} rate</span>
+          <span className="money">{rateText(rate.data?.forwardRate, trip.currency)}</span>
         </div>
       )}
 
@@ -83,7 +76,7 @@ function TripRow({ trip }) {
         className="muted"
         style={{ display: 'block', textAlign: 'center', marginTop: 10 }}
       >
-        Manage FX &amp; locks
+        Manage rates &amp; locks
       </Link>
     </div>
   )

@@ -38,6 +38,11 @@ export const SERVICES = {
     base: '/scantopay',
     normalize: true,
   },
+  // Trip analytics data mart: ETL refresh and the aggregate insights.
+  analytics: {
+    base: '/api/analytics',
+    normalize: true,
+  },
   // WeTrip_Loyalty_Composite: miles balance, sync from SMUtBank history, rewards.
   miles: {
     base: '/api/miles',

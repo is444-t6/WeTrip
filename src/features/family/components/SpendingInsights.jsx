@@ -10,6 +10,7 @@ import { useChildSpending } from '../useChildSpending'
 import Banner from '../../../components/Banner'
 import DailySpendChart from './DailySpendChart'
 import Money from '../../../components/Money'
+import { money } from '../../../lib/format'
 
 const TOP_CATEGORIES = 4
 
@@ -22,17 +23,17 @@ function forecastLine(f, span) {
     case 'on-track':
       return {
         kind: 'ok',
-        text: `On track: about SGD ${f.projected.toFixed(2)} by the end of the ${span}.`,
+        text: `On track: about ${money(f.projected)} by the end of the ${span}.`,
       }
     case 'over-pace':
       return {
         kind: 'warn',
-        text: `At this pace: about SGD ${f.projected.toFixed(2)} this ${span}, SGD ${f.overBy.toFixed(2)} over budget. The limit is reached around ${f.runsOutOn.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}.`,
+        text: `At this pace: about ${money(f.projected)} this ${span}, ${money(f.overBy)} over budget. The limit is reached around ${f.runsOutOn.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}.`,
       }
     default:
       return {
         kind: 'error',
-        text: `Already over budget by SGD ${f.overBy.toFixed(2)} this ${span}.`,
+        text: `Already over budget by ${money(f.overBy)} this ${span}.`,
       }
   }
 }
@@ -106,8 +107,8 @@ export default function SpendingInsights({ child }) {
           {change === null
             ? `No spending last ${span} to compare with.`
             : change === 0
-              ? `Same as last ${span} (SGD ${prevTotal.toFixed(2)}).`
-              : `${Math.abs(change)}% ${change > 0 ? 'more' : 'less'} than last ${span} (SGD ${prevTotal.toFixed(2)}).`}
+              ? `Same as last ${span} (${money(prevTotal)}).`
+              : `${Math.abs(change)}% ${change > 0 ? 'more' : 'less'} than last ${span} (${money(prevTotal)}).`}
         </p>
       )}
     </div>

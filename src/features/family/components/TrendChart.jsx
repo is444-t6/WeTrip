@@ -1,4 +1,5 @@
 import { trendLayout } from '../chart'
+import { money } from '../../../lib/format'
 
 // Month-end balance as a line. Months before the child had an account have no
 // dot; the labels still run along the bottom so the gap reads as a gap.
@@ -14,7 +15,7 @@ export default function TrendChart({ points }) {
         {t.dots.length > 1 && <path className="trend-line" d={t.path} />}
         {t.dots.map((d) => (
           <circle key={d.label} className="trend-dot" cx={d.x} cy={d.y} r="3.5">
-            <title>{`${d.label}: SGD ${d.value.toFixed(2)}`}</title>
+            <title>{`${d.label}: ${money(d.value)}`}</title>
           </circle>
         ))}
         {t.labels.map((l, i) => (

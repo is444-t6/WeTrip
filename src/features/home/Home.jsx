@@ -5,13 +5,13 @@ import { clearSession, getSessionDisplayName } from '../auth/session'
 import AppShell from '../../components/AppShell'
 import Banner from '../../components/Banner'
 import { firstName, maskAccount } from './homeData'
-import ExploreProducts from './components/ExploreProducts'
 import FamilyOverview from './components/FamilyOverview'
 import { EyeIcon } from './components/Icons'
 import QuickActions from './components/QuickActions'
 import RecentPayments from './components/RecentPayments'
 import MilesCard from './components/MilesCard'
-import TripWallets from './components/TripWallets'
+import NextTrip from './components/NextTrip'
+import { money } from '../../lib/format'
 
 const HIDE_KEY = 'wetrip_hide_balance'
 
@@ -54,31 +54,33 @@ export default function Home() {
     <AppShell onSignOut={signOut}>
       <Banner>{profileError?.message}</Banner>
 
-      <div className="hero">
-        <div className="row-between">
+      {/* Trip-first: the next trip leads, on one dark band with the balance. */}
+      <section className="home-hero">
+        <div className="home-top">
           <h1 className="hero-greeting">
             Hi, {firstName(user?.displayName || getSessionDisplayName())}!
           </h1>
-          <button
-            type="button"
-            className="eye-btn"
-            onClick={toggle}
-            aria-label={hidden ? 'Show balance' : 'Hide balance'}
-            aria-pressed={hidden}
-          >
-            <EyeIcon off={hidden} />
-          </button>
-        </div>
-        <div className="hero-sub" style={{ marginTop: 14 }}>
-          Available balance
-        </div>
-        <div className="hero-amount">
-          {user ? (hidden ? 'SGD ••••••' : `SGD ${Number(user.balance ?? 0).toFixed(2)}`) : '…'}
+          <div className="balance-pill">
+            <span className="balance-label">Available balance</span>
+            <span className="hero-amount">
+              {user ? (hidden ? 'SGD ••••••' : money(user.balance)) : '…'}
+            </span>
+            <button
+              type="button"
+              className="eye-btn"
+              onClick={toggle}
+              aria-label={hidden ? 'Show balance' : 'Hide balance'}
+              aria-pressed={hidden}
+            >
+              <EyeIcon off={hidden} />
+            </button>
+          </div>
         </div>
         {user && <div className="hero-sub">Deposit account {maskAccount(user.accountId)}</div>}
-      </div>
+        <NextTrip />
+      </section>
 
-      <QuickActions pendingApprovals={pendingApprovals} />
+      {role && <QuickActions role={role} />}
 
       {pendingApprovals > 0 && (
         <Banner kind="warn">
@@ -89,14 +91,10 @@ export default function Home() {
 
       <h2 className="section-title">Your accounts</h2>
       <FamilyOverview role={role} pendingApprovals={pendingApprovals} />
-      <TripWallets role={role} />
       {role === 'Child' && <MilesCard />}
 
       <h2 className="section-title">Recent activity</h2>
       <RecentPayments />
-
-      <h2 className="section-title">Explore WeTrip</h2>
-      <ExploreProducts />
     </AppShell>
   )
 }

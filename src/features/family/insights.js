@@ -1,6 +1,7 @@
 // Pure helpers behind the budget alerts and spending insights. No React, no
 // fetching, so the date and threshold maths can be tested on their own.
 import { toCategory } from './categories'
+import { money } from '../../lib/format'
 
 // A budget counts as "nearly used" from this share of it onwards.
 export const NEAR_LIMIT = 0.8
@@ -10,7 +11,6 @@ const DAY_MS = 86_400_000
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 const diffDays = (a, b) => Math.round((startOfDay(a) - startOfDay(b)) / DAY_MS)
-const money = (n) => `SGD ${Number(n).toFixed(2)}`
 
 // Local-date YYYY-MM-DD. toISOString() converts to UTC, which shifts the date
 // by a day for anyone east of Greenwich (e.g. Singapore, UTC+8).

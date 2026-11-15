@@ -26,7 +26,7 @@ export default function MyInsurance() {
 
   return (
     <InsuranceLayout>
-      <h1>My Insurance</h1>
+      <h1>My insurance</h1>
       <p className="muted">Policies returned by the insurance service.</p>
       {policies.isLoading && <div className="card muted">Loading your policies…</div>}
       {policies.error && (

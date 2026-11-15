@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BudgetIndexRouteImport } from './routes/budget.index'
 import { Route as BudgetTripIdRouteImport } from './routes/budget.$tripId'
@@ -34,6 +35,11 @@ import { Route as InsurancePlanPlanIdRouteImport } from './routes/insurance.plan
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -139,6 +145,7 @@ const InsurancePlanPlanIdRoute = InsurancePlanPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/budget/$tripId': typeof BudgetTripIdRoute
   '/family/dev-login': typeof FamilyDevLoginRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/insights'
     | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/insights'
     | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/insights'
     | '/login'
     | '/budget/$tripId'
     | '/family/dev-login'
@@ -281,6 +293,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InsightsRoute: typeof InsightsRoute
   LoginRoute: typeof LoginRoute
   BudgetTripIdRoute: typeof BudgetTripIdRoute
   FamilyDevLoginRoute: typeof FamilyDevLoginRoute
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -457,6 +477,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InsightsRoute: InsightsRoute,
   LoginRoute: LoginRoute,
   BudgetTripIdRoute: BudgetTripIdRoute,
   FamilyDevLoginRoute: FamilyDevLoginRoute,

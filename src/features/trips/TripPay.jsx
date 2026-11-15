@@ -159,14 +159,14 @@ export default function TripPay({ tripId }) {
           </p>
         )}
         <form
-          className="card"
+          className="card pay-sheet"
           onSubmit={(e) => {
             e.preventDefault()
             submit(0)
           }}
         >
           <p style={{ marginTop: 0 }}>
-            Merchant <strong>{qr.merchantCode}</strong>
+            Merchant <strong>{preview.data?.merchantName || qr.merchantCode}</strong>
             {trip && (
               <span className="muted" style={{ display: 'block' }}>
                 <Money amount={left} currency={trip.currency} /> left on this trip
@@ -174,8 +174,9 @@ export default function TripPay({ tripId }) {
             )}
           </p>
           {qr.amount > 0 ? (
-            <p>
-              Amount <Money amount={qr.amount} currency={qr.currency || trip?.currency} />
+            <p className="pay-amount">
+              <span className="muted">Amount</span>{' '}
+              <Money amount={qr.amount} currency={qr.currency || trip?.currency} />
             </p>
           ) : (
             <div className="field">

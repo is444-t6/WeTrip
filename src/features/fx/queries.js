@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FxApi } from './api'
 import { useChildren } from '../family/queries'
 import { isLoggedIn } from '../auth/session'
+import { tripKeys } from '../trips/queries'
 
 export const fxKeys = {
   trips: ['fx', 'trips'],
-  trip: (id) => ['fx', 'trip', id],
+  // The route gives '21', a mutation gives 21: one key for both, or a lock never refreshes the page.
+  trip: (id) => ['fx', 'trip', String(id)],
   rate: (currency, period) => ['fx', 'rate', currency, period],
 }
 
@@ -44,6 +46,8 @@ function useInvalidate() {
     Promise.all([
       qc.invalidateQueries({ queryKey: fxKeys.trips }),
       tripId != null && qc.invalidateQueries({ queryKey: fxKeys.trip(tripId) }),
+      // The trip page reads the same trip through the Trip composite.
+      tripId != null && qc.invalidateQueries({ queryKey: tripKeys.overview(tripId) }),
     ])
 }
 

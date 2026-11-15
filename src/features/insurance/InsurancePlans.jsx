@@ -6,6 +6,7 @@ import { getTrip } from './storage'
 import Banner from '../../components/Banner'
 import Notice from './components/Notice'
 import InsuranceLayout from './components/InsuranceLayout'
+import { dayRange } from '../../lib/format'
 
 function travellerLimit(maxTravellers) {
   return Number(maxTravellers) > 1 ? `Up to ${maxTravellers} people` : null
@@ -63,9 +64,7 @@ export default function InsurancePlans() {
             <strong>
               {trip.destination} ({trip.destinationCode.toUpperCase()})
             </strong>
-            <span>
-              {trip.startDate} – {trip.endDate}
-            </span>
+            <span>{dayRange(trip.startDate, trip.endDate)}</span>
           </div>
         </div>
       )}
@@ -206,20 +205,10 @@ export default function InsurancePlans() {
             </div>
             <div className="insurance-plan-card-footer">
               <div className="row insurance-plan-actions">
+                {/* Choosing opens the plan's details first, so one button covers both. */}
                 <button
                   type="button"
-                  className="secondary"
-                  onClick={() =>
-                    navigate({
-                      to: '/insurance/plan/$planId',
-                      params: { planId: String(plan.id) },
-                    })
-                  }
-                >
-                  Plan details
-                </button>
-                <button
-                  type="button"
+                  style={{ width: '100%' }}
                   disabled={!hasTrip || !plan.isActive}
                   onClick={() =>
                     navigate({
@@ -235,7 +224,7 @@ export default function InsurancePlans() {
           </article>
         ))}
       <Link to="/insurance/policies" className="muted">
-        View My Insurance →
+        View my insurance →
       </Link>
     </InsuranceLayout>
   )

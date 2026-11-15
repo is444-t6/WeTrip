@@ -6,9 +6,16 @@ import DetailRow from './components/DetailRow'
 import PayLayout from './components/PayLayout'
 import { getCustomerId } from './customer'
 import { useHistory } from './queries'
+import { day } from '../../lib/format'
+import { latestPayments } from '../home/homeData'
 
-const when = (value) =>
-  new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = (value) => {
+  const d = new Date(value)
+  return value && !Number.isNaN(d.getTime())
+    ? d.toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' })
+    : '—'
+}
+const PLAN_STATUS = { ACTIVE: 'Active', COMPLETED: 'Paid off', CLOSED: 'Closed' }
 
 function PaymentCard({ payment }) {
   const later = payment.paymentType === 'BNPL'
@@ -28,9 +35,11 @@ function PaymentCard({ payment }) {
         <DetailRow label="Amount">
           <Money amount={payment.amount} currency={payment.currency} />
         </DetailRow>
-        <DetailRow label="Approx.">
-          ≈ <Money amount={payment.amountSGD} />
-        </DetailRow>
+        {payment.currency !== 'SGD' && payment.amountSGD != null && (
+          <DetailRow label="Approx.">
+            ≈ <Money amount={payment.amountSGD} />
+          </DetailRow>
+        )}
         <DetailRow label="Transaction">{payment.transactionId}</DetailRow>
       </div>
     </div>
@@ -46,7 +55,7 @@ function PlanCard({ plan }) {
           <span className="muted">Started {when(plan.createdOn)}</span>
         </div>
         <span className={`badge ${plan.status === 'ACTIVE' ? 'active' : 'pending'}`}>
-          {plan.status}
+          {PLAN_STATUS[plan.status] ?? plan.status}
         </span>
       </div>
       <div className="scantopay-rows">
@@ -60,7 +69,7 @@ function PlanCard({ plan }) {
         <DetailRow label="Total interest">
           <Money amount={plan.totalInterest} currency={plan.currency} />
         </DetailRow>
-        <DetailRow label="Ends">{String(plan.maturityDate).slice(0, 10)}</DetailRow>
+        <DetailRow label="Ends">{day(plan.maturityDate)}</DetailRow>
       </div>
     </div>
   )
@@ -69,13 +78,13 @@ function PlanCard({ plan }) {
 export default function MyPayments() {
   const customerId = getCustomerId()
   const { data, error, isLoading } = useHistory(customerId)
-  const payments = data?.payments ?? []
+  const payments = latestPayments(data?.payments, Infinity)
   const plans = data?.bnplPlans ?? []
 
-  if (!customerId) return <SignedOutCard title="My Payments" />
+  if (!customerId) return <SignedOutCard title="My payments" />
 
   return (
-    <PayLayout title="My Payments">
+    <PayLayout title="My payments">
       <Banner>{error?.message}</Banner>
       {isLoading && (
         <p className="muted" role="status">

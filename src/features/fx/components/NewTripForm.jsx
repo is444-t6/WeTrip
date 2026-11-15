@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useChildren } from '../../family/queries'
 import Banner from '../../../components/Banner'
 import { CATEGORIES, blankFixedCost } from '../../budget/constants'
@@ -7,6 +7,8 @@ import FixedCostFields from '../../budget/components/FixedCostFields'
 import { usePlanTrip } from '../../trips/queries'
 import { CURRENCIES, tenorFor } from '../api'
 import { useRate } from '../queries'
+import { rateText } from '../../../lib/format'
+import { ymd } from '../../family/insights'
 
 export default function NewTripForm() {
   const { data: children } = useChildren()
@@ -26,6 +28,9 @@ export default function NewTripForm() {
   const [split, setSplit] = useState({}) // category id -> SGD limit, all optional
   const [fixed, setFixed] = useState([]) // upfront costs: { name, categoryId, amount }, max 10
 
+  // With one linked child there is nobody else to pick.
+  const linkId = familyLinkId || (active.length === 1 ? String(active[0].familyLinkId) : '')
+  const [today] = useState(() => ymd(new Date()))
   const period = tenorFor(tripStartDate)
   const quote = useRate(currency, period)
   const create = usePlanTrip()
@@ -51,7 +56,7 @@ export default function NewTripForm() {
     if (blocked) return
     create.mutate(
       {
-        FamilyLinkId: Number(familyLinkId),
+        FamilyLinkId: Number(linkId),
         Destination: destination.trim(),
         Currency: currency,
         TripStartDate: tripStartDate,
@@ -120,27 +125,13 @@ export default function NewTripForm() {
       </div>
       <Banner>{create.error?.message}</Banner>
 
-      <div className="quote-panel" style={{ marginBottom: 16 }}>
-        <div className="stack">
-          <strong>Travel insurance is optional.</strong>
-          <span className="muted">Compare illustrative cover for this trip after planning.</span>
-        </div>
-        <Link
-          to="/insurance"
-          search={{ destination, startDate: tripStartDate, endDate: tripEndDate }}
-          className="btn btn-sm"
-        >
-          Explore travel insurance →
-        </Link>
-      </div>
-
       <form onSubmit={submit}>
         <div className="field">
           <label htmlFor="trip-child">Child</label>
           <select
             id="trip-child"
             ref={childRef}
-            value={familyLinkId}
+            value={linkId}
             onChange={(e) => setFamilyLinkId(e.target.value)}
             required
           >
@@ -186,6 +177,7 @@ export default function NewTripForm() {
             <input
               id="trip-depart"
               type="date"
+              min={today}
               value={tripStartDate}
               onChange={(e) => setTripStartDate(e.target.value)}
               required
@@ -196,6 +188,7 @@ export default function NewTripForm() {
             <input
               id="trip-return"
               type="date"
+              min={tripStartDate || today}
               value={tripEndDate}
               onChange={(e) => setTripEndDate(e.target.value)}
               required
@@ -209,6 +202,7 @@ export default function NewTripForm() {
             <input
               id="trip-budget"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="1"
               value={targetBudgetSgd}
@@ -217,10 +211,13 @@ export default function NewTripForm() {
             />
           </div>
           <div className="field">
-            <label htmlFor="trip-target">Target rate ({currency} per SGD)</label>
+            <label htmlFor="trip-target">
+              Target rate ({currency} per 1 SGD, higher is better)
+            </label>
             <input
               id="trip-target"
               type="number"
+              inputMode="decimal"
               step="0.0001"
               min="0.0001"
               value={targetRate}
@@ -232,17 +229,16 @@ export default function NewTripForm() {
 
         <div className="quote-panel">
           <div className="stack">
-            <span className="muted">Live quote · {period}</span>
+            <span className="muted">Today&apos;s {period} lock rate</span>
             <strong className="money" style={{ fontSize: 20 }}>
               {quote.data?.forwardRate
-                ? Number(quote.data.forwardRate).toFixed(4)
+                ? rateText(quote.data.forwardRate, currency)
                 : quote.isLoading
                   ? '…'
-                  : '—'}{' '}
-              {currency}
+                  : '—'}
             </strong>
             <span className="muted" style={{ fontSize: '0.8em' }}>
-              spot {quote.data?.spotRate ? Number(quote.data.spotRate).toFixed(4) : '—'}
+              Exchange today: {rateText(quote.data?.spotRate, currency)}
             </span>
           </div>
           <button
@@ -251,7 +247,7 @@ export default function NewTripForm() {
             disabled={!quote.data?.forwardRate}
             onClick={() => setTargetRate(String(Number(quote.data.forwardRate).toFixed(4)))}
           >
-            Use forward
+            Use this rate
           </button>
         </div>
 
@@ -277,6 +273,7 @@ export default function NewTripForm() {
                 <input
                   id={`trip-split-${c.id}`}
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   min="0"
                   value={split[c.id] ?? ''}
@@ -286,7 +283,7 @@ export default function NewTripForm() {
             ))}
           </div>
           {overSplit && (
-            <p className="muted" role="alert">
+            <p className="banner error" role="alert">
               The categories add up to more than the trip budget.
             </p>
           )}
@@ -317,7 +314,7 @@ export default function NewTripForm() {
             </div>
           ))}
           {overFixed.map((c) => (
-            <p className="muted" role="alert" key={c.id}>
+            <p className="banner error" role="alert" key={c.id}>
               Fixed costs in {c.label} are more than its limit.
             </p>
           ))}

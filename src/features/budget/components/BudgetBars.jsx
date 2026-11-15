@@ -1,9 +1,12 @@
+import { money } from '../../../lib/format'
+
 const BAR = {
-  OK: undefined, // default green from .progress
-  WARNING: 'linear-gradient(90deg, var(--warn), #f0b35c)',
-  OVER: 'linear-gradient(90deg, var(--danger), #ff7a6e)',
+  OK: undefined, // default mint from .progress
+  WARNING: '#f0b35c',
+  OVER: 'var(--coral)',
 }
 const BADGE = { OK: 'active', WARNING: 'pending', OVER: 'removed' }
+const LABEL = { WARNING: 'Near limit', OVER: 'Over' }
 
 export default function BudgetBars({ lines }) {
   if (!lines?.length) {
@@ -23,10 +26,12 @@ export default function BudgetBars({ lines }) {
               <strong>{l.categoryName}</strong>
               <span className="row">
                 {l.alertLevel !== 'OK' && (
-                  <span className={`badge ${BADGE[l.alertLevel] ?? ''}`}>{l.alertLevel}</span>
+                  <span className={`badge ${BADGE[l.alertLevel] ?? ''}`}>
+                    {LABEL[l.alertLevel] ?? l.alertLevel}
+                  </span>
                 )}
                 <span className="money">
-                  {Number(l.spentAmount ?? 0).toFixed(2)} / {Number(l.limitAmount ?? 0).toFixed(2)}
+                  {money(l.spentAmount)} / {money(l.limitAmount)}
                 </span>
               </span>
             </div>

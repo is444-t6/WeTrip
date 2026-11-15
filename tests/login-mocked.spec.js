@@ -77,7 +77,7 @@ async function mockApi(page, { delay = 0 } = {}) {
 }
 
 const session = (page) => page.evaluate(() => sessionStorage.getItem('wetrip_session'))
-const customerField = (page) => page.getByLabel('CustomerId (the number, not the username)')
+const customerField = (page) => page.getByLabel('Customer ID (the number, not your username)')
 
 test.describe('one field', () => {
   test('the form asks for the customer id and nothing else', async ({ page }) => {
@@ -147,8 +147,8 @@ test.describe('more than one deposit account', () => {
     const select = page.getByLabel('Which account should WeTrip use?')
     await expect(select).toHaveValue('0000004554')
     await expect(select.locator('option')).toHaveText([
-      '0000004554 · SGD 8207.23',
-      '0000004848 · SGD 4699.02',
+      '0000004554 · SGD 8,207.23',
+      '0000004848 · SGD 4,699.02',
     ])
     // Nothing is stored until a choice is confirmed.
     expect(await session(page)).toBeNull()

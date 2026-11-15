@@ -91,16 +91,16 @@ test('the trip header and all four sections show their own data', async ({ page 
   await page.goto('/trips/12')
 
   await expect(page.getByRole('heading', { name: 'Kyoto' })).toBeVisible()
-  await expect(page.getByText('2027-04-01 → 2027-04-14')).toBeVisible()
+  await expect(page.getByText('1–14 Apr 2027')).toBeVisible()
 
   await expect(section(page, 'Money')).toContainText('SGD 400.00 locked')
   await expect(section(page, 'Money')).toContainText(
-    'JPY 38000.00 left of JPY 48000.00 (JPY 10000.00 spent)',
+    'JPY 38,000.00 left of JPY 48,000.00 (JPY 10,000.00 spent)',
   )
-  await expect(section(page, 'Money')).toContainText('Locked at 120.0000 JPY per SGD')
+  await expect(section(page, 'Money')).toContainText('Locked at 1 SGD = 120.00 JPY')
   await expect(section(page, 'Budget')).toContainText('SGD 150.00 spent of SGD 600.00')
   await expect(
-    section(page, 'Money').getByRole('link', { name: 'Manage FX & locks' }),
+    section(page, 'Money').getByRole('link', { name: 'Manage rates & locks' }),
   ).toHaveAttribute('href', '/fx/trips/12')
   await expect(section(page, 'Budget').getByRole('link', { name: 'Open budget' })).toHaveAttribute(
     'href',
@@ -287,6 +287,9 @@ test('the overview failing shows the error instead of an empty page', async ({ p
   })
   await page.goto('/trips/12')
   await expect(page.getByText('This trip belongs to another family')).toBeVisible()
+  // Not a dead end: back to the list, or try again.
+  await expect(page.getByRole('link', { name: 'All trips' })).toHaveAttribute('href', '/fx')
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeEnabled()
 })
 
 test('a child can pay on the trip, with no parent actions', async ({ page }) => {
@@ -296,7 +299,7 @@ test('a child can pay on the trip, with no parent actions', async ({ page }) => 
     GetTripOverview: () => overview({ CallerRole: 'Child', HasBudget: false, Policies: [] }),
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
+  await expect(section(page, 'Family')).toContainText('You have SGD 250.50')
   await expect(page.getByRole('button', { name: 'Get cover for this trip' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Set a budget' })).toHaveCount(0)
   await expect(page.getByLabel('Close trip', { exact: true })).toHaveCount(0)
@@ -304,6 +307,9 @@ test('a child can pay on the trip, with no parent actions', async ({ page }) => 
     'href',
     '/pay?tripId=12',
   )
+  // The child can look at the rates but is not offered to manage them.
+  await expect(page.getByRole('link', { name: 'See rates & locks' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Manage rates & locks' })).toHaveCount(0)
 })
 
 test('closing takes a confirm, then keeps showing what locking saved', async ({ page }) => {
@@ -337,7 +343,7 @@ test('closing takes a confirm, then keeps showing what locking saved', async ({ 
   await card.getByRole('button', { name: 'Close trip' }).click()
   expect(calls).toEqual([])
   await card.getByRole('button', { name: 'Close trip' }).click()
-  await expect(card).toContainText('JPY 38000.00 unspent, worth SGD 319.33 today')
+  await expect(card).toContainText('JPY 38,000.00 unspent, worth SGD 319.33 today')
   await expect(card).toContainText('Locking saved SGD 0.70 versus today')
   expect(calls).toEqual(['12'])
   await expect(page.getByText('Completed', { exact: true })).toBeVisible()
@@ -470,7 +476,7 @@ test('the CloseTrip reply, not the preview, is what the closed card shows', asyn
   const card = section(page, 'Close trip')
   await card.getByRole('button', { name: 'Close trip' }).click()
   await card.getByRole('button', { name: 'Close trip' }).click()
-  await expect(card).toContainText('Trip closed. JPY 38000.00 unspent, worth SGD 317.50 today.')
+  await expect(card).toContainText('Trip closed. JPY 38,000.00 unspent, worth SGD 317.50 today.')
   await expect(card).toContainText("Locking cost SGD 1.25 versus today's rate")
   await expect(card).not.toContainText('Value in SGD at today')
 })
@@ -484,7 +490,7 @@ test('a child does not read the close options', async ({ page }) => {
     GetTripOverview: () => overview({ CallerRole: 'Child' }),
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Family')).toContainText('Jamie has SGD 250.50')
+  await expect(section(page, 'Family')).toContainText('You have SGD 250.50')
   await expect(section(page, 'Close trip')).toHaveCount(0)
   expect(calls).toBe(0)
 })
@@ -550,13 +556,10 @@ test('keeping the money lists the eligible trips and closes with the one picked'
   const card = section(page, 'Close trip')
   await confirmClose(card)
   const next = card.getByLabel('Which trip')
-  await expect(next.locator('option')).toHaveText([
-    'Osaka, 2027-05-01 → 2027-05-10',
-    'Tokyo, 2027-06-01 → 2027-06-09',
-  ])
+  await expect(next.locator('option')).toHaveText(['Osaka, 1–10 May 2027', 'Tokyo, 1–9 Jun 2027'])
   await next.selectOption('22')
   await card.getByRole('button', { name: 'Close trip' }).click()
-  await expect(card).toContainText('Trip closed. JPY 1094.00 carried to Tokyo.')
+  await expect(card).toContainText('Trip closed. JPY 1,094.00 carried to Tokyo.')
   expect(calls).toEqual([{ TripId: '12', CarryToTripId: '22' }])
   await expect(card).not.toContainText('worth')
   await expect(card).not.toContainText('Locking')
@@ -576,7 +579,7 @@ test('converting back still sends no CarryToTripId when trips are eligible', asy
   const card = section(page, 'Close trip')
   await card.getByRole('button', { name: 'Close trip' }).click()
   await card.getByRole('button', { name: 'Close trip' }).click()
-  await expect(card).toContainText('Trip closed. JPY 1094.00 unspent')
+  await expect(card).toContainText('Trip closed. JPY 1,094.00 unspent')
   expect(calls).toEqual([false])
 })
 
@@ -586,7 +589,7 @@ test('with no eligible trip, keeping the money cannot be confirmed', async ({ pa
   await page.goto('/trips/12')
   const card = section(page, 'Close trip')
   await confirmClose(card)
-  await expect(card).toContainText('No Watching or Partly locked JPY trip has room for this yet')
+  await expect(card).toContainText('No other open JPY trip has room for this yet')
   await expect(card.getByRole('button', { name: 'Close trip' })).toBeDisabled()
   await card.getByLabel('Keep for my next trip').uncheck()
   await expect(card.getByRole('button', { name: 'Close trip' })).toBeEnabled()
@@ -618,7 +621,7 @@ test('a carried trip opened later says where the money went', async ({ page }) =
   })
   await page.goto('/trips/12')
   const card = section(page, 'Close trip')
-  await expect(card).toContainText('Trip closed. JPY 1094.00 carried to Tokyo.')
+  await expect(card).toContainText('Trip closed. JPY 1,094.00 carried to Tokyo.')
   await expect(card).not.toContainText('worth')
   await expect(card).not.toContainText('Locking')
 })
@@ -629,7 +632,7 @@ test('a carried trip says "your next trip" while its destination is unknown', as
   await mockApi(page, { GetTripOverview: () => overview({ Trip: CARRIED }) })
   await page.goto('/trips/12')
   await expect(section(page, 'Close trip')).toContainText(
-    'Trip closed. JPY 1094.00 carried to your next trip.',
+    'Trip closed. JPY 1,094.00 carried to your next trip.',
   )
 })
 
@@ -652,7 +655,7 @@ test('the trip that received a carry-over shows where it came from', async ({ pa
       }),
   })
   await page.goto('/trips/12')
-  await expect(section(page, 'Money')).toContainText('Carried JPY 1094.00 from Osaka')
+  await expect(section(page, 'Money')).toContainText('Carried JPY 1,094.00 from Osaka')
 })
 
 test('a trip with no carry-over lock does not read the trip list', async ({ page }) => {
@@ -701,7 +704,7 @@ test('foreign amounts keep their cents', async ({ page }) => {
   })
   await page.goto('/trips/12')
   await expect(section(page, 'Money')).toContainText(
-    'JPY 76674.88 left of JPY 96675.38 (JPY 20000.50 spent)',
+    'JPY 76,674.88 left of JPY 96,675.38 (JPY 20,000.50 spent)',
   )
 })
 
@@ -724,7 +727,7 @@ test('a Pay later card lists the trip instalment plans', async ({ page }) => {
   })
   await page.goto('/trips/12')
   await expect(section(page, 'Pay later')).toContainText(
-    'Universal Studios Japan · 3 × JPY 1506.50 · first 2027-04-07 · ends 2027-06-07',
+    'Universal Studios Japan · 3 × JPY 1,506.50 · first 7 Apr 2027 · ends 7 Jun 2027',
   )
 })
 

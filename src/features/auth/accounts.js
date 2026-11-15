@@ -1,4 +1,5 @@
 import { serviceClient } from '../../lib/services'
+import { money } from '../../lib/format'
 
 // The dev sign-in is given only a customer id, but a session needs an account
 // too. GetMyAccounts reads just the customer id from the session token, so a
@@ -36,7 +37,7 @@ export function depositAccounts(accounts) {
 }
 
 export function accountLabel(account) {
-  return `${account.accountId} · ${account.currency} ${Number(account.balance ?? 0).toFixed(2)}`
+  return `${account.accountId} · ${money(account.balance, account.currency)}`
 }
 
 // What to tell someone when the lookup fails.

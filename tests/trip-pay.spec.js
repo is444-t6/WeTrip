@@ -127,12 +127,12 @@ test('a trip payment sends the trip, merchant, amount, category and one request 
   await page.goto('/pay?tripId=12')
   await expect(page.getByRole('heading', { name: 'Pay on Kyoto' })).toBeVisible()
   await scan(page, RAMEN_QR)
-  await expect(page.getByText('JPY 48000.00 left on this trip')).toBeVisible()
+  await expect(page.getByText('JPY 48,000.00 left on this trip')).toBeVisible()
   await page.getByLabel('Budget category').selectOption({ label: 'Food' })
   await page.getByRole('button', { name: 'Pay from trip' }).click()
 
-  await expect(page.getByRole('status')).toContainText('JPY 1200.00 charged as SGD 10.00')
-  await expect(page.getByRole('status')).toContainText('JPY 46800.00 left on this trip')
+  await expect(page.getByRole('status')).toContainText('JPY 1,200.00 charged as SGD 10.00')
+  await expect(page.getByRole('status')).toContainText('JPY 46,800.00 left on this trip')
   expect(bodies).toHaveLength(1)
   expect(bodies[0]).toMatchObject({ TripId: 12, MerchantCode: 'M001', Amount: 1200, CategoryId: 6 })
   expect(bodies[0].RequestId).toBeTruthy()
@@ -151,7 +151,7 @@ test('the Paid card shows the miles earned, and nothing when none were', async (
   await page.getByRole('button', { name: 'Pay again' }).click()
   await scan(page, RAMEN_QR)
   await page.getByRole('button', { name: 'Pay from trip' }).click()
-  await expect(page.getByRole('status')).toContainText('JPY 1200.00 charged as SGD 10.00')
+  await expect(page.getByRole('status')).toContainText('JPY 1,200.00 charged as SGD 10.00')
   await expect(page.getByRole('status')).not.toContainText('mile')
 })
 
@@ -189,7 +189,7 @@ test('an eligible QR offers each pay-later option next to Pay from trip', async 
   await page.goto('/pay?tripId=12')
   await scan(page, USJ_QR)
   await expect(page.getByRole('button', { name: 'Pay from trip' })).toBeEnabled()
-  await expect(page.getByRole('radio', { name: /^3 months · JPY 1506\.50\/month/ })).toBeVisible()
+  await expect(page.getByRole('radio', { name: /^3 months · JPY 1,506\.50\/month/ })).toBeVisible()
   await expect(page.getByRole('radio', { name: /^6 months · JPY 755\.70\/month/ })).toBeVisible()
   await expect(page.getByText('Billed by the bank, not from your trip pot')).toBeVisible()
   expect(calls).toEqual([
@@ -222,7 +222,7 @@ test('a failed preview leaves Pay from trip working', async ({ page }) => {
   await page.goto('/pay?tripId=12')
   await scan(page, RAMEN_QR)
   await page.getByRole('button', { name: 'Pay from trip' }).click()
-  await expect(page.getByRole('status')).toContainText('JPY 1200.00 charged as SGD 10.00')
+  await expect(page.getByRole('status')).toContainText('JPY 1,200.00 charged as SGD 10.00')
   expect(bodies).toHaveLength(1)
 })
 
@@ -241,14 +241,14 @@ test('picking 3 months pays later: one PayLaterOnTrip, no trip payment, plan sho
 
   const status = page.getByRole('status')
   await expect(status).toContainText('Pay-later plan created')
-  await expect(status).toContainText('3 × JPY 1506.50')
+  await expect(status).toContainText('3 × JPY 1,506.50')
   await expect(status.locator('.row-between', { hasText: 'Total interest' })).toContainText(
     'JPY 19.51',
   )
   await expect(status.locator('.row-between', { hasText: 'First repayment' })).toContainText(
-    '2026-12-07',
+    '7 Dec 2026',
   )
-  await expect(status.locator('.row-between', { hasText: 'Ends' })).toContainText('2027-02-07')
+  await expect(status.locator('.row-between', { hasText: 'Ends' })).toContainText('7 Feb 2027')
 
   const later = calls.filter((c) => c.name === 'PayLaterOnTrip')
   expect(later).toHaveLength(1)
