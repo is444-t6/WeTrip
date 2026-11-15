@@ -227,7 +227,8 @@ if (backup) {
   await step(`market flipped to ${CLOSE_SHIFT}% so closing shows a saving`, async () => {
     await setShift(backup, CLOSE_SHIFT)
     const o = await api('trip', 'GET', `GetCloseOptions?TripId=${backup}`)
-    const saved = Number(field(o, 'savedVsSpotSgd'))
+    // What converting the unspent pot back at today's (demo) spot is worth, minus what it cost.
+    const saved = Number(field(o, 'valueAtSpotSgd')) - Number(field(o, 'costAtLockedSgd'))
     if (Number.isFinite(saved)) {
       note(`closing now ${saved >= 0 ? 'saves' : 'costs'} ${sgd(Math.abs(saved))} vs spot`)
       if (saved <= 0) throw new Error('closing would not show a saving')
