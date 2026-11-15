@@ -1,0 +1,62 @@
+.miles-rewards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.miles-rewards .card {
+  margin-bottom: 0;
+}
+
+.miles-reward {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.miles-cost {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.miles-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.miles-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.miles-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--card-border);
+}
+
+.miles-row:first-child {
+  border-top: 0;
+}
+
+.miles-delta {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.miles-delta.earn {
+  color: #08775b;
+}
+
+.miles-delta.redeem {
+  color: var(--muted);
+}

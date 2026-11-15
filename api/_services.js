@@ -40,6 +40,10 @@ export const SERVICES = {
     path: '/WeTrip_Analytics_Composite/rest/Analytics',
     key: KEY,
   },
+  miles: {
+    path: '/WeTrip_Loyalty_Composite/rest/Loyalty',
+    key: KEY,
+  },
 }
 
 const keyFor = (svc, env) => svc.key.map((name) => env[name]).find(Boolean) ?? ''

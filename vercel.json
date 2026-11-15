@@ -21,6 +21,10 @@
       "destination": "/api/proxy?service=insurance&path=:path*"
     },
     {
+      "source": "/api/miles/:path*",
+      "destination": "/api/proxy?service=miles&path=:path*"
+    },
+    {
       "source": "/scantopay/:path*",
       "destination": "/api/proxy?service=scantopay&path=:path*"
     },

@@ -43,6 +43,11 @@ export const SERVICES = {
     base: '/api/analytics',
     normalize: true,
   },
+  // WeTrip_Loyalty_Composite: miles balance, sync from SMUtBank history, rewards.
+  miles: {
+    base: '/api/miles',
+    normalize: true,
+  },
 }
 
 // A client for one service. `overrides` is for the odd call that needs a different

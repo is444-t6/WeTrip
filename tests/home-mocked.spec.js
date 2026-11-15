@@ -181,11 +181,17 @@ test.describe('parent home page', () => {
     await mockApi(page)
     await page.goto('/')
     const quick = page.getByRole('navigation', { name: 'Quick actions' })
-    await expect(quick.getByRole('link')).toHaveText(['Lock a rate', 'Insurance', 'Budgets'])
+    await expect(quick.getByRole('link')).toHaveText([
+      'Lock a rate',
+      'Insurance',
+      'Budgets',
+      'Miles',
+    ])
     for (const [name, href] of [
       ['Lock a rate', '/fx'],
       ['Insurance', '/insurance'],
       ['Budgets', '/budget'],
+      ['Miles', '/miles'],
     ]) {
       await expect(quick.getByRole('link', { name })).toHaveAttribute('href', href)
     }
@@ -420,6 +426,14 @@ test.describe('child home page', () => {
     await page.goto('/')
     await expect(page.getByText('No trip yet. When your parent plans one')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Plan a trip' })).toHaveCount(0)
+  })
+
+  test('a child’s quick actions include Miles', async ({ page }) => {
+    await mockApi(page, child)
+    await page.goto('/')
+    const quick = page.getByRole('navigation', { name: 'Quick actions' })
+    await expect(quick.getByRole('link')).toHaveText(['Budgets', 'My payments', 'Miles'])
+    await expect(quick.getByRole('link', { name: 'Miles' })).toHaveAttribute('href', '/miles')
   })
 
   const miles = (page) => page.getByLabel('Miles', { exact: true })
